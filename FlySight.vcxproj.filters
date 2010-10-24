@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Config.c" />
+    <ClCompile Include="Descriptors.c" />
+    <ClCompile Include="Log.c" />
+    <ClCompile Include="Main.c" />
+    <ClCompile Include="MassStorage.c" />
+    <ClCompile Include="Power.c" />
+    <ClCompile Include="Timer.c" />
+    <ClCompile Include="Tone.c" />
+    <ClCompile Include="uart.c" />
+    <ClCompile Include="UBX.c" />
+    <ClCompile Include="Lib\MMC.c">
+      <Filter>Lib</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\SCSI.c">
+      <Filter>Lib</Filter>
+    </ClCompile>
+    <ClCompile Include="FatFS\ff.c">
+      <Filter>FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="FatFS\mmc.c">
+      <Filter>FatFS</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="Descriptors.h" />
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="Main.h" />
+    <ClInclude Include="MassStorage.h" />
+    <ClInclude Include="Power.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="Tone.h" />
+    <ClInclude Include="uart.h" />
+    <ClInclude Include="UBX.h" />
+    <ClInclude Include="Lib\MMC.h">
+      <Filter>Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\SCSI.h">
+      <Filter>Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="FatFS\diskio.h">
+      <Filter>FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="FatFS\ff.h">
+      <Filter>FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="FatFS\ffconf.h">
+      <Filter>FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="FatFS\integer.h">
+      <Filter>FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="Board\LEDs.h">
+      <Filter>Board</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Lib">
+      <UniqueIdentifier>{73168e0f-33ef-4424-a310-85f8d45093d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FatFS">
+      <UniqueIdentifier>{a74b4421-4267-4ecd-8c7f-27d9ac9f7727}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Board">
+      <UniqueIdentifier>{7af99eb2-8a23-405d-8060-784e49280bf1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
