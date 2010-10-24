@@ -84,7 +84,7 @@
     <LibraryPath />
     <SourcePath />
     <ExcludePath />
-    <ExecutablePath>D:\Development\FlySight\WinAVR\bin</ExecutablePath>
+    <ExecutablePath>D:\Development\FlySight\WinAVR\bin;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>make</NMakeBuildCommandLine>
@@ -94,7 +94,7 @@
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>D:\Development\FlySight\WinAVR\avr\include</NMakeIncludeSearchPath>
-    <ExecutablePath>D:\Development\FlySight\WinAVR\bin</ExecutablePath>
+    <ExecutablePath>D:\Development\FlySight\WinAVR\bin;$(ExecutablePath)</ExecutablePath>
     <IncludePath>D:\Development\FlySight\WinAVR\avr\include</IncludePath>
     <ReferencePath />
     <LibraryPath />
