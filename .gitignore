@@ -1,0 +1,11 @@
+*.o
+*.o.d
+*.lst
+*.map
+*.eep
+*.elf
+*.hex
+*.sym
+*.tmp
+*.lss
+/WinAVR/
