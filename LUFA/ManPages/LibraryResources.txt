@@ -11,7 +11,7 @@
  *  Project Homepage: http://www.fourwalledcubicle.com/LUFA.php \n
  *  Author's Website: http://www.fourwalledcubicle.com \n
  *  Development Blog: http://www.fourwalledcubicle.com/blog \n
- *  Commercial Licences: http://fourwalledcubicle.com/PurchaseLUFA.php \n
+ *  Commercial Licenses: http://fourwalledcubicle.com/PurchaseLUFA.php \n
  *
  *  \section Sec_ProjectHelp Assistance With LUFA
  *  Discussion Group: http://groups.google.com/group/myusb-support-list \n
@@ -21,7 +21,8 @@
  *  \section Sec_InDevelopment Latest In-Development Source Code
  *  Official Releases, SVN Access, Issue Tracker: http://code.google.com/p/lufa-lib/ \n
  *  Git Access: http://github.com/abcminiuser/lufa-lib \n
- *  Development Source Archives: http://github.com/abcminiuser/lufa-lib/archives/master \n
+ *  Mercurial Access: http://bitbucket.org/abcminiuser/lufa-lib \n
+ *  Latest Repository Source Archive: http://github.com/abcminiuser/lufa-lib/archives/master \n
  *  Commit RSS Feed: http://github.com/feeds/abcminiuser/commits/lufa-lib/master \n
  *
  *  \section Sec_Toolchain AVR Toolchain

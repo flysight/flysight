@@ -31,28 +31,29 @@
 /** \file
  *  \brief USB device standard request management.
  *
- *  This file contains the function prototypes neccesary for the processing of incomming standard control requests
+ *  This file contains the function prototypes necessary for the processing of incoming standard control requests
  *  when the library is in USB device mode.
  *
  *  \note This file should not be included directly. It is automatically included as needed by the USB driver
  *        dispatch header located in LUFA/Drivers/USB/USB.h.
  */
 
-#ifndef __DEVCHAPTER9_H__
-#define __DEVCHAPTER9_H__
+#ifndef __DEVICESTDREQ_H__
+#define __DEVICESTDREQ_H__
 
 	/* Includes: */
-		#include <avr/io.h>
 		#include <avr/pgmspace.h>
 		#include <avr/eeprom.h>
 		#include <avr/boot.h>
 		#include <util/atomic.h>
+		#include <stdint.h>
+		#include <stdbool.h>
 		
-		#include "../HighLevel/StdDescriptors.h"
-		#include "../HighLevel/Events.h"
-		#include "../HighLevel/StdRequestType.h"
-		#include "../HighLevel/USBTask.h"
-		#include "LowLevel.h"
+		#include "StdDescriptors.h"
+		#include "Events.h"
+		#include "StdRequestType.h"
+		#include "USBTask.h"
+		#include "../LowLevel/USBController.h"
 
 	/* Enable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)
@@ -80,9 +81,9 @@
 				 */
 				enum USB_DescriptorMemorySpaces_t
 				{
-					MEMSPACE_FLASH    = 0, /**< Indicates the requested descriptor is located in FLASH memory */
-					MEMSPACE_EEPROM   = 1, /**< Indicates the requested descriptor is located in EEPROM memory */
-					MEMSPACE_RAM      = 2, /**< Indicates the requested descriptor is located in RAM memory */
+					MEMSPACE_FLASH    = 0, /**< Indicates the requested descriptor is located in FLASH memory. */
+					MEMSPACE_EEPROM   = 1, /**< Indicates the requested descriptor is located in EEPROM memory. */
+					MEMSPACE_RAM      = 2, /**< Indicates the requested descriptor is located in RAM memory. */
 				};
 			#endif
 	
@@ -141,7 +142,7 @@
 		/* Function Prototypes: */
 			void USB_Device_ProcessControlRequest(void);
 			
-			#if defined(__INCLUDE_FROM_DEVCHAPTER9_C)
+			#if defined(__INCLUDE_FROM_DEVICESTDREQ_C)
 				static void USB_Device_SetAddress(void);
 				static void USB_Device_SetConfiguration(void);
 				static void USB_Device_GetConfiguration(void);
@@ -149,7 +150,7 @@
 				static void USB_Device_GetStatus(void);
 				static void USB_Device_ClearSetFeature(void);
 				
-				#if !defined(NO_INTERNAL_SERIAL) && (defined(USB_SERIES_6_AVR) || defined(USB_SERIES_7_AVR))
+				#if !defined(NO_INTERNAL_SERIAL) && (USE_INTERNAL_SERIAL != NO_DESCRIPTOR)
 					static char USB_Device_NibbleToASCII(uint8_t Nibble) ATTR_ALWAYS_INLINE;
 					static void USB_Device_GetInternalSerialDescriptor(void);
 				#endif				

@@ -10,11 +10,40 @@
  *  to the next version released. It does not indicate all new additions to the library in each version change, only
  *  areas relevant to making older projects compatible with the API changes of each new release.
  *
- * \section Sec_Migration100513 Migrating from 100512 to 100513
- *  This release was made shortly after the 100512 release, to fix a critical device-mode error. No specific migration
- *  information applies to this release - see \ref Sec_Migration100512 for migration information of the previous release.
+ * \section Sec_Migration100807 Migrating from 100513 to 100807
  *
- * \section Sec_Migration100512 Migrating from 100219 to 100512
+ *  <b>Non-USB Library Components</b>
+ *    - The Dataflash board driver stub file has changed, as dataflash functions previously located in the internal
+ *      Dataflash driver of the library have now been moved to the individual board files. Existing drivers can
+ *      copy-paste the new functions from the board Dataflash stub driver.
+ *
+ *  <b>USB Core</b>
+ *    - A new USB driver source file, Drivers/USB/LowLevel/Device.c now exists. This source file should be added to all project
+ *      makefiles using the USB driver of LUFA, or the makefile should be updated to use the new module source variables.
+ *    - The Drivers/USB/LowLevel/DevChapter9.c source file has moved to Drivers/USB/HighLevel/DeviceStandardReq.c - this should
+ *      be updated in all project makefiles, or the makefile should be updated to use the new module source variables.
+ *    - The Drivers/USB/LowLevel/HostChapter9.h source file has moved to Drivers/USB/HighLevel/HostStandardReq.c - this should
+ *      be updated in all project makefiles, or the makefile should be updated to use the new module source variables.
+ *    - The Drivers/USB/LowLevel/LowLevel.c source file has moved to Drivers/LowLevel/USBController.c - this should be updated 
+ *      in all project makefiles, or the makefile should be updated to use the new module source variables.
+ *
+ *  <b>Device Mode</b>
+ *    - The USB_Device_IsRemoteWakeupSent() macro has been removed, as the remote wakeup request is now fully handled by the
+ *      enhanced \ref USB_Device_SendRemoteWakeup() function. Existing code may now discard any checks to USB_Device_IsRemoteWakeupSent().
+ *    - The USB_Device_IsUSBSuspended() macro has been removed, as it is obsolete. Existing code should compare \ref USB_DeviceState
+ *      to see if it the device is in the \ref DEVICE_STATE_Suspended state instead.
+ *    - The \ref CDC_Device_ReceiveByte() function has changed, and now returns a signed 16-bit integer, with -1 indicating no data was
+ *      received. This allows for more efficient coding, as a call to \ref CDC_Device_BytesReceived() is no longer needed if the exact
+ *      number of queued bytes received is not needed.
+ *
+ *  <b>Host Mode</b>
+ *    - The \ref CDC_Host_ReceiveByte() function has changed, and now returns a signed 16-bit integer, with -1 indicating no data was
+ *      received. This allows for more efficient coding, as a call to \ref CDC_Device_BytesReceived() is no longer needed if the exact
+ *      number of queued bytes received is not needed.
+ *    - The \ref CDC_Host_USBTask() now calls \ref CDC_Host_Flush() automatically, flushing any queued data to the attached device. Manual
+ *      flushing of the interface is no longer needed if the flushes should be in sync with calls to \ref CDC_Host_USBTask().
+ *
+ * \section Sec_Migration100513 Migrating from 100219 to 100513
  *
  *  <b>Non-USB Library Components</b>
  *    - The \ref TWI_StartTransmission() function now takes in a timeout period, expressed in milliseconds, within which the addressed
@@ -29,7 +58,7 @@
  *      Projects must update their makefile SRC values accordingly.
  *    - The HID Device Class driver's function signature for the CALLBACK_HID_Device_ProcessHIDReport() function has been changed, to
  *      allow for a new ReportType parameter. This new parameter must be added in all user applications using the Device mode HID Class
- *      Driver, but may be ingnored unless Host-to-Device FEATURE HID reports are used.
+ *      Driver, but may be ignored unless Host-to-Device FEATURE HID reports are used.
  *
  *  <b>Host Mode</b>
  *    - The \ref USB_Init() function no longer calls sei() to enable global interrupts, as the user application may need
@@ -71,9 +100,9 @@
  *      now named \ref SImage_Host_USBTask() and \ref SImage_Host_ConfigurePipes() respectively.
  *    - The HOST_SENDCONTROL_DeviceDisconnect enum value has been renamed to \ref HOST_SENDCONTROL_DeviceDisconnected to be in
  *      line with the rest of the library error codes.
- *    - The HID Parser item usages no longer contain seperate minimum and maximum values, as this was a violation of the HID
+ *    - The HID Parser item usages no longer contain separate minimum and maximum values, as this was a violation of the HID
  *      specification. Instead, the values are distributed evenly across each item as its usage value, to ensure that all items
- *      can be distinguished from oneanother.
+ *      can be distinguished from one-another.
  *
  *  <b>Device Mode</b>
  *    - The CALLBACK_HID_Device_CreateHIDReport() HID Device Class driver callback now has a new ReportType parameter to
@@ -100,24 +129,24 @@
  *    - The USB_GetDeviceConfigDescriptor() function's parameters and behaviour has changed; the user is required to
  *      preallocate the largest allowable buffer, and pass the size of the buffer to the function. This allows for a single
  *      call to the function to retrieve, size check and validate the Configuration Descriptor rather than having the user
- *      application perform these intermediatary steps.
+ *      application perform these intermediary steps.
  *    - The HID report parser now requires a mandatory callback in the user code, to filter only the items the application
  *      is interested in into the processed HID report item structure to save RAM. See \ref CALLBACK_HIDParser_FilterHIDReportItem().
  *    - The HID report parser now always parses FEATURE and always ignores constant-data items - the HID_ENABLE_FEATURE_PROCESSING
  *      and HID_INCLUDE_CONSTANT_DATA_ITEMS compile time tokens now have no effect.
- *    - The USE_NONSTANDARD_DESCRIPTOR_NAMES compile time token has been removed - there are now seperate USB_Descriptor_*
+ *    - The USE_NONSTANDARD_DESCRIPTOR_NAMES compile time token has been removed - there are now separate USB_Descriptor_*
  *      and USB_StdDescriptor_* structures for both the LUFA and standardized element naming conventions so that both may be used in
  *      the one project. For existing projects using the standardized names, change all code to use the USB_StdDescriptor_* variants.
  *
  *  <b>Device Mode</b>
- *    - The USE_NONSTANDARD_DESCRIPTOR_NAMES compile time token has been removed - there are now seperate USB_Descriptor_*
+ *    - The USE_NONSTANDARD_DESCRIPTOR_NAMES compile time token has been removed - there are now separate USB_Descriptor_*
  *      and USB_StdDescriptor_* structures for both the LUFA and standardized element naming conventions so that both may be used in
  *      the one project. For existing projects using the standardized names, change all code to use the USB_StdDescriptor_* variants.
  *
  * \section Sec_Migration090810 Migrating from 090605 to 090810
  *
  *  <b>All</b>
- *    - The "Simple Scheduler" has been <i>deprecated</i>, as it was little more than an abtracted loop and caused much confusion.
+ *    - The "Simple Scheduler" has been <i>deprecated</i>, as it was little more than an abstracted loop and caused much confusion.
  *      User applications using the scheduler should switch to regular loops instead. The scheduler code will be removed in a future
  *      release.
  *    - The "Dynamic Memory Block Allocator" has been removed, as it was unused in (and unrelated to) the LUFA library and never
@@ -143,7 +172,7 @@
  *      state.
  *    - The USB_IsConnected global has been removed, as it is too vague for general use. Test \ref USB_HostState explicitly to ensure the host is
  *      in the desired state instead.
- *    - The USB event names have been changed and their firing conditions changed to properly seperate out Host mode events from Device mode
+ *    - The USB event names have been changed and their firing conditions changed to properly separate out Host mode events from Device mode
  *      events. See the \ref Group_Events page for details on the new event names and firing conditions.
  *
  *  <b>Device Mode</b>
@@ -154,7 +183,7 @@
  *    - The USB_IsConnected global has been removed, as it is too vague for general use. Test \ref USB_DeviceState explicitly to ensure the device
  *      is in the desired state instead.
  *    - The VBUS events have been removed, as they are already exposed to the user via the USB_Connect and USB_Disconnect events.
- *    - The USB event names have been changed and their firing conditions changed to properly seperate out Host mode events from Device mode
+ *    - The USB event names have been changed and their firing conditions changed to properly separate out Host mode events from Device mode
  *      events. See the \ref Group_Events page for details on the new event names and firing conditions. *
  *
  * \section Sec_Migration090605 Migrating from 090510 to 090605
@@ -301,7 +330,7 @@
  *    - The previous SPI_SendByte() functionality is now located in SPI_TransferByte(). SPI_SendByte() now discards the return byte
  *      for speed, to compliment the new SPI_ReceiveByte() function. If two-way SPI transfers are required, calls to SPI_SendByte()
  *      should be changed to SPI_TransferByte().
- *    - The serial driver now sets the Tx line as an output explicitly, and enables the pullup of the Rx line.
+ *    - The serial driver now sets the Tx line as an output explicitly, and enables the pull-up of the Rx line.
  *    - The Serial_Init() and SerialStream_Init() functions now take a second DoubleSpeed parameter, which indicates if the USART
  *      should be initialized in double speed mode - useful in some circumstances for attaining baud rates not usually possible at
  *      the given AVR clock speed.
@@ -463,7 +492,7 @@
  *      appropriate. It fires in an identical manner to the previously named event, thus the only change to be made
  *      is the event name itself in the user project.
  *    - The USB_Descriptor_Language_t structure no longer exists in StdDescriptors.h, as this was a
- *      pseudo-descriptor modelled on the string descriptor. It is replaced by the true USB_Descriptor_String_t type
+ *      pseudo-descriptor modeled on the string descriptor. It is replaced by the true USB_Descriptor_String_t type
  *      descriptor as indicated in the USB specification, thus all device code must be updated accordingly.
  *    - The names of several Endpoint macros have been changed to be more consistent with the rest of the library,
  *      with no implementation changes. This means that existing code can be altered to use the new macro names

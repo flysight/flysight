@@ -57,13 +57,14 @@
 #define __COMMON_H__
 
 	/* Includes: */
-		#include <avr/io.h>
+		#include <stdint.h>
+		#include <stdbool.h>
 	
 		#include "Attributes.h"
 		#include "BoardTypes.h"
 
 	/* Public Interface - May be used in end-application: */
-		/* Macros: */		
+		/* Macros: */
 			/** Macro for encasing other multi-statement macros. This should be used along with an opening brace
 			 *  before the start of any multi-statement macro, so that the macros contents as a whole are treated
 			 *  as a discrete block and not as a list of separate statements which may cause problems when used as
@@ -79,7 +80,7 @@
 			#define MACROE                  while (0)
 			
 			/** Defines a volatile NOP statement which cannot be optimized out by the compiler, and thus can always
-			 *  be set as a breakpoint in the resulting code. Useful for debugging purposes, where the optimizer
+			 *  be set as a breakpoint in the resulting code. Useful for debugging purposes, where the optimiser
 			 *  removes/reorders code to the point where break points cannot reliably be set.
 			 *
 			 *  \ingroup Group_Debugging
@@ -99,18 +100,53 @@
 			*/
 			#define JTAG_DEBUG_ASSERT(x)    MACROS{ if (!(x)) { JTAG_DEBUG_BREAK(); } }MACROE
 
-			/** Macro for testing condition "x" and writing debug data to the serial stream if false. As a
-			 *  prerequisite for this macro, the serial stream should be configured via the Peripheral/SerialStream driver.
+			/** Macro for testing condition "x" and writing debug data to the stdout stream if false. The stdout stream
+			 *  must be pre-initialized before this macro is run and linked to an output device, such as the AVR's USART
+			 *  peripheral.
 			 *
-			 *  The serial output takes the form "{FILENAME}: Function {FUNCTION NAME}, Line {LINE NUMBER}: Assertion
-			 *  {x} failed."
+			 *  The output takes the form "{FILENAME}: Function {FUNCTION NAME}, Line {LINE NUMBER}: Assertion {x} failed."
 			 *
 			 *  \ingroup Group_Debugging
 			 */
-			#define SERIAL_STREAM_ASSERT(x) MACROS{ if (!(x)) { printf_P(PSTR("%s: Function \"%s\", Line %d: "   \
-																"Assertion \"%s\" failed.\r\n"),   \
-																__FILE__, __func__, __LINE__, #x); \
-			                                } }MACROE
+			#define STDOUT_ASSERT(x)        MACROS{ if (!(x)) { printf_P(PSTR("%s: Function \"%s\", Line %d: "   \
+			                                             "Assertion \"%s\" failed.\r\n"),     \
+			                                             __FILE__, __func__, __LINE__, #x); } }MACROE
+
+			#if !defined(pgm_read_ptr) || defined(__DOXYGEN__)
+				/** Reads a pointer out of PROGMEM space. This is currently a wrapper for the avr-libc pgm_read_ptr()
+				 *  macro with a void* cast, so that its value can be assigned directly to a pointer variable or used
+				 *  in pointer arithmetic without further casting in C. In a future avr-libc distribution this will be
+				 *  part of the standard API and will be implemented in a more formal manner.
+				 *
+				 *  \param[in] Addr  Address of the pointer to read.
+				 *
+				 *  \return Pointer retrieved from PROGMEM space.
+				 */
+				#define pgm_read_ptr(Addr)    (void*)pgm_read_word(Addr)
+			#endif
+
+			/** Swaps the byte ordering of a 16-bit value at compile time. Do not use this macro for swapping byte orderings
+			 *  of dynamic values computed at runtime, use \ref SwapEndian_16() instead. The result of this macro can be used
+			 *  inside struct or other variable initializers outside of a function, something that is not possible with the
+			 *  inline function variant.
+			 *
+			 *  \param[in]  x  16-bit value whose byte ordering is to be swapped.
+			 *
+			 *  \return Input value with the byte ordering reversed.
+			 */
+			#define SWAPENDIAN_16(x)          ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
+
+			/** Swaps the byte ordering of a 32-bit value at compile time. Do not use this macro for swapping byte orderings
+			 *  of dynamic values computed at runtime- use \ref SwapEndian_32() instead. The result of this macro can be used
+			 *  inside struct or other variable initializers outside of a function, something that is not possible with the
+			 *  inline function variant.
+			 *
+			 *  \param[in]  x  32-bit value whose byte ordering is to be swapped.
+			 *
+			 *  \return Input value with the byte ordering reversed.
+			 */
+			#define SWAPENDIAN_32(x)          ((((x) & 0xFF000000UL) >> 24UL) | (((x) & 0x00FF0000UL) >> 8UL) | \
+			                                   (((x) & 0x0000FF00UL) << 8UL)  | (((x) & 0x000000FFUL) << 24UL))
 
 		/* Inline Functions: */
 			/** Function to reverse the individual bits in a byte - i.e. bit 7 is moved to bit 0, bit 6 to bit 1,
@@ -118,7 +154,7 @@
 			 *
 			 *  \ingroup Group_BitManip
 			 *
-			 *  \param[in] Byte   Byte of data whose bits are to be reversed
+			 *  \param[in] Byte  Byte of data whose bits are to be reversed.
 			 */
 			static inline uint8_t BitReverse(uint8_t Byte) ATTR_WARN_UNUSED_RESULT ATTR_CONST;
 			static inline uint8_t BitReverse(uint8_t Byte)
@@ -134,42 +170,73 @@
 			 *
 			 *  \ingroup Group_BitManip
 			 *
-			 *  \param[in] Word   Word of data whose bytes are to be swapped
+			 *  \param[in] Word  Word of data whose bytes are to be swapped.
 			 */
-			static inline uint16_t SwapEndian_16(uint16_t Word) ATTR_WARN_UNUSED_RESULT ATTR_CONST;
-			static inline uint16_t SwapEndian_16(uint16_t Word)
+			static inline uint16_t SwapEndian_16(const uint16_t Word) ATTR_WARN_UNUSED_RESULT ATTR_CONST;
+			static inline uint16_t SwapEndian_16(const uint16_t Word)
 			{
-				return ((Word >> 8) | (Word << 8));				
+				uint8_t Temp;
+
+				union
+				{
+					uint16_t Word;
+					uint8_t  Bytes[2];
+				} Data;
+				
+				Data.Word = Word;
+				
+				Temp = Data.Bytes[0];
+				Data.Bytes[0] = Data.Bytes[1];
+				Data.Bytes[1] = Temp;
+				
+				return Data.Word;
 			}
 
 			/** Function to reverse the byte ordering of the individual bytes in a 32 bit number.
 			 *
 			 *  \ingroup Group_BitManip
 			 *
-			 *  \param[in] DWord   Double word of data whose bytes are to be swapped
+			 *  \param[in] DWord  Double word of data whose bytes are to be swapped.
 			 */
-			static inline uint32_t SwapEndian_32(uint32_t DWord) ATTR_WARN_UNUSED_RESULT ATTR_CONST;
-			static inline uint32_t SwapEndian_32(uint32_t DWord)
+			static inline uint32_t SwapEndian_32(const uint32_t DWord) ATTR_WARN_UNUSED_RESULT ATTR_CONST;
+			static inline uint32_t SwapEndian_32(const uint32_t DWord)
 			{
-				return (((DWord & 0xFF000000) >> 24) |
-				        ((DWord & 0x00FF0000) >> 8)  |
-						((DWord & 0x0000FF00) << 8)  |
-						((DWord & 0x000000FF) << 24));
+				uint8_t Temp;
+
+				union
+				{
+					uint32_t DWord;
+					uint8_t  Bytes[4];
+				} Data;
+				
+				Data.DWord = DWord;
+				
+				Temp = Data.Bytes[0];
+				Data.Bytes[0] = Data.Bytes[3];
+				Data.Bytes[3] = Temp;
+				
+				Temp = Data.Bytes[1];
+				Data.Bytes[1] = Data.Bytes[2];
+				Data.Bytes[2] = Temp;
+				
+				return Data.DWord;
 			}
 
 			/** Function to reverse the byte ordering of the individual bytes in a n byte number.
 			 *
 			 *  \ingroup Group_BitManip
 			 *
-			 *  \param[in,out] Data  Pointer to a number containing an even number of bytes to be reversed
-			 *  \param[in] Bytes  Length of the data in bytes
+			 *  \param[in,out] Data   Pointer to a number containing an even number of bytes to be reversed.
+			 *  \param[in]     Bytes  Length of the data in bytes.
 			 */
-			static inline void SwapEndian_n(void* Data, uint8_t Bytes);
-			static inline void SwapEndian_n(void* Data, uint8_t Bytes)
+			static inline void SwapEndian_n(void* Data,
+			                                uint8_t Bytes) ATTR_NON_NULL_PTR_ARG(1);
+			static inline void SwapEndian_n(void* Data,
+			                                uint8_t Bytes)
 			{
-				uint8_t* CurrDataPos = Data;
+				uint8_t* CurrDataPos = (uint8_t*)Data;
 			
-				while (Bytes)
+				while (Bytes > 1)
 				{
 					uint8_t Temp = *CurrDataPos;
 					*CurrDataPos = *(CurrDataPos + Bytes - 1);

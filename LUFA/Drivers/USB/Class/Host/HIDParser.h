@@ -41,7 +41,7 @@
  *
  *  \section Sec_Dependencies Module Source Dependencies
  *  The following files must be built with any user project that uses this module:
- *    - LUFA/Drivers/USB/Class/Host/HIDParser.c
+ *    - LUFA/Drivers/USB/Class/Host/HIDParser.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
  *
  *  \section Module Description
  *  Functions, macros, variables, enums and types related to the parsing of HID class device report descriptors.
@@ -101,7 +101,7 @@
 		#if !defined(HID_MAX_COLLECTIONS) || defined(__DOXYGEN__)
 			/** Constant indicating the maximum number of COLLECTION items (nested or unnested) that can be
 			 *  processed in the report item descriptor. A large value allows for more COLLECTION items to be
-			 *  processed, but consumes more memory. By default this is set to 5 collections, but this can be
+			 *  processed, but consumes more memory. By default this is set to 10 collections, but this can be
 			 *  overridden by defining HID_MAX_COLLECTIONS to another value in the user project makefile, passing
 			 *  the define to the compiler using the -D compiler switch.
 			 */
@@ -122,7 +122,7 @@
 			/** Constant indicating the maximum number of unique report IDs that can be processed in the report item
 			 *  descriptor for the report size information array in the user HID Report Info structure. A large value
 			 *  allows for more report ID report sizes to be stored, but consumes more memory. By default this is set
-			 *  to 5 items, but this can be overridden by defining HID_MAX_REPORT_IDS to another value in the user project
+			 *  to 10 items, but this can be overridden by defining HID_MAX_REPORT_IDS to another value in the user project
 			 *  makefile, and passing the define to the compiler using the -D compiler switch. Note that IN, OUT and FEATURE
 			 *  items sharing the same report ID consume only one size item in the array.
 			 */
@@ -133,16 +133,16 @@
 		 *  left-aligned to the given data type. This allows for signed data to be interpreted correctly, by shifting the data
 		 *  leftwards until the data's sign bit is in the correct position.
 		 *
-		 *  \param[in] reportitem  HID Report Item whose retrieved value is to be aligned
-		 *  \param[in] type  Data type to align the HID report item's value to
+		 *  \param[in] ReportItem  HID Report Item whose retrieved value is to be aligned.
+		 *  \param[in] Type        Data type to align the HID report item's value to.
 		 *
-		 *  \return Left-aligned data of the given report item's pre-retrived value for the given datatype
+		 *  \return Left-aligned data of the given report item's pre-retrieved value for the given datatype.
 		 */
-		#define HID_ALIGN_DATA(reportitem, type) ((type)(reportitem->Value << ((8 * sizeof(type)) - reportitem->Attributes.BitSize)))
+		#define HID_ALIGN_DATA(ReportItem, Type) ((Type)(ReportItem->Value << ((8 * sizeof(Type)) - ReportItem->Attributes.BitSize)))
 
 	/* Public Interface - May be used in end-application: */
 		/* Enums: */			
-			/** Enum for the possible error codes in the return value of the \ref USB_ProcessHIDReport() function */
+			/** Enum for the possible error codes in the return value of the \ref USB_ProcessHIDReport() function. */
 			enum HID_Parse_ErrorCodes_t
 			{
 				HID_PARSE_Successful                  = 0, /**< Successful parse of the HID report descriptor, no error. */
@@ -239,9 +239,9 @@
 			 */
 			typedef struct
 			{
-				uint8_t                      ReportID; /** Report ID of the report within the HID interface */
-				uint16_t                     ReportSizeBits[3]; /** Total number of bits in each report type for the given Report ID,
-				                                                 *  indexed by the \ref HID_ReportItemTypes_t enum
+				uint8_t                      ReportID; /**< Report ID of the report within the HID interface. */
+				uint16_t                     ReportSizeBits[3]; /**< Total number of bits in each report type for the given Report ID,
+				                                                 *   indexed by the \ref HID_ReportItemTypes_t enum.
 																 */
 			} HID_ReportSizeInfo_t;
 
@@ -272,14 +272,15 @@
 			/** Function to process a given HID report returned from an attached device, and store it into a given
 			 *  \ref HID_ReportInfo_t structure.
 			 *
-			 *  \param[in] ReportData  Buffer containing the device's HID report table
-			 *  \param[in] ReportSize  Size in bytes of the HID report table
-			 *  \param[out] ParserData  Pointer to a \ref HID_ReportInfo_t instance for the parser output
+			 *  \param[in]  ReportData  Buffer containing the device's HID report table.
+			 *  \param[in]  ReportSize  Size in bytes of the HID report table.
+			 *  \param[out] ParserData  Pointer to a \ref HID_ReportInfo_t instance for the parser output.
 			 *
-			 *  \return A value in the \ref HID_Parse_ErrorCodes_t enum
+			 *  \return A value in the \ref HID_Parse_ErrorCodes_t enum.
 			 */
-			uint8_t USB_ProcessHIDReport(const uint8_t* ReportData, uint16_t ReportSize, HID_ReportInfo_t* const ParserData)
-			                             ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(3);
+			uint8_t USB_ProcessHIDReport(const uint8_t* ReportData,
+			                             uint16_t ReportSize,
+			                             HID_ReportInfo_t* const ParserData) ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(3);
 
 			/** Extracts the given report item's value out of the given HID report and places it into the Value
 			 *  member of the report item's \ref HID_ReportItem_t structure.
@@ -287,13 +288,13 @@
 			 *  When called, this copies the report item's Value element to it's PreviousValue element for easy
 			 *  checking to see if an item's value has changed before processing a report.
 			 *
-			 *  \param[in] ReportData  Buffer containing an IN or FEATURE report from an attached device
-			 *  \param[in,out] ReportItem  Pointer to the report item of interest in a \ref HID_ReportInfo_t ReportItem array
+			 *  \param[in]     ReportData  Buffer containing an IN or FEATURE report from an attached device.
+			 *  \param[in,out] ReportItem  Pointer to the report item of interest in a \ref HID_ReportInfo_t ReportItem array.
 			 *
-			 *  \returns Boolean true if the item to retrieve was located in the given report, false otherwise
+			 *  \returns Boolean true if the item to retrieve was located in the given report, false otherwise.
 			 */
-			bool USB_GetHIDReportItemInfo(const uint8_t* ReportData, HID_ReportItem_t* const ReportItem)
-			                              ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(2);
+			bool USB_GetHIDReportItemInfo(const uint8_t* ReportData,
+			                              HID_ReportItem_t* const ReportItem) ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(2);
 
 			/** Retrieves the given report item's value out of the Value member of the report item's
 			 *  \ref HID_ReportItem_t structure and places it into the correct position in the HID report
@@ -305,22 +306,23 @@
 			 *
 			 *  If the device has multiple HID reports, the first byte in the report is set to the report ID of the given item.
 			 *
-			 *  \param[out] ReportData  Buffer holding the current OUT or FEATURE report data
-			 *  \param[in] ReportItem  Pointer to the report item of interest in a \ref HID_ReportInfo_t ReportItem array
+			 *  \param[out] ReportData  Buffer holding the current OUT or FEATURE report data.
+			 *  \param[in]  ReportItem  Pointer to the report item of interest in a \ref HID_ReportInfo_t ReportItem array.
 			 */
-			void USB_SetHIDReportItemInfo(uint8_t* ReportData, HID_ReportItem_t* const ReportItem)
-			                              ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(2);
-										  
+			void USB_SetHIDReportItemInfo(uint8_t* ReportData,
+			                              HID_ReportItem_t* const ReportItem) ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(2);
+
 			/** Retrieves the size of a given HID report in bytes from it's Report ID.
 			 *
-			 *  \param[in] ParserData  Pointer to a \ref HID_ReportInfo_t instance containing the parser output
-			 *  \param[in] ReportID  Report ID of the report whose size is to be retrieved
+			 *  \param[in] ParserData  Pointer to a \ref HID_ReportInfo_t instance containing the parser output.
+			 *  \param[in] ReportID    Report ID of the report whose size is to be retrieved.
 			 *  \param[in] ReportType  Type of the report whose size is to be determined, a valued from the
-			 *                         \ref HID_ReportItemTypes_t enum
+			 *                         \ref HID_ReportItemTypes_t enum.
 			 *
-			 *  \return Size of the report in bytes, or 0 if the report does not exist
+			 *  \return Size of the report in bytes, or 0 if the report does not exist.
 			 */
-			uint16_t USB_GetHIDReportSize(HID_ReportInfo_t* const ParserData, const uint8_t ReportID,
+			uint16_t USB_GetHIDReportSize(HID_ReportInfo_t* const ParserData,
+			                              const uint8_t ReportID,
 			                              const uint8_t ReportType) ATTR_CONST ATTR_NON_NULL_PTR_ARG(1);
 
 			/** Callback routine for the HID Report Parser. This callback <b>must</b> be implemented by the user code when
@@ -328,11 +330,11 @@
 			 *  HID_ReportInfo_t structure. This can be used to filter only those items the application will be using, so that
 			 *  no RAM is wasted storing the attributes for report items which will never be referenced by the application.
 			 *
-			 *  \param[in] CurrentItem  Pointer to the current report item for user checking
+			 *  \param[in] CurrentItem  Pointer to the current report item for user checking.
 			 *
-			 *  \return Boolean true if the item should be stored into the HID_ReportInfo_t structure, false if it should be ignored
+			 *  \return Boolean true if the item should be stored into the HID_ReportInfo_t structure, false if it should be ignored.
 			 */
-			bool CALLBACK_HIDParser_FilterHIDReportItem(HID_ReportItem_t* CurrentItem);
+			bool CALLBACK_HIDParser_FilterHIDReportItem(HID_ReportItem_t* const CurrentItem);
 
 	/* Private Interface - For use in library only: */
 	#if !defined(__DOXYGEN__)

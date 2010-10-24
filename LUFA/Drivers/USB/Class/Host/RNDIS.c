@@ -36,8 +36,9 @@
 #define  __INCLUDE_FROM_RNDIS_DRIVER
 #include "RNDIS.h"
 
-uint8_t RNDIS_Host_ConfigurePipes(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo, uint16_t ConfigDescriptorSize,
-                                void* ConfigDescriptorData)
+uint8_t RNDIS_Host_ConfigurePipes(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo,
+                                  uint16_t ConfigDescriptorSize,
+                                  void* ConfigDescriptorData)
 {
 	uint8_t FoundEndpoints = 0;
 
@@ -195,7 +196,8 @@ static uint8_t DCOMP_RNDIS_Host_NextRNDISInterfaceEndpoint(void* const CurrentDe
 }
 
 static uint8_t RNDIS_SendEncapsulatedCommand(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo,
-                                             void* Buffer, uint16_t Length)
+                                             void* Buffer,
+                                             const uint16_t Length)
 {
 	USB_ControlRequest = (USB_Request_Header_t)
 		{
@@ -211,7 +213,8 @@ static uint8_t RNDIS_SendEncapsulatedCommand(USB_ClassInfo_RNDIS_Host_t* const R
 }
 
 static uint8_t RNDIS_GetEncapsulatedResponse(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo,
-                                             void* Buffer, uint16_t Length)
+                                             void* Buffer,
+                                             const uint16_t Length)
 {
 	USB_ControlRequest = (USB_Request_Header_t)
 		{
@@ -287,14 +290,17 @@ uint8_t RNDIS_Host_InitializeDevice(USB_ClassInfo_RNDIS_Host_t* const RNDISInter
 	return HOST_SENDCONTROL_Successful;
 }
 
-uint8_t RNDIS_Host_SetRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo, uint32_t Oid, void* Buffer, uint16_t Length)
+uint8_t RNDIS_Host_SetRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo,
+                                    const uint32_t Oid,
+                                    void* Buffer,
+                                    const uint16_t Length)
 {
 	uint8_t ErrorCode;
 
 	struct
 	{
 		RNDIS_Set_Message_t SetMessage;
-		uint8_t             ContigiousBuffer[Length];
+		uint8_t             ContiguousBuffer[Length];
 	} SetMessageData;
 	
 	RNDIS_Set_Complete_t SetMessageResponse;
@@ -308,7 +314,7 @@ uint8_t RNDIS_Host_SetRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInter
 	SetMessageData.SetMessage.InformationBufferOffset = (sizeof(RNDIS_Set_Message_t) - sizeof(RNDIS_Message_Header_t));
 	SetMessageData.SetMessage.DeviceVcHandle = 0;
 	
-	memcpy(&SetMessageData.ContigiousBuffer, Buffer, Length);
+	memcpy(&SetMessageData.ContiguousBuffer, Buffer, Length);
 
 	if ((ErrorCode = RNDIS_SendEncapsulatedCommand(RNDISInterfaceInfo, &SetMessageData,
 	                                               SetMessageData.SetMessage.MessageLength)) != HOST_SENDCONTROL_Successful)
@@ -328,7 +334,10 @@ uint8_t RNDIS_Host_SetRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInter
 	return HOST_SENDCONTROL_Successful;
 }
 
-uint8_t RNDIS_Host_QueryRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo, uint32_t Oid, void* Buffer, uint16_t MaxLength)
+uint8_t RNDIS_Host_QueryRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo,
+                                      const uint32_t Oid,
+                                      void* Buffer,
+                                      const uint16_t MaxLength)
 {
 	uint8_t ErrorCode;
 
@@ -337,7 +346,7 @@ uint8_t RNDIS_Host_QueryRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInt
 	struct
 	{
 		RNDIS_Query_Complete_t QueryMessageResponse;
-		uint8_t                ContigiousBuffer[MaxLength];
+		uint8_t                ContiguousBuffer[MaxLength];
 	} QueryMessageResponseData;
 
 	QueryMessage.MessageType    = REMOTE_NDIS_QUERY_MSG;
@@ -364,7 +373,7 @@ uint8_t RNDIS_Host_QueryRNDISProperty(USB_ClassInfo_RNDIS_Host_t* const RNDISInt
 	if (QueryMessageResponseData.QueryMessageResponse.Status != REMOTE_NDIS_STATUS_SUCCESS)
 	  return RNDIS_COMMAND_FAILED;
 
-	memcpy(Buffer, &QueryMessageResponseData.ContigiousBuffer, MaxLength);
+	memcpy(Buffer, &QueryMessageResponseData.ContiguousBuffer, MaxLength);
 
 	return HOST_SENDCONTROL_Successful;
 }
@@ -377,18 +386,17 @@ bool RNDIS_Host_IsPacketReceived(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfac
 	  return false;
 
 	Pipe_SelectPipe(RNDISInterfaceInfo->Config.DataINPipeNumber);
-	Pipe_SetPipeToken(PIPE_TOKEN_IN);
 	
 	Pipe_Unfreeze();
-
-	PacketWaiting = Pipe_IsINReceived();
-	
+	PacketWaiting = Pipe_IsINReceived();	
 	Pipe_Freeze();
 	
 	return PacketWaiting;
 }
 
-uint8_t RNDIS_Host_ReadPacket(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo, void* Buffer, uint16_t* PacketLength)
+uint8_t RNDIS_Host_ReadPacket(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo,
+                              void* Buffer,
+                              uint16_t* const PacketLength)
 {
 	uint8_t ErrorCode;
 
@@ -396,7 +404,6 @@ uint8_t RNDIS_Host_ReadPacket(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceIn
 	  return PIPE_READYWAIT_DeviceDisconnected;
 
 	Pipe_SelectPipe(RNDISInterfaceInfo->Config.DataINPipeNumber);
-	Pipe_SetPipeToken(PIPE_TOKEN_IN);
 	Pipe_Unfreeze();
 	
 	if (!(Pipe_IsReadWriteAllowed()))
@@ -432,7 +439,9 @@ uint8_t RNDIS_Host_ReadPacket(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceIn
 	return PIPE_RWSTREAM_NoError;
 }
 
-uint8_t RNDIS_Host_SendPacket(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo, void* Buffer, uint16_t PacketLength)
+uint8_t RNDIS_Host_SendPacket(USB_ClassInfo_RNDIS_Host_t* const RNDISInterfaceInfo,
+                              void* Buffer,
+                              const uint16_t PacketLength)
 {
 	uint8_t ErrorCode;
 

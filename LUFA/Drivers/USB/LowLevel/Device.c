@@ -28,26 +28,25 @@
   this software.
 */
 
-#define  __INCLUDE_FROM_SERIALSTREAM_C
-#include "SerialStream.h"
+#define  __INCLUDE_FROM_USB_DRIVER
+#include "../HighLevel/USBMode.h"
 
-FILE USARTStream = FDEV_SETUP_STREAM(SerialStream_TxByte, SerialStream_RxByte, _FDEV_SETUP_RW);
+#if defined(USB_CAN_BE_DEVICE)
 
-static int SerialStream_TxByte(char DataByte,
-                               FILE *Stream)
+#include "Device.h"
+
+void USB_Device_SendRemoteWakeup(void)
 {
-	(void)Stream;
-	
-	Serial_TxByte(DataByte);
-	return 0;
+	if (!(USB_Options & USB_OPT_MANUAL_PLL))
+	{
+		USB_PLL_On();
+		while (!(USB_PLL_IsReady()));
+	}
+
+	USB_CLK_Unfreeze();
+
+	UDCON |= (1 << RMWKUP);
+	while (!(UDCON & (1 << RMWKUP)));
 }
 
-static int SerialStream_RxByte(FILE *Stream)
-{
-	(void)Stream;
-	
-	if (!(Serial_IsCharReceived()))
-	  return _FDEV_EOF;
-
-	return Serial_RxByte();
-}
+#endif

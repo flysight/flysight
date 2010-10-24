@@ -70,24 +70,27 @@
 		#endif
 
 	/* Public Interface - May be used in end-application: */
-		/* Pseudo-Function Macros: */
-			#if defined(__DOXYGEN__)
-				/** Initializes the TWI hardware into master mode, ready for data transmission and reception. This must be
-				 *  before any other TWI operations.
-				 */
-				static inline void TWI_Init(void);
-				
-				/** Turns off the TWI driver hardware. If this is called, any further TWI operations will require a call to
-				 *  \ref TWI_Init() before the TWI can be used again.
-				 */				
-				static inline void TWI_ShutDown(void);
-			#else
-				#define TWI_Init()        MACROS{ TWCR |=  (1 << TWEN); }MACROE
-				#define TWI_ShutDown()    MACROS{ TWCR &= ~(1 << TWEN); }MACROE
-			#endif
-
 		/* Inline Functions: */
+			/** Initialises the TWI hardware into master mode, ready for data transmission and reception. This must be
+			 *  before any other TWI operations.
+			 */
+			static inline void TWI_Init(void) ATTR_ALWAYS_INLINE;
+			static inline void TWI_Init(void)
+			{
+				TWCR |=  (1 << TWEN);
+			}
+			
+			/** Turns off the TWI driver hardware. If this is called, any further TWI operations will require a call to
+			 *  \ref TWI_Init() before the TWI can be used again.
+			 */				
+			static inline void TWI_ShutDown(void) ATTR_ALWAYS_INLINE;
+			static inline void TWI_ShutDown(void)
+			{
+				TWCR &= ~(1 << TWEN);
+			}
+
 			/** Sends a TWI STOP onto the TWI bus, terminating communication with the currently addressed device. */
+			static inline void TWI_StopTransmission(void) ATTR_ALWAYS_INLINE;
 			static inline void TWI_StopTransmission(void)
 			{
 				TWCR = ((1 << TWINT) | (1 << TWSTO) | (1 << TWEN));
@@ -99,7 +102,7 @@
 			 *
 			 *  \return Boolean true if the recipient ACKed the byte, false otherwise
 			 */
-			static inline bool TWI_SendByte(uint8_t Byte)
+			static inline bool TWI_SendByte(const uint8_t Byte)
 			{
 				TWDR = Byte;
 				TWCR = ((1 << TWINT) | (1 << TWEN));	
@@ -110,12 +113,13 @@
 
 			/** Receives a byte from the currently addressed device on the TWI bus.
 			 *
-			 *  \param[in] Byte  Location where the read byte is to be stored
+			 *  \param[in] Byte      Location where the read byte is to be stored
 			 *  \param[in] LastByte  Indicates if the byte should be ACKed if false, NAKed if true
 			 *
-			 *  \return Boolean true if the byte reception sucessfully completed, false otherwise
+			 *  \return Boolean true if the byte reception successfully completed, false otherwise
 			 */
-			static inline bool TWI_ReceiveByte(uint8_t* Byte, bool LastByte)
+			static inline bool TWI_ReceiveByte(uint8_t* const Byte,
+			                                   const bool LastByte)
 			{
 				uint8_t TWCRMask = ((1 << TWINT) | (1 << TWEN));
 				
@@ -137,7 +141,8 @@
 			 *
 			 *  \return Boolean true if the device is ready for data, false otherwise
 			 */
-			bool TWI_StartTransmission(uint8_t SlaveAddress, uint8_t TimeoutMS);
+			bool TWI_StartTransmission(const uint8_t SlaveAddress,
+			                           const uint8_t TimeoutMS);
 
 	/* Disable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)

@@ -45,7 +45,9 @@ uint8_t Endpoint_BytesToEPSizeMaskDynamic(const uint16_t Size)
 	return Endpoint_BytesToEPSizeMask(Size);
 }
 
-bool Endpoint_ConfigureEndpoint_Prv(const uint8_t Number, const uint8_t UECFG0XData, const uint8_t UECFG1XData)
+bool Endpoint_ConfigureEndpoint_Prv(const uint8_t Number,
+                                    const uint8_t UECFG0XData,
+                                    const uint8_t UECFG1XData)
 {
 	Endpoint_SelectEndpoint(Number);
 	Endpoint_EnableEndpoint();
@@ -65,9 +67,9 @@ void Endpoint_ClearEndpoints(void)
 	for (uint8_t EPNum = 0; EPNum < ENDPOINT_TOTAL_ENDPOINTS; EPNum++)
 	{
 		Endpoint_SelectEndpoint(EPNum);	
-		UEIENX = 0;
-		UEINTX = 0;
-		Endpoint_DeallocateMemory();
+		UEIENX  = 0;
+		UEINTX  = 0;
+		UECFG1X = 0;
 		Endpoint_DisableEndpoint();
 	}
 }
@@ -115,7 +117,7 @@ uint8_t Endpoint_WaitUntilReady(void)
 		else
 		{
 			if (Endpoint_IsOUTReceived())
-			  return ENDPOINT_READYWAIT_NoError;		
+			  return ENDPOINT_READYWAIT_NoError;
 		}
 		
 		if (USB_DeviceState == DEVICE_STATE_Unattached)
@@ -139,7 +141,7 @@ uint8_t Endpoint_Discard_Stream(uint16_t Length
 #if !defined(NO_STREAM_CALLBACKS)
                                 , StreamCallbackPtr_t Callback
 #endif
-								)
+                                )
 {
 	uint8_t  ErrorCode;
 	
@@ -266,7 +268,7 @@ uint8_t Endpoint_Discard_Stream(uint16_t Length
 #define  TEMPLATE_BUFFER_TYPE                      void*
 #define  TEMPLATE_CLEAR_ENDPOINT()                 Endpoint_ClearOUT()
 #define  TEMPLATE_BUFFER_OFFSET(Length)            0
-#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_write_byte((uint8_t*)BufferPtr++, Endpoint_Read_Byte())
+#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte((uint8_t*)BufferPtr++, Endpoint_Read_Byte())
 #include "Template/Template_Endpoint_RW.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Stream_BE
@@ -280,7 +282,7 @@ uint8_t Endpoint_Discard_Stream(uint16_t Length
 #define  TEMPLATE_BUFFER_TYPE                      void*
 #define  TEMPLATE_CLEAR_ENDPOINT()                 Endpoint_ClearOUT()
 #define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
-#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_write_byte((uint8_t*)BufferPtr--, Endpoint_Read_Byte())
+#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte((uint8_t*)BufferPtr--, Endpoint_Read_Byte())
 #include "Template/Template_Endpoint_RW.c"
 
 #endif
@@ -322,7 +324,7 @@ uint8_t Endpoint_Discard_Stream(uint16_t Length
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Control_EStream_LE
 #define  TEMPLATE_BUFFER_OFFSET(Length)            0
-#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_write_byte((uint8_t*)BufferPtr++, Endpoint_Read_Byte())
+#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte((uint8_t*)BufferPtr++, Endpoint_Read_Byte())
 #include "Template/Template_Endpoint_Control_R.c"
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Control_Stream_BE
@@ -332,7 +334,7 @@ uint8_t Endpoint_Discard_Stream(uint16_t Length
 
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Read_Control_EStream_BE
 #define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
-#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_write_byte((uint8_t*)BufferPtr--, Endpoint_Read_Byte())
+#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte((uint8_t*)BufferPtr--, Endpoint_Read_Byte())
 #include "Template/Template_Endpoint_Control_R.c"
 
 #endif

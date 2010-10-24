@@ -72,10 +72,13 @@
 			/** LED mask for the second LED on the board. */
 			#define LEDS_LED2        (1 << 7)
 
-			/** LED mask for all the LEDs on the board. */
-			#define LEDS_ALL_LEDS    (LEDS_LED1 | LEDS_LED2)
+			/** LED mask for the third LED on the board. */
+			#define LEDS_LED3        (1 << 5)
 
-			/** LED mask for the none of the board LEDs */
+			/** LED mask for all the LEDs on the board. */
+			#define LEDS_ALL_LEDS    (LEDS_LED1 | LEDS_LED2 | LEDS_LED3)
+
+			/** LED mask for the none of the board LEDs. */
 			#define LEDS_NO_LEDS     0
 
 		/* Inline Functions: */
@@ -101,7 +104,8 @@
 				PORTB = ((PORTB & ~LEDS_ALL_LEDS) | LedMask);
 			}
 		
-			static inline void LEDs_ChangeLEDs(const uint8_t LedMask, const uint8_t ActiveMask)
+			static inline void LEDs_ChangeLEDs(const uint8_t LedMask,
+			                                   const uint8_t ActiveMask)
 			{
 				PORTB = ((PORTB & ~LedMask) | ActiveMask);
 			}

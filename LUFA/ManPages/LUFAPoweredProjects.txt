@@ -20,13 +20,13 @@
  *
  *  - AT90USB162 Breadboard PCB (Russian): http://microsin.ru/content/view/685/44/
  *  - Benito #7, a no-frills USB board: http://www.dorkbotpdx.org/wiki/benito
- *  - Bumble-B, yet another AT90USB162 development board: http://fletchtronics.net/bumble-b
- *  - JM-DB-U2, an ATMEGA32U2 development board: http://u2.mattair.net/index.html
+ *  - JM-DB-U2, an ATMEGA32U2 development board: http://www.mattairtech.com/index.php/development-boards/atmega32u2-development-board.html
  *  - Micropendous, an open design/source set of AVR USB development boards: http://micropendous.org/
  *  - Nanduino, a do-it-yourself AT90USB162 board: http://www.makestuff.eu/wordpress/?page_id=569
  *  - Teensy and Teensy++, two other AVR USB development boards: http://www.pjrc.com/teensy/index.html
  *  - U2DIL/U4DIL, a set of DIP layout USB AVR boards: http://www.reworld.eu/re/en/products/u2dil/
  *  - USB10 AKA "The Ferret", a AT90USB162 development board: http://www.soc-machines.com
+ *  - USBFOO 2, AT90USB162 based development board: http://shop.kernelconcepts.de/product_info.php?products_id=102
  * 
  *  \section Sec_LUFAProjects Projects Using LUFA (Hobbyist)
  *
@@ -37,20 +37,23 @@
  *  - Arcade Controller: http://fletchtronics.net/arcade-controller-made-petunia
  *  - AVR USB Modem, a 3G Wireless Modem host: http://code.google.com/p/avrusbmodem/
  *  - Bicycle POV: http://www.code.google.com/p/bicycleledpov/
+ *  - BusNinja, an AVR clone of the popular BusPirate project: http://blog.hodgepig.org/busninja/
  *  - CAMTRIG, a remote Camera Trigger device: http://code.astraw.com/projects/motmot/camtrig
  *  - CD Driver Emulator Dongle for ISO Files: http://cdemu.blogspot.com/
  *  - ClockTamer, a configurable clock generator: http://code.google.com/p/clock-tamer/
  *  - EMUCOMBOX, a USB-RS422 adapter for E-Mu Emax samplers: http://users.skynet.be/emxp/EMUCOMBOX.htm
+ *  - Estick JTAG, an ARM JTAG debugger: http://code.google.com/p/estick-jtag/
  *  - "Fingerlicking Wingdinger" (WARNING: Bad Language if no Javascript), a MIDI controller: http://noisybox.net/electronics/wingdinger/
  *  - Garmin GPS USB to NMEA standard serial sentence translator: http://github.com/nall/garmin-transmogrifier/tree/master
  *  - Generic HID Device Creator: http://generichid.sourceforge.net/
+ *  - Ghetto Drum, a MIDI drum controller: http://noisybox.net/art/gdrum/
  *  - IR Remote to Keyboard decoder: http://netzhansa.blogspot.com/2010/04/our-living-room-hi-fi-setup-needs-mp3.html
  *  - LED Panel controller: http://projects.peterpolidoro.net/caltech/panelscontroller/panelscontroller.htm
  *  - Linux Secure Storage Dongle: http://github.com/TomMD/teensy
  *  - MakeTV Episode Dispenser: http://www.youtube.com/watch?v=BkWUi18hl3g
  *  - MidiMonster, a USB-to-MIDI gateway board: http://www.dorkbotpdx.org/wiki/midimonster
  *  - NES Controller USB modification: http://projects.peterpolidoro.net/video/NESUSB.htm
- *  - Opendous-JTAG, an open source JTAG device: http://code.google.com/p/opendous-jtag/
+ *  - Opendous-JTAG, an open source ARM JTAG debugger: http://code.google.com/p/opendous-jtag/
  *  - Openkubus, an open source hardware-based authentication dongle: http://code.google.com/p/openkubus/
  *  - Orbee, a USB connected RGB Orb for notifications: http://www.franksworkshop.com.au/Electronics/Orbee/Orbee.htm
  *  - Programmable XBOX controller: http://richard-burke.dyndns.org/wordpress/pan-galactic-gargantuan-gargle-brain-aka-xbox-360-usb-controller/
@@ -58,6 +61,7 @@
  *  - SD Card reader: http://elasticsheep.com/2010/04/teensy2-usb-mass-storage-with-an-sd-card/
  *  - SEGA Megadrive/Genesis Development Cartridge: http://www.makestuff.eu/wordpress/?page_id=398
  *  - Stripe Snoop, a Magnetic Card reader: http://www.ossguy.com/ss_usb/
+ *  - Touchscreen Input Device: http://capnstech.blogspot.com/2010/07/touchscreen-update.html
  *  - USB Interface for Playstation Portable Devices: http://forums.ps2dev.org/viewtopic.php?t=11001
  *  - Userial, a USB to Serial converter with SPI, I2C and other protocols: http://www.tty1.net/userial/
  *  - XUM1541, a Commodore 64 floppy drive to USB adapter: http://www.root.org/~nate/c64/xum1541/

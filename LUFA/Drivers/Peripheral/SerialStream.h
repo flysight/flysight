@@ -42,7 +42,7 @@
  *
  *  \section Sec_Dependencies Module Source Dependencies
  *  The following files must be built with any user project that uses this module:
- *    - LUFA/Drivers/Peripheral/SerialStream.c
+ *    - LUFA/Drivers/Peripheral/SerialStream.c <i>(Makefile source module name: LUFA_SRC_SERIALSTREAM)</i>
  *
  *  \section Module Description
  *  Serial stream driver for the USART subsystem on supported USB AVRs. This makes use of the functions in the
@@ -74,20 +74,22 @@
 
 		/* Function Prototypes: */
 		#if defined(__INCLUDE_FROM_SERIALSTREAM_C)
-			static int SerialStream_TxByte(char DataByte, FILE *Stream) ATTR_NON_NULL_PTR_ARG(2);
+			static int SerialStream_TxByte(char DataByte,
+			                               FILE *Stream) ATTR_NON_NULL_PTR_ARG(2);
 			static int SerialStream_RxByte(FILE *Stream) ATTR_NON_NULL_PTR_ARG(1);
 		#endif
 	#endif
 
 	/* Public Interface - May be used in end-application: */
 		/* Inline Functions: */
-			/** Initializes the serial stream (and regular USART driver) so that both the stream and regular
+			/** Initialises the serial stream (and regular USART driver) so that both the stream and regular
 			 *  USART driver functions can be used. Must be called before any stream or regular USART functions.
 			 *
-			 *  \param[in] BaudRate     Baud rate to configure the USART to
-			 *  \param[in] DoubleSpeed  Enables double speed mode when set, halving the sample time to double the baud rate
+			 *  \param[in] BaudRate     Baud rate to configure the USART to.
+			 *  \param[in] DoubleSpeed  Enables double speed mode when set, halving the sample time to double the baud rate.
 			 */
-			static inline void SerialStream_Init(const uint32_t BaudRate, const bool DoubleSpeed)
+			static inline void SerialStream_Init(const uint32_t BaudRate,
+			                                     const bool DoubleSpeed)
 			{
 				Serial_Init(BaudRate, DoubleSpeed);
 				

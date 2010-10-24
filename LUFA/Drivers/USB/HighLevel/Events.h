@@ -69,7 +69,7 @@
 #define __USBEVENTS_H__
 
 	/* Includes: */
-		#include <avr/io.h>
+		#include <stdint.h>
 		
 		#include "../../../Common/Common.h"
 		#include "USBMode.h"
@@ -92,7 +92,7 @@
 			 *
 			 *  \note This event only exists on USB AVR models which support dual role modes.
 			 *
-			 *  \param[in] ErrorCode  Error code indicating the failure reason, a value in \ref USB_InitErrorCodes_t
+			 *  \param[in] ErrorCode  Error code indicating the failure reason, a value in \ref USB_InitErrorCodes_t.
 			 */
 			void EVENT_USB_InitFailure(const uint8_t ErrorCode);
 
@@ -112,7 +112,7 @@
 			/** Event for USB host error. This event fires when a hardware fault has occurred whilst the USB
 			 *  interface is in host mode.
 			 *
-			 *  \param[in] ErrorCode  Error code indicating the failure reason, a value in \ref USB_Host_ErrorCodes_t
+			 *  \param[in] ErrorCode  Error code indicating the failure reason, a value in \ref USB_Host_ErrorCodes_t.
 			 *
 			 *  \note This event only exists on USB AVR models which supports host mode.
 			 *        \n\n
@@ -154,8 +154,8 @@
 			/** Event for USB device enumeration failure. This event fires when a the USB interface is
 			 *  in host mode, and an attached USB device has failed to enumerate completely.
 			 *
-			 *  \param[in] ErrorCode  Error code indicating the failure reason, a value in 
-			 *                        \ref USB_Host_EnumerationErrorCodes_t
+			 *  \param[in] ErrorCode     Error code indicating the failure reason, a value in 
+			 *                           \ref USB_Host_EnumerationErrorCodes_t.
 			 *
 			 *  \param[in] SubErrorCode  Sub error code indicating the reason for failure - for example, if the
 			 *                           ErrorCode parameter indicates a control error, this will give the error
@@ -167,7 +167,8 @@
 			 *  \note This event does not exist if the USB_DEVICE_ONLY token is supplied to the compiler (see
 			 *        \ref Group_USBManagement documentation).
 			 */
-			void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode, const uint8_t SubErrorCode);
+			void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode,
+			                                            const uint8_t SubErrorCode);
 
 			/** Event for USB device enumeration completion. This event fires when a the USB interface is
 			 *  in host mode and an attached USB device has been completely enumerated and is ready to be
@@ -226,7 +227,7 @@
 			 *  This event is time-critical; each packet within the request transaction must be acknowledged or
 			 *  sent within 50ms or the host will abort the transfer.
 			 *
-			 *  The library interally handles all standard control requests with the exceptions of SYNC FRAME,
+			 *  The library internally handles all standard control requests with the exceptions of SYNC FRAME,
 			 *  SET DESCRIPTOR and SET INTERFACE. These and all other non-standard control requests will be left
 			 *  for the user to process via this event if desired. If not handled in the user application, requests
 			 *  are automatically STALLed.
@@ -307,7 +308,7 @@
 			 *  millisecond timer source when the USB bus is enumerated in device mode to a USB host.
 			 *
 			 *  This event is time-critical; it is run once per millisecond and thus long handlers will significantly
-			 *  degrade device performance. This event should only be enabled when needed to reduce device wakeups.
+			 *  degrade device performance. This event should only be enabled when needed to reduce device wake-ups.
 			 *
 			 *  \note This event is not normally active - it must be manually enabled and disabled via the
 			 *        \ref USB_Device_EnableSOFEvents() and \ref USB_Device_DisableSOFEvents() commands after enumeration.
@@ -335,8 +336,9 @@
 					void EVENT_USB_Host_DeviceAttached(void) ATTR_WEAK ATTR_ALIAS(USB_Event_Stub);
 					void EVENT_USB_Host_DeviceUnattached(void) ATTR_WEAK ATTR_ALIAS(USB_Event_Stub);
 					void EVENT_USB_Host_DeviceEnumerationComplete(void) ATTR_WEAK ATTR_ALIAS(USB_Event_Stub);
-					void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode, const uint8_t SubErrorCode)
-					                                       ATTR_WEAK ATTR_ALIAS(USB_Event_Stub);
+					void EVENT_USB_Host_DeviceEnumerationFailed(const uint8_t ErrorCode,
+                                                                const uint8_t SubErrorCode)
+					                                            ATTR_WEAK ATTR_ALIAS(USB_Event_Stub);
 				#endif
 
 				#if defined(USB_CAN_BE_DEVICE)

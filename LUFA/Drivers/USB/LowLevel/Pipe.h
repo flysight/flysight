@@ -105,6 +105,14 @@
 		#if !defined(__INCLUDE_FROM_USB_DRIVER)
 			#error Do not include this file directly. Include LUFA/Drivers/USB/USB.h instead.
 		#endif
+
+	/* Private Interface - For use in library only: */
+	#if !defined(__DOXYGEN__)
+		/* Macros: */
+			#if !defined(ENDPOINT_CONTROLEP) && !defined(__DOXYGEN__)
+				#define ENDPOINT_CONTROLEP          0
+			#endif
+	#endif
 		
 	/* Public Interface - May be used in end-application: */
 		/* Macros: */
@@ -195,327 +203,14 @@
 			 */
 			#define PIPE_EPDIR_MASK                 0x80
 
-		/* Pseudo-Function Macros: */
-			#if defined(__DOXYGEN__)
-				/** Indicates the number of bytes currently stored in the current pipes's selected bank.
-				 *
-				 *  \note The return width of this function may differ, depending on the maximum pipe bank size
-				 *        of the selected AVR model.
-				 *
-				 *  \ingroup Group_PipeRW
-				 *
-				 *  \return Total number of bytes in the currently selected Pipe's FIFO buffer
-				 */
-				static inline uint16_t Pipe_BytesInPipe(void);
-				
-				/** Returns the pipe address of the currently selected pipe. This is typically used to save the
-				 *  currently selected pipe number so that it can be restored after another pipe has been manipulated.
-				 *
-				 *  \return Index of the currently selected pipe
-				 */
-				static inline uint8_t Pipe_GetCurrentPipe(void);
-
-				/** Selects the given pipe number. Any pipe operations which do not require the pipe number to be
-				 *  indicated will operate on the currently selected pipe.
-				 *
-				 *  \param[in] PipeNumber  Index of the pipe to select
-				 */
-				static inline void Pipe_SelectPipe(uint8_t PipeNumber);
-				
-				/** Resets the desired pipe, including the pipe banks and flags.
-				 *
-				 *  \param[in] PipeNumber  Index of the pipe to reset
-				 */
-				static inline void Pipe_ResetPipe(uint8_t PipeNumber);
-				
-				/** Enables the currently selected pipe so that data can be sent and received through it to and from
-				 *  an attached device.
-				 *
-				 *  \note Pipes must first be configured properly via \ref Pipe_ConfigurePipe().
-				 */
-				static inline void Pipe_EnablePipe(void);
-
-				/** Disables the currently selected pipe so that data cannot be sent and received through it to and
-				 *  from an attached device.
-				 */
-				static inline void Pipe_DisablePipe(void);
-
-				/** Determines if the currently selected pipe is enabled, but not necessarily configured.
-				 *
-				 * \return Boolean True if the currently selected pipe is enabled, false otherwise
-				 */
-				static inline bool Pipe_IsEnabled(void);
-				
-				/** Gets the current pipe token, indicating the pipe's data direction and type.
-				 *
-				 *  \return The current pipe token, as a PIPE_TOKEN_* mask
-				 */
-				static inline uint8_t Pipe_GetPipeToken(void);
-				
-				/** Sets the token for the currently selected pipe to one of the tokens specified by the PIPE_TOKEN_*
-				 *  masks. This can be used on CONTROL type pipes, to allow for bidirectional transfer of data during
-				 *  control requests, or on regular pipes to allow for half-duplex bidirectional data transfer to devices
-				 *  which have two endpoints of opposite direction sharing the same endpoint address within the device.
-				 *
-				 *  \param[in] Token  New pipe token to set the selected pipe to, as a PIPE_TOKEN_* mask
-				 */
-				static inline void Pipe_SetPipeToken(uint8_t Token);
-				
-				/** Configures the currently selected pipe to allow for an unlimited number of IN requests. */
-				static inline void Pipe_SetInfiniteINRequests(void);
-				
-				/** Configures the currently selected pipe to only allow the specified number of IN requests to be
-				 *  accepted by the pipe before it is automatically frozen.
-				 *
-				 *  \param[in] TotalINRequests  Total number of IN requests that the pipe may receive before freezing
-				 */
-				static inline void Pipe_SetFiniteINRequests(uint8_t TotalINRequests);
-
-				/** Determines if the currently selected pipe is configured.
-				 *
-				 *  \return Boolean true if the selected pipe is configured, false otherwise
-				 */
-				static inline bool Pipe_IsConfigured(void);
-				
-				/** Retrieves the endpoint number of the endpoint within the attached device that the currently selected
-				 *  pipe is bound to.
-				 *
-				 *  \return Endpoint number the currently selected pipe is bound to
-				 */
-				static inline uint8_t Pipe_BoundEndpointNumber(void);
-
-				/** Sets the period between interrupts for an INTERRUPT type pipe to a specified number of milliseconds.
-				 *
-				 *  \param[in] Milliseconds  Number of milliseconds between each pipe poll
-				 */
-				static inline void Pipe_SetInterruptPeriod(uint8_t Milliseconds);
-				
-				/** Returns a mask indicating which pipe's interrupt periods have elapsed, indicating that the pipe should
-				 *  be serviced.
-				 *
-				 *  \return Mask whose bits indicate which pipes have interrupted
-				 */
-				static inline uint8_t Pipe_GetPipeInterrupts(void);
-				
-				/** Determines if the specified pipe number has interrupted (valid only for INTERRUPT type
-				 *  pipes).
-				 *
-				 *  \param[in] PipeNumber  Index of the pipe whose interrupt flag should be tested
-				 *
-				 *  \return Boolean true if the specified pipe has interrupted, false otherwise
-				 */
-				static inline bool Pipe_HasPipeInterrupted(uint8_t PipeNumber);
-				
-				/** Unfreezes the selected pipe, allowing it to communicate with an attached device. */
-				static inline void Pipe_Unfreeze(void);
-				
-				/** Freezes the selected pipe, preventing it from communicating with an attached device. */
-				static inline void Pipe_Freeze(void);
-
-				/** Determines if the currently selected pipe is frozen, and not able to accept data.
-				 *
-				 *  \return Boolean true if the currently selected pipe is frozen, false otherwise
-				 */
-				static inline bool Pipe_IsFrozen(void);
-				
-				/** Clears the master pipe error flag. */
-				static inline void Pipe_ClearError(void);
-				
-				/** Determines if the master pipe error flag is set for the currently selected pipe, indicating that
-				 *  some sort of hardware error has occurred on the pipe.
-				 *
-				 *  \see \ref Pipe_GetErrorFlags() macro for information on retrieving the exact error flag.
-				 *
-				 *  \return Boolean true if an error has occurred on the selected pipe, false otherwise
-				 */
-				static inline bool Pipe_IsError(void);
-				
-				/** Clears all the currently selected pipe's hardware error flags, but does not clear the master error
-				 *  flag for the pipe.
-				 */
-				static inline void Pipe_ClearErrorFlags(void);
-				
-				/** Gets a mask of the hardware error flags which have occurred on the currently selected pipe. This
-				 *  value can then be masked against the PIPE_ERRORFLAG_* masks to determine what error has occurred.
-				 *
-				 *  \return  Mask comprising of PIPE_ERRORFLAG_* bits indicating what error has occurred on the selected pipe
-				 */
-				static inline uint8_t Pipe_GetErrorFlags(void);
-				
-				/** Determines if the currently selected pipe may be read from (if data is waiting in the pipe
-				 *  bank and the pipe is an IN direction, or if the bank is not yet full if the pipe is an OUT
-				 *  direction). This function will return false if an error has occurred in the pipe, or if the pipe
-				 *  is an IN direction and no packet (or an empty packet) has been received, or if the pipe is an OUT
-				 *  direction and the pipe bank is full.
-				 *
-				 *  \note This function is not valid on CONTROL type pipes.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 *  
-				 *  \return Boolean true if the currently selected pipe may be read from or written to, depending on its direction
-				 */
-				static inline bool Pipe_IsReadWriteAllowed(void);
-				
-				/** Determines if an IN request has been received on the currently selected pipe.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 *
-				 *  \return Boolean true if the current pipe has received an IN packet, false otherwise.
-				 */
-				static inline bool Pipe_IsINReceived(void);
-				
-				/** Determines if the currently selected pipe is ready to send an OUT request.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 *
-				 *  \return Boolean true if the current pipe is ready for an OUT packet, false otherwise.
-				 */
-				static inline bool Pipe_IsOUTReady(void);
-
-				/** Determines if no SETUP request is currently being sent to the attached device on the selected
-				 *  CONTROL type pipe.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 *
-				 *  \return Boolean true if the current pipe is ready for a SETUP packet, false otherwise.
-				 */
-				static inline bool Pipe_IsSETUPSent(void);
-				
-				/** Sends the currently selected CONTROL type pipe's contents to the device as a SETUP packet.
-				 *
-				 *  \ingroup Group_PipePacketManagement		
-				 */
-				static inline void Pipe_ClearSETUP(void);
-
-				/** Acknowledges the reception of a setup IN request from the attached device on the currently selected
-				 *  pipe, freeing the bank ready for the next packet.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 */
-				static inline void Pipe_ClearIN(void);
-
-				/** Sends the currently selected pipe's contents to the device as an OUT packet on the selected pipe, freeing
-				 *  the bank ready for the next packet.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 */
-				static inline void Pipe_ClearOUT(void);
-
-				/** Determines if the device sent a NAK (Negative Acknowledge) in response to the last sent packet on
-				 *  the currently selected pipe. This occurs when the host sends a packet to the device, but the device
-				 *  is not currently ready to handle the packet (i.e. its endpoint banks are full). Once a NAK has been
-				 *  received, it must be cleared using \ref Pipe_ClearNAKReceived() before the previous (or any other) packet
-				 *  can be re-sent.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 *
-				 *  \return Boolean true if an NAK has been received on the current pipe, false otherwise
-				 */
-				static inline bool Pipe_IsNAKReceived(void);
-
-				/** Clears the NAK condition on the currently selected pipe.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 *
-				 *  \see \ref Pipe_IsNAKReceived() for more details.
-				 */
-				static inline void Pipe_ClearNAKReceived(void);
-				 
-				/** Determines if the currently selected pipe has had the STALL condition set by the attached device.
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 *
-				 *  \return Boolean true if the current pipe has been stalled by the attached device, false otherwise
-				*/
-				static inline bool Pipe_IsStalled(void);
-				
-				/** Clears the STALL condition detection flag on the currently selected pipe, but does not clear the
-				 *  STALL condition itself (this must be done via a ClearFeature control request to the device).
-				 *
-				 *  \ingroup Group_PipePacketManagement
-				 */
-				static inline void Pipe_ClearStall(void);
-			#else
-				#define Pipe_BytesInPipe()             UPBCX
-
-				#define Pipe_GetCurrentPipe()          (UPNUM & PIPE_PIPENUM_MASK)
-
-				#define Pipe_SelectPipe(pipenum)       MACROS{ UPNUM = (pipenum); }MACROE
-				
-				#define Pipe_ResetPipe(pipenum)        MACROS{ UPRST = (1 << (pipenum)); UPRST = 0; }MACROE
-
-				#define Pipe_EnablePipe()              MACROS{ UPCONX |= (1 << PEN); }MACROE
-
-				#define Pipe_DisablePipe()             MACROS{ UPCONX &= ~(1 << PEN); }MACROE
-
-				#define Pipe_IsEnabled()               ((UPCONX & (1 << PEN)) ? true : false)
-
-				#define Pipe_GetPipeToken()            (UPCFG0X & PIPE_TOKEN_MASK)
-
-				#define Pipe_SetPipeToken(token)       MACROS{ UPCFG0X = ((UPCFG0X & ~PIPE_TOKEN_MASK) | (token)); }MACROE
-				
-				#define Pipe_SetInfiniteINRequests()   MACROS{ UPCONX |= (1 << INMODE); }MACROE
-
-				#define Pipe_SetFiniteINRequests(n)    MACROS{ UPCONX &= ~(1 << INMODE); UPINRQX = (n); }MACROE
-
-				#define Pipe_IsConfigured()            ((UPSTAX  & (1 << CFGOK)) ? true : false)
-
-				#define Pipe_BoundEndpointNumber()     ((UPCFG0X >> PEPNUM0) & PIPE_EPNUM_MASK)
-				
-				#define Pipe_SetInterruptPeriod(ms)    MACROS{ UPCFG2X = (ms); }MACROE
-
-				#define Pipe_GetPipeInterrupts()       UPINT
-
-				#define Pipe_HasPipeInterrupted(n)     ((UPINT & (1 << (n))) ? true : false)
-
-				#define Pipe_Unfreeze()                MACROS{ UPCONX &= ~(1 << PFREEZE); }MACROE
-
-				#define Pipe_Freeze()                  MACROS{ UPCONX |= (1 << PFREEZE); }MACROE
-				
-				#define Pipe_IsFrozen()                ((UPCONX & (1 << PFREEZE)) ? true : false)
-
-				#define Pipe_ClearError()              MACROS{ UPINTX &= ~(1 << PERRI); }MACROE
-
-				#define Pipe_IsError()                 ((UPINTX & (1 << PERRI)) ? true : false)
-				
-				#define Pipe_ClearErrorFlags()         MACROS{ UPERRX = 0; }MACROE
-
-				#define Pipe_GetErrorFlags()           ((UPERRX & (PIPE_ERRORFLAG_CRC16 | PIPE_ERRORFLAG_TIMEOUT | \
-				                                                   PIPE_ERRORFLAG_PID   | PIPE_ERRORFLAG_DATAPID | \
-				                                                   PIPE_ERRORFLAG_DATATGL))                      | \
-				                                        (UPSTAX & PIPE_ERRORFLAG_OVERFLOW | PIPE_ERRORFLAG_UNDERFLOW))
-
-				#define Pipe_IsReadWriteAllowed()      ((UPINTX & (1 << RWAL)) ? true : false)
-
-				#define Pipe_IsINReceived()            ((UPINTX & (1 << RXINI)) ? true : false)
-
-				#define Pipe_IsOUTReady()              ((UPINTX & (1 << TXOUTI)) ? true : false)
-
-				#define Pipe_IsSETUPSent()             ((UPINTX & (1 << TXSTPI)) ? true : false)
-
-				#define Pipe_ClearIN()                 MACROS{ UPINTX &= ~((1 << RXINI) | (1 << FIFOCON)); }MACROE
-
-				#define Pipe_ClearOUT()                MACROS{ UPINTX &= ~((1 << TXOUTI) | (1 << FIFOCON)); }MACROE
-				
-				#define Pipe_ClearSETUP()              MACROS{ UPINTX &= ~((1 << TXSTPI) | (1 << FIFOCON)); }MACROE
-
-				#define Pipe_IsNAKReceived()           ((UPINTX & (1 << NAKEDI)) ? true : false)
-
-				#define Pipe_ClearNAKReceived()        MACROS{ UPINTX &= ~(1 << NAKEDI); }MACROE
-
-				#define Pipe_IsStalled()               ((UPINTX & (1 << RXSTALLI)) ? true : false)
-
-				#define Pipe_ClearStall()              MACROS{ UPINTX &= ~(1 << RXSTALLI); }MACROE
-			#endif
-
 		/* Enums: */
-			/** Enum for the possible error return codes of the Pipe_WaitUntilReady function
+			/** Enum for the possible error return codes of the Pipe_WaitUntilReady function.
 			 *
 			 *  \ingroup Group_PipeRW
 			 */
 			enum Pipe_WaitUntilReady_ErrorCodes_t
 			{
-				PIPE_READYWAIT_NoError                 = 0, /**< Pipe ready for next packet, no error */
+				PIPE_READYWAIT_NoError                 = 0, /**< Pipe ready for next packet, no error. */
 				PIPE_READYWAIT_PipeStalled             = 1,	/**< The device stalled the pipe while waiting. */			
 				PIPE_READYWAIT_DeviceDisconnected      = 2,	/**< Device was disconnected from the host while waiting. */
 				PIPE_READYWAIT_Timeout                 = 3, /**< The device failed to accept or send the next packet
@@ -545,11 +240,391 @@
 			};
 
 		/* Inline Functions: */
+			/** Indicates the number of bytes currently stored in the current pipes's selected bank.
+			 *
+			 *  \note The return width of this function may differ, depending on the maximum pipe bank size
+			 *        of the selected AVR model.
+			 *
+			 *  \ingroup Group_PipeRW
+			 *
+			 *  \return Total number of bytes in the currently selected Pipe's FIFO buffer.
+			 */
+			static inline uint16_t Pipe_BytesInPipe(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline uint16_t Pipe_BytesInPipe(void)
+			{
+				return UPBCX;
+			}
+			
+			/** Returns the pipe address of the currently selected pipe. This is typically used to save the
+			 *  currently selected pipe number so that it can be restored after another pipe has been manipulated.
+			 *
+			 *  \return Index of the currently selected pipe.
+			 */
+			static inline uint8_t Pipe_GetCurrentPipe(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline uint8_t Pipe_GetCurrentPipe(void)
+			{
+				return (UPNUM & PIPE_PIPENUM_MASK);
+			}
+
+			/** Selects the given pipe number. Any pipe operations which do not require the pipe number to be
+			 *  indicated will operate on the currently selected pipe.
+			 *
+			 *  \param[in] PipeNumber  Index of the pipe to select.
+			 */
+			static inline void Pipe_SelectPipe(const uint8_t PipeNumber) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_SelectPipe(const uint8_t PipeNumber)
+			{
+				UPNUM = PipeNumber;
+			}
+			
+			/** Resets the desired pipe, including the pipe banks and flags.
+			 *
+			 *  \param[in] PipeNumber  Index of the pipe to reset.
+			 */
+			static inline void Pipe_ResetPipe(const uint8_t PipeNumber) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ResetPipe(const uint8_t PipeNumber)
+			{
+				UPRST = (1 << PipeNumber);
+				UPRST = 0;
+			}
+			
+			/** Enables the currently selected pipe so that data can be sent and received through it to and from
+			 *  an attached device.
+			 *
+			 *  \pre The currently selected pipe must first be configured properly via \ref Pipe_ConfigurePipe().
+			 */
+			static inline void Pipe_EnablePipe(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_EnablePipe(void)
+			{
+				UPCONX |= (1 << PEN);
+			}
+
+			/** Disables the currently selected pipe so that data cannot be sent and received through it to and
+			 *  from an attached device.
+			 */
+			static inline void Pipe_DisablePipe(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_DisablePipe(void)
+			{
+				UPCONX &= ~(1 << PEN);
+			}
+
+			/** Determines if the currently selected pipe is enabled, but not necessarily configured.
+			 *
+			 * \return Boolean True if the currently selected pipe is enabled, false otherwise.
+			 */
+			static inline bool Pipe_IsEnabled(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsEnabled(void)
+			{
+				return ((UPCONX & (1 << PEN)) ? true : false);
+			}
+			
+			/** Gets the current pipe token, indicating the pipe's data direction and type.
+			 *
+			 *  \return The current pipe token, as a PIPE_TOKEN_* mask.
+			 */
+			static inline uint8_t Pipe_GetPipeToken(void) ATTR_ALWAYS_INLINE;
+			static inline uint8_t Pipe_GetPipeToken(void)
+			{
+				return (UPCFG0X & (0x03 << PTOKEN0));
+			}
+			
+			/** Sets the token for the currently selected pipe to one of the tokens specified by the PIPE_TOKEN_*
+			 *  masks. This can be used on CONTROL type pipes, to allow for bidirectional transfer of data during
+			 *  control requests, or on regular pipes to allow for half-duplex bidirectional data transfer to devices
+			 *  which have two endpoints of opposite direction sharing the same endpoint address within the device.
+			 *
+			 *  \param[in] Token  New pipe token to set the selected pipe to, as a PIPE_TOKEN_* mask.
+			 */
+			static inline void Pipe_SetPipeToken(const uint8_t Token) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_SetPipeToken(const uint8_t Token)
+			{
+				UPCFG0X = ((UPCFG0X & ~(0x03 << PTOKEN0)) | Token);
+			}
+			
+			/** Configures the currently selected pipe to allow for an unlimited number of IN requests. */
+			static inline void Pipe_SetInfiniteINRequests(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_SetInfiniteINRequests(void)
+			{
+				UPCONX |= (1 << INMODE);
+			}
+			
+			/** Configures the currently selected pipe to only allow the specified number of IN requests to be
+			 *  accepted by the pipe before it is automatically frozen.
+			 *
+			 *  \param[in] TotalINRequests  Total number of IN requests that the pipe may receive before freezing.
+			 */
+			static inline void Pipe_SetFiniteINRequests(const uint8_t TotalINRequests) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_SetFiniteINRequests(const uint8_t TotalINRequests)
+			{
+				UPCONX &= ~(1 << INMODE);
+				UPINRQX = TotalINRequests;
+			}
+
+			/** Determines if the currently selected pipe is configured.
+			 *
+			 *  \return Boolean true if the selected pipe is configured, false otherwise.
+			 */
+			static inline bool Pipe_IsConfigured(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsConfigured(void)
+			{
+				return ((UPSTAX & (1 << CFGOK)) ? true : false);
+			}
+			
+			/** Retrieves the endpoint number of the endpoint within the attached device that the currently selected
+			 *  pipe is bound to.
+			 *
+			 *  \return Endpoint number the currently selected pipe is bound to.
+			 */
+			static inline uint8_t Pipe_BoundEndpointNumber(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline uint8_t Pipe_BoundEndpointNumber(void)
+			{
+				return ((UPCFG0X >> PEPNUM0) & PIPE_EPNUM_MASK);
+			}
+
+			/** Sets the period between interrupts for an INTERRUPT type pipe to a specified number of milliseconds.
+			 *
+			 *  \param[in] Milliseconds  Number of milliseconds between each pipe poll.
+			 */
+			static inline void Pipe_SetInterruptPeriod(const uint8_t Milliseconds) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_SetInterruptPeriod(const uint8_t Milliseconds)
+			{
+				UPCFG2X = Milliseconds;
+			}
+			
+			/** Returns a mask indicating which pipe's interrupt periods have elapsed, indicating that the pipe should
+			 *  be serviced.
+			 *
+			 *  \return Mask whose bits indicate which pipes have interrupted.
+			 */
+			static inline uint8_t Pipe_GetPipeInterrupts(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline uint8_t Pipe_GetPipeInterrupts(void)
+			{
+				return UPINT;
+			}
+			
+			/** Determines if the specified pipe number has interrupted (valid only for INTERRUPT type
+			 *  pipes).
+			 *
+			 *  \param[in] PipeNumber  Index of the pipe whose interrupt flag should be tested.
+			 *
+			 *  \return Boolean true if the specified pipe has interrupted, false otherwise.
+			 */
+			static inline bool Pipe_HasPipeInterrupted(const uint8_t PipeNumber) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_HasPipeInterrupted(const uint8_t PipeNumber)
+			{
+				return ((UPINT & (1 << PipeNumber)) ? true : false);
+			}
+			
+			/** Unfreezes the selected pipe, allowing it to communicate with an attached device. */
+			static inline void Pipe_Unfreeze(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_Unfreeze(void)
+			{
+				UPCONX &= ~(1 << PFREEZE);
+			}
+			
+			/** Freezes the selected pipe, preventing it from communicating with an attached device. */
+			static inline void Pipe_Freeze(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_Freeze(void)
+			{
+				UPCONX |= (1 << PFREEZE);
+			}
+
+			/** Determines if the currently selected pipe is frozen, and not able to accept data.
+			 *
+			 *  \return Boolean true if the currently selected pipe is frozen, false otherwise.
+			 */
+			static inline bool Pipe_IsFrozen(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsFrozen(void)
+			{
+				return ((UPCONX & (1 << PFREEZE)) ? true : false);
+			}
+			
+			/** Clears the master pipe error flag. */
+			static inline void Pipe_ClearError(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ClearError(void)
+			{
+				UPINTX &= ~(1 << PERRI);
+			}
+			
+			/** Determines if the master pipe error flag is set for the currently selected pipe, indicating that
+			 *  some sort of hardware error has occurred on the pipe.
+			 *
+			 *  \see \ref Pipe_GetErrorFlags() macro for information on retrieving the exact error flag.
+			 *
+			 *  \return Boolean true if an error has occurred on the selected pipe, false otherwise.
+			 */
+			static inline bool Pipe_IsError(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsError(void)
+			{
+				return ((UPINTX & (1 << PERRI)) ? true : false);
+			}
+			
+			/** Clears all the currently selected pipe's hardware error flags, but does not clear the master error
+			 *  flag for the pipe.
+			 */
+			static inline void Pipe_ClearErrorFlags(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ClearErrorFlags(void)
+			{
+				UPERRX = 0;
+			}
+			
+			/** Gets a mask of the hardware error flags which have occurred on the currently selected pipe. This
+			 *  value can then be masked against the PIPE_ERRORFLAG_* masks to determine what error has occurred.
+			 *
+			 *  \return  Mask comprising of PIPE_ERRORFLAG_* bits indicating what error has occurred on the selected pipe.
+			 */
+			static inline uint8_t Pipe_GetErrorFlags(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline uint8_t Pipe_GetErrorFlags(void)
+			{
+				return ((UPERRX & (PIPE_ERRORFLAG_CRC16 | PIPE_ERRORFLAG_TIMEOUT |
+				                   PIPE_ERRORFLAG_PID   | PIPE_ERRORFLAG_DATAPID |
+				                   PIPE_ERRORFLAG_DATATGL)) |
+				        (UPSTAX & (PIPE_ERRORFLAG_OVERFLOW | PIPE_ERRORFLAG_UNDERFLOW)));
+			}
+			
+			/** Determines if the currently selected pipe may be read from (if data is waiting in the pipe
+			 *  bank and the pipe is an IN direction, or if the bank is not yet full if the pipe is an OUT
+			 *  direction). This function will return false if an error has occurred in the pipe, or if the pipe
+			 *  is an IN direction and no packet (or an empty packet) has been received, or if the pipe is an OUT
+			 *  direction and the pipe bank is full.
+			 *
+			 *  \note This function is not valid on CONTROL type pipes.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 *  
+			 *  \return Boolean true if the currently selected pipe may be read from or written to, depending on its direction.
+			 */
+			static inline bool Pipe_IsReadWriteAllowed(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsReadWriteAllowed(void)
+			{
+				return ((UPINTX & (1 << RWAL)) ? true : false);
+			}
+			
+			/** Determines if an IN request has been received on the currently selected pipe.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 *
+			 *  \return Boolean true if the current pipe has received an IN packet, false otherwise.
+			 */
+			static inline bool Pipe_IsINReceived(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsINReceived(void)
+			{
+				return ((UPINTX & (1 << RXINI)) ? true : false);
+			}
+			
+			/** Determines if the currently selected pipe is ready to send an OUT request.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 *
+			 *  \return Boolean true if the current pipe is ready for an OUT packet, false otherwise.
+			 */
+			static inline bool Pipe_IsOUTReady(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsOUTReady(void)
+			{
+				return ((UPINTX & (1 << TXOUTI)) ? true : false);
+			}
+
+			/** Determines if no SETUP request is currently being sent to the attached device on the selected
+			 *  CONTROL type pipe.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 *
+			 *  \return Boolean true if the current pipe is ready for a SETUP packet, false otherwise.
+			 */
+			static inline bool Pipe_IsSETUPSent(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsSETUPSent(void)
+			{
+				return ((UPINTX & (1 << TXSTPI)) ? true : false);
+			}
+			
+			/** Sends the currently selected CONTROL type pipe's contents to the device as a SETUP packet.
+			 *
+			 *  \ingroup Group_PipePacketManagement		
+			 */
+			static inline void Pipe_ClearSETUP(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ClearSETUP(void)
+			{
+				UPINTX &= ~((1 << TXSTPI) | (1 << FIFOCON));
+			}
+
+			/** Acknowledges the reception of a setup IN request from the attached device on the currently selected
+			 *  pipe, freeing the bank ready for the next packet.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 */
+			static inline void Pipe_ClearIN(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ClearIN(void)
+			{
+				UPINTX &= ~((1 << RXINI) | (1 << FIFOCON));
+			}
+
+			/** Sends the currently selected pipe's contents to the device as an OUT packet on the selected pipe, freeing
+			 *  the bank ready for the next packet.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 */
+			static inline void Pipe_ClearOUT(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ClearOUT(void)
+			{
+				UPINTX &= ~((1 << TXOUTI) | (1 << FIFOCON));
+			}
+
+			/** Determines if the device sent a NAK (Negative Acknowledge) in response to the last sent packet on
+			 *  the currently selected pipe. This occurs when the host sends a packet to the device, but the device
+			 *  is not currently ready to handle the packet (i.e. its endpoint banks are full). Once a NAK has been
+			 *  received, it must be cleared using \ref Pipe_ClearNAKReceived() before the previous (or any other) packet
+			 *  can be re-sent.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 *
+			 *  \return Boolean true if an NAK has been received on the current pipe, false otherwise.
+			 */
+			static inline bool Pipe_IsNAKReceived(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsNAKReceived(void)
+			{
+				return ((UPINTX & (1 << NAKEDI)) ? true : false);
+			}
+
+			/** Clears the NAK condition on the currently selected pipe.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 *
+			 *  \see \ref Pipe_IsNAKReceived() for more details.
+			 */
+			static inline void Pipe_ClearNAKReceived(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ClearNAKReceived(void)
+			{
+				UPINTX &= ~(1 << NAKEDI);
+			}
+			 
+			/** Determines if the currently selected pipe has had the STALL condition set by the attached device.
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 *
+			 *  \return Boolean true if the current pipe has been stalled by the attached device, false otherwise.
+			 */
+			static inline bool Pipe_IsStalled(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
+			static inline bool Pipe_IsStalled(void)
+			{
+				return ((UPINTX & (1 << RXSTALLI)) ? true : false);
+			}
+			
+			/** Clears the STALL condition detection flag on the currently selected pipe, but does not clear the
+			 *  STALL condition itself (this must be done via a ClearFeature control request to the device).
+			 *
+			 *  \ingroup Group_PipePacketManagement
+			 */
+			static inline void Pipe_ClearStall(void) ATTR_ALWAYS_INLINE;
+			static inline void Pipe_ClearStall(void)
+			{
+				UPINTX &= ~(1 << RXSTALLI);
+			}
+
 			/** Reads one byte from the currently selected pipe's bank, for OUT direction pipes.
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \return Next byte in the currently selected pipe's FIFO buffer
+			 *  \return Next byte in the currently selected pipe's FIFO buffer.
 			 */
 			static inline uint8_t Pipe_Read_Byte(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
 			static inline uint8_t Pipe_Read_Byte(void)
@@ -561,7 +636,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \param[in] Byte  Next byte to write into the the currently selected pipe's FIFO buffer
+			 *  \param[in] Byte  Next byte to write into the the currently selected pipe's FIFO buffer.
 			 */
 			static inline void Pipe_Write_Byte(const uint8_t Byte) ATTR_ALWAYS_INLINE;
 			static inline void Pipe_Write_Byte(const uint8_t Byte)
@@ -586,7 +661,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \return Next word in the currently selected pipe's FIFO buffer
+			 *  \return Next word in the currently selected pipe's FIFO buffer.
 			 */
 			static inline uint16_t Pipe_Read_Word_LE(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
 			static inline uint16_t Pipe_Read_Word_LE(void)
@@ -608,7 +683,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \return Next word in the currently selected pipe's FIFO buffer
+			 *  \return Next word in the currently selected pipe's FIFO buffer.
 			 */
 			static inline uint16_t Pipe_Read_Word_BE(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
 			static inline uint16_t Pipe_Read_Word_BE(void)
@@ -630,7 +705,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \param[in] Word  Next word to write to the currently selected pipe's FIFO buffer
+			 *  \param[in] Word  Next word to write to the currently selected pipe's FIFO buffer.
 			 */
 			static inline void Pipe_Write_Word_LE(const uint16_t Word) ATTR_ALWAYS_INLINE;
 			static inline void Pipe_Write_Word_LE(const uint16_t Word)
@@ -644,7 +719,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \param[in] Word  Next word to write to the currently selected pipe's FIFO buffer
+			 *  \param[in] Word  Next word to write to the currently selected pipe's FIFO buffer.
 			 */
 			static inline void Pipe_Write_Word_BE(const uint16_t Word) ATTR_ALWAYS_INLINE;
 			static inline void Pipe_Write_Word_BE(const uint16_t Word)
@@ -671,7 +746,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \return Next double word in the currently selected pipe's FIFO buffer
+			 *  \return Next double word in the currently selected pipe's FIFO buffer.
 			 */
 			static inline uint32_t Pipe_Read_DWord_LE(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
 			static inline uint32_t Pipe_Read_DWord_LE(void)
@@ -695,7 +770,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \return Next double word in the currently selected pipe's FIFO buffer
+			 *  \return Next double word in the currently selected pipe's FIFO buffer.
 			 */
 			static inline uint32_t Pipe_Read_DWord_BE(void) ATTR_WARN_UNUSED_RESULT ATTR_ALWAYS_INLINE;
 			static inline uint32_t Pipe_Read_DWord_BE(void)
@@ -719,7 +794,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \param[in] DWord  Next double word to write to the currently selected pipe's FIFO buffer
+			 *  \param[in] DWord  Next double word to write to the currently selected pipe's FIFO buffer.
 			 */
 			static inline void Pipe_Write_DWord_LE(const uint32_t DWord) ATTR_ALWAYS_INLINE;
 			static inline void Pipe_Write_DWord_LE(const uint32_t DWord)
@@ -735,7 +810,7 @@
 			 *
 			 *  \ingroup Group_PipePrimitiveRW
 			 *
-			 *  \param[in] DWord  Next double word to write to the currently selected pipe's FIFO buffer
+			 *  \param[in] DWord  Next double word to write to the currently selected pipe's FIFO buffer.
 			 */
 			static inline void Pipe_Write_DWord_BE(const uint32_t DWord) ATTR_ALWAYS_INLINE;
 			static inline void Pipe_Write_DWord_BE(const uint32_t DWord)
@@ -776,7 +851,7 @@
 			#if !defined(NO_STREAM_CALLBACKS) || defined(__DOXYGEN__)
 				#define __CALLBACK_PARAM     , StreamCallbackPtr_t Callback
 			#else
-				#define __CALLBACK_PARAM			
+				#define __CALLBACK_PARAM
 			#endif
 
 			/** Configures the specified pipe number with the given pipe type, token, target endpoint number in the
@@ -799,17 +874,21 @@
 			 *  numbers of IN requests without automatic freezing - this can be overridden by a call to
 			 *  \ref Pipe_SetFiniteINRequests().
 			 *
-			 *  \note The default control pipe does not have to be manually configured, as it is automatically
-			 *        configured by the library internally.
+			 *  \note The default control pipe should not be manually configured by the user application, as it 
+			 *        is automatically configured by the library internally.
 			 *        \n\n
 			 *
 			 *  \note This routine will select the specified pipe, and the pipe will remain selected once the
 			 *        routine completes regardless of if the pipe configuration succeeds.
 			 *
-			 *  \return Boolean true if the configuration is successful, false otherwise
+			 *  \return Boolean true if the configuration is successful, false otherwise.
 			 */
-			bool Pipe_ConfigurePipe(const uint8_t  Number, const uint8_t Type, const uint8_t Token, const uint8_t EndpointNumber,
-			                        const uint16_t Size, const uint8_t Banks);
+			bool Pipe_ConfigurePipe(const uint8_t  Number,
+			                        const uint8_t Type,
+			                        const uint8_t Token,
+			                        const uint8_t EndpointNumber,
+			                        const uint16_t Size,
+			                        const uint8_t Banks);
 
 			/** Spin-loops until the currently selected non-control pipe is ready for the next packed of data to be read 
 			 *  or written to it, aborting in the case of an error condition (such as a timeout or device disconnect).
@@ -823,10 +902,10 @@
 			/** Determines if a pipe has been bound to the given device endpoint address. If a pipe which is bound to the given
 			 *  endpoint is found, it is automatically selected.
 			 *
-			 *  \param[in] EndpointAddress Address and direction mask of the endpoint within the attached device to check
+			 *  \param[in] EndpointAddress Address and direction mask of the endpoint within the attached device to check.
 			 *
 			 *  \return Boolean true if a pipe bound to the given endpoint address of the specified direction is found, false
-			 *          otherwise
+			 *          otherwise.
 			 */
 			bool Pipe_IsEndpointBound(const uint8_t EndpointAddress);
 		
@@ -845,12 +924,13 @@
 			 *
 			 *  \ingroup Group_PipeStreamRW
 			 *
-			 *  \param[in] Length  Number of bytes to send via the currently selected pipe.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[in] Length    Number of bytes to send via the currently selected pipe.
+			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Discard_Stream(uint16_t Length __CALLBACK_PARAM);
+			uint8_t Pipe_Discard_Stream(uint16_t Length
+			                            __CALLBACK_PARAM);
 
 			/** Writes the given number of bytes to the pipe from the given buffer in little endian,
 			 *  sending full packets to the device as needed. The last packet filled is not automatically sent;
@@ -869,11 +949,13 @@
 			 *
 			 *  \param[in] Buffer    Pointer to the source data buffer to read from.
 			 *  \param[in] Length    Number of bytes to read for the currently selected pipe into the buffer.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Write_Stream_LE(const void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);				
+			uint8_t Pipe_Write_Stream_LE(const void* Buffer,
+			                             uint16_t Length
+			                             __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 
 			/** EEPROM buffer source version of \ref Pipe_Write_Stream_LE().
 			 *
@@ -881,26 +963,30 @@
 			 *
 			 *  \param[in] Buffer    Pointer to the source data buffer to read from.
 			 *  \param[in] Length    Number of bytes to read for the currently selected pipe into the buffer.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Write_EStream_LE(const void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Write_EStream_LE(const void* Buffer,
+			                              uint16_t Length
+			                              __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 			
 			/** FLASH buffer source version of \ref Pipe_Write_Stream_LE().
 			 *
-			 *  \note The FLASH data must be located in the first 64KB of FLASH for this function to work correctly.
+			 *  \pre The FLASH data must be located in the first 64KB of FLASH for this function to work correctly.
 			 *
 			 *  \ingroup Group_PipeStreamRW
 			 *
 			 *  \param[in] Buffer    Pointer to the source data buffer to read from.
 			 *  \param[in] Length    Number of bytes to read for the currently selected pipe into the buffer.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Write_PStream_LE(const void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
-						
+			uint8_t Pipe_Write_PStream_LE(const void* Buffer,
+			                              uint16_t Length
+			                              __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			
 			/** Writes the given number of bytes to the pipe from the given buffer in big endian,
 			 *  sending full packets to the device as needed. The last packet filled is not automatically sent;
 			 *  the user is responsible for manually sending the last written packet to the host via the
@@ -918,11 +1004,13 @@
 			 *
 			 *  \param[in] Buffer    Pointer to the source data buffer to read from.
 			 *  \param[in] Length    Number of bytes to read for the currently selected pipe into the buffer.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Write_Stream_BE(const void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Write_Stream_BE(const void* Buffer,
+			                             uint16_t Length
+			                             __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 
 			/** EEPROM buffer source version of \ref Pipe_Write_Stream_BE().
 			 *
@@ -930,25 +1018,29 @@
 			 *
 			 *  \param[in] Buffer    Pointer to the source data buffer to read from.
 			 *  \param[in] Length    Number of bytes to read for the currently selected pipe into the buffer.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Write_EStream_BE(const void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Write_EStream_BE(const void* Buffer,
+			                              uint16_t Length
+			                              __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 			
 			/** FLASH buffer source version of \ref Pipe_Write_Stream_BE().
 			 *
-			 *  \note The FLASH data must be located in the first 64KB of FLASH for this function to work correctly.
+			 *  \pre The FLASH data must be located in the first 64KB of FLASH for this function to work correctly.
 			 *
 			 *  \ingroup Group_PipeStreamRW
 			 *
 			 *  \param[in] Buffer    Pointer to the source data buffer to read from.
 			 *  \param[in] Length    Number of bytes to read for the currently selected pipe into the buffer.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Write_PStream_BE(const void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Write_PStream_BE(const void* Buffer,
+			                              uint16_t Length
+			                              __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 
 			/** Reads the given number of bytes from the pipe into the given buffer in little endian,
 			 *  sending full packets to the device as needed. The last packet filled is not automatically sent;
@@ -965,25 +1057,29 @@
 			 *
 			 *  \ingroup Group_PipeStreamRW
 			 *
-			 *  \param[out] Buffer   Pointer to the source data buffer to write to.
-			 *  \param[in] Length    Number of bytes to read for the currently selected pipe to read from.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[out] Buffer    Pointer to the source data buffer to write to.
+			 *  \param[in]  Length    Number of bytes to read for the currently selected pipe to read from.
+			 *  \param[in]  Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Read_Stream_LE(void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Read_Stream_LE(void* Buffer,
+			                            uint16_t Length
+			                            __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 
 			/** EEPROM buffer source version of \ref Pipe_Read_Stream_LE().
 			 *
 			 *  \ingroup Group_PipeStreamRW
 			 *
-			 *  \param[out] Buffer   Pointer to the source data buffer to write to.
-			 *  \param[in] Length    Number of bytes to read for the currently selected pipe to read from.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[out] Buffer    Pointer to the source data buffer to write to.
+			 *  \param[in]  Length    Number of bytes to read for the currently selected pipe to read from.
+			 *  \param[in]  Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Read_EStream_LE(void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Read_EStream_LE(void* Buffer,
+			                             uint16_t Length
+			                             __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 
 			/** Reads the given number of bytes from the pipe into the given buffer in big endian,
 			 *  sending full packets to the device as needed. The last packet filled is not automatically sent;
@@ -1000,57 +1096,49 @@
 			 *
 			 *  \ingroup Group_PipeStreamRW
 			 *
-			 *  \param[out] Buffer   Pointer to the source data buffer to write to.
-			 *  \param[in] Length    Number of bytes to read for the currently selected pipe to read from.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[out] Buffer    Pointer to the source data buffer to write to.
+			 *  \param[in]  Length    Number of bytes to read for the currently selected pipe to read from.
+			 *  \param[in]  Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Read_Stream_BE(void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Read_Stream_BE(void* Buffer,
+			                            uint16_t Length
+			                            __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 			
 			/** EEPROM buffer source version of \ref Pipe_Read_Stream_BE().
 			 *
 			 *  \ingroup Group_PipeStreamRW
 			 *
-			 *  \param[out] Buffer   Pointer to the source data buffer to write to.
-			 *  \param[in] Length    Number of bytes to read for the currently selected pipe to read from.
-			 *  \param[in] Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback
+			 *  \param[out] Buffer    Pointer to the source data buffer to write to.
+			 *  \param[in]  Length    Number of bytes to read for the currently selected pipe to read from.
+			 *  \param[in]  Callback  Name of a callback routine to call between successive USB packet transfers, NULL if no callback.
 			 *
 			 *  \return A value from the \ref Pipe_Stream_RW_ErrorCodes_t enum.
 			 */
-			uint8_t Pipe_Read_EStream_BE(void* Buffer, uint16_t Length __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
+			uint8_t Pipe_Read_EStream_BE(void* Buffer,
+			                             uint16_t Length
+			                             __CALLBACK_PARAM) ATTR_NON_NULL_PTR_ARG(1);
 
 	/* Private Interface - For use in library only: */
-	#if !defined(__DOXYGEN__)
-		/* Macros: */
-			#define PIPE_TOKEN_MASK                (0x03 << PTOKEN0)
-
-			#if !defined(ENDPOINT_CONTROLEP)
-				#define ENDPOINT_CONTROLEP         0
-			#endif
-			
-			#define Pipe_AllocateMemory()          MACROS{ UPCFG1X |=  (1 << ALLOC); }MACROE
-			#define Pipe_DeallocateMemory()        MACROS{ UPCFG1X &= ~(1 << ALLOC); }MACROE
-
+	#if !defined(__DOXYGEN__)			
 		/* Function Prototypes: */
 			void Pipe_ClearPipes(void);
 
 		/* Inline Functions: */
-			static inline uint8_t Pipe_BytesToEPSizeMask(uint16_t Bytes) ATTR_WARN_UNUSED_RESULT ATTR_CONST ATTR_ALWAYS_INLINE;
-			static inline uint8_t Pipe_BytesToEPSizeMask(uint16_t Bytes)
+			static inline uint8_t Pipe_BytesToEPSizeMask(const uint16_t Bytes) ATTR_WARN_UNUSED_RESULT ATTR_CONST ATTR_ALWAYS_INLINE;
+			static inline uint8_t Pipe_BytesToEPSizeMask(const uint16_t Bytes)
 			{
-				if (Bytes <= 8)
-				  return (0 << EPSIZE0);
-				else if (Bytes <= 16)
-				  return (1 << EPSIZE0);
-				else if (Bytes <= 32)
-				  return (2 << EPSIZE0);
-				else if (Bytes <= 64)
-				  return (3 << EPSIZE0);
-				else if (Bytes <= 128)
-				  return (4 << EPSIZE0);
-				else
-				  return (5 << EPSIZE0);
+				uint8_t  MaskVal    = 0;
+				uint16_t CheckBytes = 8;
+				
+				while ((CheckBytes < Bytes) && (CheckBytes < PIPE_MAX_SIZE))
+				{
+					MaskVal++;
+					CheckBytes <<= 1;
+				}
+				
+				return (MaskVal << EPSIZE0);
 			}
 
 	#endif

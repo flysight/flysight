@@ -51,6 +51,9 @@
 #ifndef __STREAMCALLBACK_H__
 #define __STREAMCALLBACK_H__
 
+	/* Includes: */
+		#include <stdint.h>
+
 	/* Preprocessor Checks: */
 		#if !defined(__INCLUDE_FROM_USB_DRIVER)
 			#error Do not include this file directly. Include LUFA/Drivers/USB/USB.h instead.
@@ -64,7 +67,7 @@
 			#define NO_STREAM_CALLBACK    NULL
 			
 		/* Enums: */
-			/** Enum for the possible error return codes of a stream callback function */
+			/** Enum for the possible error return codes of a stream callback function. */
 			enum StreamCallback_Return_ErrorCodes_t
 			{
 				STREAMCALLBACK_Continue            = 0, /**< Continue sending or receiving the stream. */

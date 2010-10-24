@@ -42,22 +42,22 @@
 #define __USBTASK_H__
 
 	/* Includes: */
-		#include <avr/io.h>
 		#include <avr/interrupt.h>
+		#include <stdint.h>
 		#include <stdbool.h>
 		
-		#include "../LowLevel/LowLevel.h"
+		#include "../LowLevel/USBController.h"
 		#include "Events.h"
 		#include "StdRequestType.h"
 		#include "StdDescriptors.h"
 		#include "USBMode.h"
 
 		#if defined(USB_CAN_BE_DEVICE)
-			#include "../LowLevel/DevChapter9.h"
+			#include "DeviceStandardReq.h"
 		#endif
 
 		#if defined(USB_CAN_BE_HOST)
-			#include "../LowLevel/HostChapter9.h"
+			#include "HostStandardReq.h"
 		#endif
 		
 	/* Enable C linkage for C++ Compilers: */
@@ -107,7 +107,7 @@
 					 *
 					 *  \note This global is only present if the user application can be a USB host.
 					 *
-					 *  \see \ref USB_Host_States_t for a list of possible device states
+					 *  \see \ref USB_Host_States_t for a list of possible device states.
 					 *
 					 *  \ingroup Group_Host
 					 */
@@ -140,7 +140,7 @@
 					 *  \note This variable should be treated as read-only in the user application, and never manually
 					 *        changed in value except in the circumstances outlined above.
 					 *
-					 *  \see \ref USB_Device_States_t for a list of possible device states
+					 *  \see \ref USB_Device_States_t for a list of possible device states.
 					 *
 					 *  \ingroup Group_Device
 					 */

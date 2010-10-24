@@ -66,10 +66,10 @@
 		#endif
 		
 	/* Macros: */
-		/** Mass Storage Class specific request to reset the Mass Storage interface, ready for the next command. */
+		/** Mass Storage class-specific request to reset the Mass Storage interface, ready for the next command. */
 		#define REQ_MassStorageReset       0xFF
 
-		/** Mass Storage Class specific request to retrieve the total number of Logical Units (drives) in the SCSI device. */
+		/** Mass Storage class-specific request to retrieve the total number of Logical Units (drives) in the SCSI device. */
 		#define REQ_GetMaxLUN              0xFE
 		
 		/** Magic signature for a Command Block Wrapper used in the Mass Storage Bulk-Only transport protocol. */
@@ -211,13 +211,13 @@
 		 *  Type define for a Command Block Wrapper, used in the Mass Storage Bulk-Only Transport protocol. */
 		typedef struct
 		{
-			uint32_t Signature; /**< Command block signature, must be CBW_SIGNATURE to indicate a valid Command Block */
-			uint32_t Tag; /**< Unique command ID value, to associate a command block wrapper with its command status wrapper */
-			uint32_t DataTransferLength; /** Length of the optional data portion of the issued command, in bytes */
-			uint8_t  Flags; /**< Command block flags, indicating command data direction */
-			uint8_t  LUN; /**< Logical Unit number this command is issued to */
-			uint8_t  SCSICommandLength; /**< Length of the issued SCSI command within the SCSI command data array */
-			uint8_t  SCSICommandData[16]; /**< Issued SCSI command in the Command Block */
+			uint32_t Signature; /**< Command block signature, must be CBW_SIGNATURE to indicate a valid Command Block. */
+			uint32_t Tag; /**< Unique command ID value, to associate a command block wrapper with its command status wrapper. */
+			uint32_t DataTransferLength; /**< Length of the optional data portion of the issued command, in bytes. */
+			uint8_t  Flags; /**< Command block flags, indicating command data direction. */
+			uint8_t  LUN; /**< Logical Unit number this command is issued to. */
+			uint8_t  SCSICommandLength; /**< Length of the issued SCSI command within the SCSI command data array. */
+			uint8_t  SCSICommandData[16]; /**< Issued SCSI command in the Command Block. */
 		} MS_CommandBlockWrapper_t;
 		
 		/** \brief Mass Storage Class Command Status Wrapper.
@@ -226,16 +226,16 @@
 		 */
 		typedef struct
 		{
-			uint32_t Signature; /**< Status block signature, must be CSW_SIGNATURE to indicate a valid Command Status */
-			uint32_t Tag; /**< Unique command ID value, to associate a command block wrapper with its command status wrapper */
-			uint32_t DataTransferResidue; /**< Number of bytes of data not processed in the SCSI command */
-			uint8_t  Status; /**< Status code of the issued command - a value from the MassStorage_CommandStatusCodes_t enum */
+			uint32_t Signature; /**< Status block signature, must be CSW_SIGNATURE to indicate a valid Command Status. */
+			uint32_t Tag; /**< Unique command ID value, to associate a command block wrapper with its command status wrapper. */
+			uint32_t DataTransferResidue; /**< Number of bytes of data not processed in the SCSI command. */
+			uint8_t  Status; /**< Status code of the issued command - a value from the MassStorage_CommandStatusCodes_t enum. */
 		} MS_CommandStatusWrapper_t;
 		
 		/** \brief Mass Storage Class SCSI Sense Structure
 		 *  
 		 *  Type define for a SCSI Sense structure. Structures of this type are filled out by the
-		 *  device via the MassStore_RequestSense() function, indicating the current sense data of the
+		 *  device via the \ref MS_Host_RequestSense() function, indicating the current sense data of the
 		 *  device (giving explicit error codes for the last issued command). For details of the
 		 *  structure contents, refer to the SCSI specifications.
 		 */
@@ -246,7 +246,7 @@
 			uint8_t       SegmentNumber;
 			
 			unsigned char SenseKey            : 4;
-			unsigned char _RESERVED1          : 1;
+			unsigned char Reserved            : 1;
 			unsigned char ILI                 : 1;
 			unsigned char EOM                 : 1;
 			unsigned char FileMark            : 1;
@@ -263,7 +263,9 @@
 		/** \brief Mass Storage Class SCSI Inquiry Structure.
 		 *
 		 *  Type define for a SCSI Inquiry structure. Structures of this type are filled out by the
-		 *  device via the MassStore_Inquiry() function, retrieving the attached device's information.
+		 *  device via the \ref MS_Host_GetInquiryData() function, retrieving the attached device's
+		 *  information.
+		 *
 		 *  For details of the structure contents, refer to the SCSI specifications.
 		 */
 		typedef struct
@@ -271,23 +273,23 @@
 			unsigned char DeviceType          : 5;
 			unsigned char PeripheralQualifier : 3;
 			
-			unsigned char _RESERVED1          : 7;
+			unsigned char Reserved            : 7;
 			unsigned char Removable           : 1;
 			
 			uint8_t      Version;
 			
 			unsigned char ResponseDataFormat  : 4;
-			unsigned char _RESERVED2          : 1;
+			unsigned char Reserved2           : 1;
 			unsigned char NormACA             : 1;
 			unsigned char TrmTsk              : 1;
 			unsigned char AERC                : 1;
 
 			uint8_t      AdditionalLength;
-			uint8_t      _RESERVED3[2];
+			uint8_t      Reserved3[2];
 
 			unsigned char SoftReset           : 1;
 			unsigned char CmdQue              : 1;
-			unsigned char _RESERVED4          : 1;
+			unsigned char Reserved4           : 1;
 			unsigned char Linked              : 1;
 			unsigned char Sync                : 1;
 			unsigned char WideBus16Bit        : 1;
@@ -304,8 +306,10 @@
 		enum MassStorage_CommandStatusCodes_t
 		{
 			SCSI_Command_Pass = 0, /**< Command completed with no error */
-			SCSI_Command_Fail = 1, /**< Command failed to complete - host may check the exact error via a SCSI REQUEST SENSE command */
-			SCSI_Phase_Error  = 2  /**< Command failed due to being invalid in the current phase */
+			SCSI_Command_Fail = 1, /**< Command failed to complete - host may check the exact error via a
+			                        *   SCSI REQUEST SENSE command.
+			                        */
+			SCSI_Phase_Error  = 2  /**< Command failed due to being invalid in the current phase. */
 		};
 	
 	/* Disable C linkage for C++ Compilers: */

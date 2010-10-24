@@ -31,24 +31,24 @@
 /** \file
  *  \brief USB host standard request management.
  *
- *  This file contains the function prototypes neccesary for the issuing of outgoing standard control requests
+ *  This file contains the function prototypes necessary for the issuing of outgoing standard control requests
  *  when the library is in USB host mode.
  *
  *  \note This file should not be included directly. It is automatically included as needed by the USB driver
  *        dispatch header located in LUFA/Drivers/USB/USB.h.
  */
 
-#ifndef __HOSTCHAPTER9_H__
-#define __HOSTCHAPTER9_H__
+#ifndef __HOSTSTDREQ_H__
+#define __HOSTSTDREQ_H__
 
 	/* Includes: */
-		#include <avr/io.h>
+		#include <stdint.h>
 		#include <stdbool.h>
 		
-		#include "LowLevel.h"
-		#include "../HighLevel/USBMode.h"
-		#include "../HighLevel/StdRequestType.h"
-
+		#include "USBMode.h"
+		#include "StdRequestType.h"
+		#include "../LowLevel/USBController.h"
+		
 	/* Enable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)
 			extern "C" {
@@ -91,7 +91,7 @@
 			 *
 			 *  \return A value from the \ref USB_Host_SendControlErrorCodes_t enum to indicate the result.
 			 */
-			uint8_t USB_Host_SendControlRequest(void* BufferPtr);
+			uint8_t USB_Host_SendControlRequest(void* const BufferPtr);
 			
 	/* Private Interface - For use in library only: */
 	#if !defined(__DOXYGEN__)
@@ -104,7 +104,7 @@
 			};
 	
 		/* Function Prototypes: */
-			#if defined(__INCLUDE_FROM_HOSTCHAPTER9_C)
+			#if defined(__INCLUDE_FROM_HOSTSTDREQ_C)
 				static uint8_t USB_Host_WaitForIOS(const uint8_t WaitType);
 			#endif
 	#endif

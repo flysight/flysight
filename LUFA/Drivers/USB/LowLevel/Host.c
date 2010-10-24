@@ -144,10 +144,6 @@ void USB_Host_ProcessNextHostState(void)
 			HOST_TASK_NONBLOCK_WAIT(200, HOST_STATE_Default_PostReset);
 			break;
 		case HOST_STATE_Default_PostReset:
-			Pipe_DisablePipe();
-			Pipe_DeallocateMemory();		
-			Pipe_ResetPipe(PIPE_CONTROLPIPE);
-			
 			Pipe_ConfigurePipe(PIPE_CONTROLPIPE, EP_TYPE_CONTROL,
 			                   PIPE_TOKEN_SETUP, ENDPOINT_CONTROLEP,
 			                   USB_ControlPipeSize, PIPE_BANK_SINGLE);
@@ -309,7 +305,9 @@ uint8_t USB_Host_GetDeviceDescriptor(void* const DeviceDescriptorPtr)
 	return USB_Host_SendControlRequest(DeviceDescriptorPtr);
 }
 
-uint8_t USB_Host_GetDeviceStringDescriptor(const uint8_t Index, void* const Buffer, const uint8_t BufferLength)
+uint8_t USB_Host_GetDeviceStringDescriptor(const uint8_t Index,
+                                           void* const Buffer,
+                                           const uint8_t BufferLength)
 {
 	USB_ControlRequest = (USB_Request_Header_t)
 		{

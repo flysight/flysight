@@ -38,8 +38,12 @@
 
 uint8_t USB_ControlPipeSize = PIPE_CONTROLPIPE_DEFAULT_SIZE;
 
-bool Pipe_ConfigurePipe(const uint8_t Number, const uint8_t Type, const uint8_t Token, const uint8_t EndpointNumber,
-						const uint16_t Size, const uint8_t Banks)
+bool Pipe_ConfigurePipe(const uint8_t Number,
+                        const uint8_t Type,
+                        const uint8_t Token,
+                        const uint8_t EndpointNumber,
+                        const uint16_t Size,
+                        const uint8_t Banks)
 {
 	Pipe_SelectPipe(Number);
 	Pipe_EnablePipe();
@@ -60,13 +64,10 @@ void Pipe_ClearPipes(void)
 
 	for (uint8_t PNum = 0; PNum < PIPE_TOTAL_PIPES; PNum++)
 	{
-		Pipe_ResetPipe(PNum);
 		Pipe_SelectPipe(PNum);
-		UPIENX = 0;
-		UPINTX = 0;
-		Pipe_ClearError();
-		Pipe_ClearErrorFlags();
-		Pipe_DeallocateMemory();
+		UPIENX  = 0;
+		UPINTX  = 0;
+		UPCFG1X = 0;
 		Pipe_DisablePipe();
 	}
 }
@@ -79,13 +80,16 @@ bool Pipe_IsEndpointBound(const uint8_t EndpointAddress)
 	{
 		Pipe_SelectPipe(PNum);
 		
-		uint8_t PipeToken = Pipe_GetPipeToken();
+		if (!(Pipe_IsConfigured()))
+		  continue;
+		
+		uint8_t PipeToken        = Pipe_GetPipeToken();
 		bool    PipeTokenCorrect = true;
 
 		if (PipeToken != PIPE_TOKEN_SETUP)
 		  PipeTokenCorrect = (PipeToken == ((EndpointAddress & PIPE_EPDIR_MASK) ? PIPE_TOKEN_IN : PIPE_TOKEN_OUT));
 		
-		if (Pipe_IsConfigured() && PipeTokenCorrect && (Pipe_BoundEndpointNumber() == (EndpointAddress & PIPE_EPNUM_MASK)))
+		if (PipeTokenCorrect && (Pipe_BoundEndpointNumber() == (EndpointAddress & PIPE_EPNUM_MASK)))
 		  return true;
 	}
 	
@@ -131,9 +135,9 @@ uint8_t Pipe_WaitUntilReady(void)
 
 uint8_t Pipe_Discard_Stream(uint16_t Length
 #if !defined(NO_STREAM_CALLBACKS)
-                                 , StreamCallbackPtr_t Callback
+                            , StreamCallbackPtr_t Callback
 #endif
-								 )
+                            )
 {
 	uint8_t  ErrorCode;
 	
@@ -270,7 +274,7 @@ uint8_t Pipe_Discard_Stream(uint16_t Length
 #define  TEMPLATE_TOKEN                            PIPE_TOKEN_IN
 #define  TEMPLATE_CLEAR_PIPE()                     Pipe_ClearIN()
 #define  TEMPLATE_BUFFER_OFFSET(Length)            0
-#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_write_byte((uint8_t*)BufferPtr++, Pipe_Read_Byte())
+#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte((uint8_t*)BufferPtr++, Pipe_Read_Byte())
 #include "Template/Template_Pipe_RW.c"
 
 #define  TEMPLATE_FUNC_NAME                        Pipe_Read_Stream_BE
@@ -286,7 +290,7 @@ uint8_t Pipe_Discard_Stream(uint16_t Length
 #define  TEMPLATE_TOKEN                            PIPE_TOKEN_IN
 #define  TEMPLATE_CLEAR_PIPE()                     Pipe_ClearIN()
 #define  TEMPLATE_BUFFER_OFFSET(Length)            (Length - 1)
-#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_write_byte((uint8_t*)BufferPtr--, Pipe_Read_Byte())
+#define  TEMPLATE_TRANSFER_BYTE(BufferPtr)         eeprom_update_byte((uint8_t*)BufferPtr--, Pipe_Read_Byte())
 #include "Template/Template_Pipe_RW.c"
 
 #endif

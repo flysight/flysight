@@ -39,7 +39,7 @@
  *
  *  \section Sec_Dependencies Module Source Dependencies
  *  The following files must be built with any user project that uses this module:
- *    - LUFA/Drivers/Board/Temperature.c
+ *    - LUFA/Drivers/Board/Temperature.c <i>(Makefile source module name: LUFA_SRC_TEMPERATURE)</i>
  *
  *  \section Module Description
  *  Temperature sensor driver. This provides an easy to use interface for the hardware temperature sensor located
@@ -86,24 +86,24 @@
 			/** Maximum returnable temperature from the \ref Temperature_GetTemperature() function. */
 			#define TEMP_MAX_TEMP          ((TEMP_TABLE_SIZE - 1) + TEMP_TABLE_OFFSET)
 		
-		/* Pseudo-Function Macros: */
-			#if defined(__DOXYGEN__)
-				/** Initializes the temperature sensor driver, including setting up the appropriate ADC channel.
-				 *  This must be called before any other temperature sensor routines.
-				 *
-				 *  \note The ADC itself (not the ADC channel) must be configured separately before calling the
-				 *        temperature sensor functions.
-				 */
-				static inline void Temperature_Init(void);
-			#else
-				#define Temperature_Init() ADC_SetupChannel(TEMP_ADC_CHANNEL);
-			#endif
+		/* Inline Functions: */
+			/** Initialises the temperature sensor driver, including setting up the appropriate ADC channel.
+			 *  This must be called before any other temperature sensor routines.
+			 *
+			 *  \pre The ADC itself (not the ADC channel) must be configured separately before calling the
+			 *       temperature sensor functions.
+			 */
+			static inline void Temperature_Init(void) ATTR_ALWAYS_INLINE;
+			static inline void Temperature_Init(void)
+			{
+				ADC_SetupChannel(TEMP_ADC_CHANNEL);
+			}
 
 		/* Function Prototypes: */
 			/** Performs a complete ADC on the temperature sensor channel, and converts the result into a
 			 *  valid temperature between \ref TEMP_MIN_TEMP and \ref TEMP_MAX_TEMP in degrees Celsius.
 			 *
-			 *  \return Signed temperature in degrees Celsius
+			 *  \return Signed temperature value in degrees Celsius.
 			 */
 			int8_t Temperature_GetTemperature(void) ATTR_WARN_UNUSED_RESULT;
 

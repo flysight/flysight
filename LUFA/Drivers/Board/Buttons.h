@@ -99,7 +99,7 @@
 	
 	/* Pseudo-Functions for Doxygen: */
 	#if defined(__DOXYGEN__)
-		/** Initializes the BUTTONS driver, so that the current button position can be read. This sets the appropriate
+		/** Initialises the BUTTONS driver, so that the current button position can be read. This sets the appropriate
 		 *  I/O pins to an inputs with pull-ups enabled.
 		 *
 		 *  This must be called before any Button driver functions are used.
@@ -108,7 +108,7 @@
 		
 		/** Returns a mask indicating which board buttons are currently pressed.
 		 *
-		 *  \return Mask indicating which board buttons are currently pressed
+		 *  \return Mask indicating which board buttons are currently pressed.
 		 */
 		static inline uint8_t Buttons_GetStatus(void) ATTR_WARN_UNUSED_RESULT;
 	#endif

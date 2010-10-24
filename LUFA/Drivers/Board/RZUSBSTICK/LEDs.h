@@ -92,7 +92,7 @@
 			/** LED mask for all the LEDs on the board. */
 			#define LEDS_ALL_LEDS         (LEDS_LED1 | LEDS_LED2 | LEDS_LED3 | LEDS_LED4)
 
-			/** LED mask for the none of the board LEDs */
+			/** LED mask for the none of the board LEDs. */
 			#define LEDS_NO_LEDS          0
 			
 		/* Inline Functions: */
@@ -129,7 +129,8 @@
 				        ~((LEDMask & LEDS_PORTE_LEDS) << LEDS_PORTE_MASK_SHIFT));
 			}
 			
-			static inline void LEDs_ChangeLEDs(const uint8_t LEDMask, const uint8_t ActiveMask)
+			static inline void LEDs_ChangeLEDs(const uint8_t LEDMask,
+			                                   const uint8_t ActiveMask)
 			{
 				PORTD = (((PORTD & ~(LEDMask & LEDS_LED1)) |  (ActiveMask & LEDS_LED1)) |
 				         ((PORTD |  (LEDMask & LEDS_LED2)) & ~(ActiveMask & LEDS_LED2)));

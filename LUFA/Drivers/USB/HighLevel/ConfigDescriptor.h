@@ -51,12 +51,12 @@
 #define __CONFIGDESCRIPTOR_H__
 
 	/* Includes: */
-		#include <avr/io.h>
+		#include <stdint.h>
 		
 		#include "../../../Common/Common.h"
-		#include "../HighLevel/USBMode.h"
-		#include "../LowLevel/HostChapter9.h"
-		#include "../HighLevel/StdDescriptors.h"
+		#include "HostStandardReq.h"
+		#include "USBMode.h"
+		#include "StdDescriptors.h"
 		
 	/* Enable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)
@@ -116,70 +116,27 @@
 			/** Type define for a Configuration Descriptor comparator function (function taking a pointer to an array
 			 *  of type void, returning a uint8_t value).
 			 *
-			 *  \see \ref USB_GetNextDescriptorComp function for more details
+			 *  \see \ref USB_GetNextDescriptorComp function for more details.
 			 */
-			typedef uint8_t (* const ConfigComparatorPtr_t)(void*);
-
-		/* Function Prototypes: */
-			/** Searches for the next descriptor in the given configuration descriptor using a premade comparator
-			 *  function. The routine updates the position and remaining configuration descriptor bytes values
-			 *  automatically. If a comparator routine fails a search, the descriptor pointer is retreated back
-			 *  so that the next descriptor search invocation will start from the descriptor which first caused the
-			 *  original search to fail. This behaviour allows for one comparator to be used immediately after another
-			 *  has failed, starting the second search from the descriptor which failed the first.
-			 *
-			 *  Comparator functions should be standard functions which accept a pointer to the header of the current
-			 *  descriptor inside the configuration descriptor which is being compared, and should return a value from
-			 *  the \ref DSearch_Return_ErrorCodes_t enum as a uint8_t value.
-			 *
-			 *  \note This function is available in USB Host mode only.
-			 *
-			 *  \param[in,out] BytesRem  Pointer to an int storing the remaining bytes in the configuration descriptor
-			 *  \param[in,out] CurrConfigLoc  Pointer to the current position in the configuration descriptor
-			 *  \param[in] ComparatorRoutine  Name of the comparator search function to use on the configuration descriptor
-			 *
-			 *  \return Value of one of the members of the \ref DSearch_Comp_Return_ErrorCodes_t enum
-			 *
-			 *  Usage Example:
-			 *  \code
-			 *  uint8_t EndpointSearcher(void* CurrentDescriptor); // Comparator Prototype
-			 *
-			 *  uint8_t EndpointSearcher(void* CurrentDescriptor)
-			 *  {
-			 *     if (DESCRIPTOR_TYPE(CurrentDescriptor) == DTYPE_Endpoint)
-			 *         return DESCRIPTOR_SEARCH_Found;
-			 *     else
-			 *         return DESCRIPTOR_SEARCH_NotFound;
-			 *  }
-			 *
-			 *  //...
-			 *  // After retrieving configuration descriptor:
-			 *  if (USB_Host_GetNextDescriptorComp(&BytesRemaining, &CurrentConfigLoc, EndpointSearcher) ==
-			 *      Descriptor_Search_Comp_Found)
-			 *  {
-			 *      // Do something with the endpoint descriptor
-			 *  }
-			 *  \endcode
-			 */
-			uint8_t USB_GetNextDescriptorComp(uint16_t* BytesRem, void** CurrConfigLoc, ConfigComparatorPtr_t ComparatorRoutine);
+			typedef uint8_t (* ConfigComparatorPtr_t)(void*);
 			
 		/* Enums: */
 			/** Enum for the possible return codes of the \ref USB_Host_GetDeviceConfigDescriptor() function. */
 			enum USB_Host_GetConfigDescriptor_ErrorCodes_t
 			{
-				HOST_GETCONFIG_Successful       = 0, /**< No error occurred while retrieving the configuration descriptor */
+				HOST_GETCONFIG_Successful       = 0, /**< No error occurred while retrieving the configuration descriptor. */
 				HOST_GETCONFIG_DeviceDisconnect = 1, /**< The attached device was disconnected while retrieving the configuration
-				                                        * descriptor
+				                                        * descriptor.
 				                                        */
-				HOST_GETCONFIG_PipeError        = 2, /**< An error occurred in the pipe while sending the request */
+				HOST_GETCONFIG_PipeError        = 2, /**< An error occurred in the pipe while sending the request. */
 				HOST_GETCONFIG_SetupStalled     = 3, /**< The attached device stalled the request to retrieve the configuration
-				                                        * descriptor
+				                                        * descriptor.
 				                                        */
-				HOST_GETCONFIG_SoftwareTimeOut  = 4, /**< The request or data transfer timed out */
+				HOST_GETCONFIG_SoftwareTimeOut  = 4, /**< The request or data transfer timed out. */
 				HOST_GETCONFIG_BuffOverflow     = 5, /**< The device's configuration descriptor is too large to fit into the allocated
-				                                        * buffer
+				                                        * buffer.
 				                                        */
-				HOST_GETCONFIG_InvalidData      = 6, /**< The device returned invalid configuration descriptor data */
+				HOST_GETCONFIG_InvalidData      = 6, /**< The device returned invalid configuration descriptor data. */
 			};
 		
 			/** Enum for return values of a descriptor comparator function. */
@@ -203,13 +160,13 @@
 			/** Retrieves the configuration descriptor data from an attached device via a standard request into a buffer,
 			 *  including validity and size checking to prevent a buffer overflow.
 			 *
-			 *  \param[in] ConfigNumber  Device configuration descriptor number to fetch from the device (usually set to 1 for
-			 *                           single configuration devices)
-			 *  \param[in,out] ConfigSizePtr  Pointer to a uint16_t for storing the retrieved configuration descriptor size
-			 *  \param[out] BufferPtr  Pointer to the buffer for storing the configuration descriptor data.
-			 *  \param[out] BufferSize  Size of the allocated buffer where the configuration descriptor is to be stored
+			 *  \param[in]     ConfigNumber   Device configuration descriptor number to fetch from the device (usually set to 1 for
+			 *                                single configuration devices).
+			 *  \param[in,out] ConfigSizePtr  Pointer to a uint16_t for storing the retrieved configuration descriptor size.
+			 *  \param[out]    BufferPtr      Pointer to the buffer for storing the configuration descriptor data.
+			 *  \param[out]    BufferSize     Size of the allocated buffer where the configuration descriptor is to be stored.
 			 *
-			 *  \return A value from the \ref USB_Host_GetConfigDescriptor_ErrorCodes_t enum
+			 *  \return A value from the \ref USB_Host_GetConfigDescriptor_ErrorCodes_t enum.
 			 */
 			uint8_t USB_Host_GetDeviceConfigDescriptor(uint8_t ConfigNumber, uint16_t* const ConfigSizePtr, void* BufferPtr,
 			                                           uint16_t BufferSize) ATTR_NON_NULL_PTR_ARG(2) ATTR_NON_NULL_PTR_ARG(3);
@@ -217,9 +174,9 @@
 			/** Skips to the next sub-descriptor inside the configuration descriptor of the specified type value.
 			 *  The bytes remaining value is automatically decremented.
 			 *
-			 * \param[in,out] BytesRem  Pointer to the number of bytes remaining of the configuration descriptor
-			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor
-			 * \param[in] Type  Descriptor type value to search for
+			 * \param[in,out] BytesRem       Pointer to the number of bytes remaining of the configuration descriptor.
+			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor.
+			 * \param[in]     Type           Descriptor type value to search for.
 			 */
 			void USB_GetNextDescriptorOfType(uint16_t* const BytesRem,
 			                                 void** const CurrConfigLoc,
@@ -231,10 +188,10 @@
 			 *  descriptor is reached first, the number of bytes remaining to process is set to zero and the
 			 *  function exits. The bytes remaining value is automatically decremented.
 			 *
-			 * \param[in,out] BytesRem  Pointer to the number of bytes remaining of the configuration descriptor
-			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor
-			 * \param[in] Type  Descriptor type value to search for
-			 * \param[in] BeforeType  Descriptor type value which must not be reached before the given Type descriptor
+			 * \param[in,out] BytesRem       Pointer to the number of bytes remaining of the configuration descriptor.
+			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor.
+			 * \param[in]     Type           Descriptor type value to search for.
+			 * \param[in]     BeforeType     Descriptor type value which must not be reached before the given Type descriptor.
 			 */
 			void USB_GetNextDescriptorOfTypeBefore(uint16_t* const BytesRem,
 			                                       void** const CurrConfigLoc,
@@ -246,10 +203,10 @@
 			 *  which must come after a descriptor of the second given type value. The bytes remaining value is
 			 *  automatically decremented.
 			 *
-			 * \param[in,out] BytesRem  Pointer to the number of bytes remaining of the configuration descriptor
-			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor
-			 * \param[in] Type  Descriptor type value to search for
-			 * \param[in] AfterType  Descriptor type value which must be reached before the given Type descriptor
+			 * \param[in,out] BytesRem       Pointer to the number of bytes remaining of the configuration descriptor.
+			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor.
+			 * \param[in]     Type           Descriptor type value to search for.
+			 * \param[in]     AfterType      Descriptor type value which must be reached before the given Type descriptor.
 			 */
 			void USB_GetNextDescriptorOfTypeAfter(uint16_t* const BytesRem,
 			                                      void** const CurrConfigLoc,
@@ -257,25 +214,68 @@
 			                                      const uint8_t AfterType)
 			                                      ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(2);
 
+			/** Searches for the next descriptor in the given configuration descriptor using a pre-made comparator
+			 *  function. The routine updates the position and remaining configuration descriptor bytes values
+			 *  automatically. If a comparator routine fails a search, the descriptor pointer is retreated back
+			 *  so that the next descriptor search invocation will start from the descriptor which first caused the
+			 *  original search to fail. This behaviour allows for one comparator to be used immediately after another
+			 *  has failed, starting the second search from the descriptor which failed the first.
+			 *
+			 *  Comparator functions should be standard functions which accept a pointer to the header of the current
+			 *  descriptor inside the configuration descriptor which is being compared, and should return a value from
+			 *  the \ref DSearch_Return_ErrorCodes_t enum as a uint8_t value.
+			 *
+			 *  \note This function is available in USB Host mode only.
+			 *
+			 *  \param[in,out] BytesRem           Pointer to an int storing the remaining bytes in the configuration descriptor.
+			 *  \param[in,out] CurrConfigLoc      Pointer to the current position in the configuration descriptor.
+			 *  \param[in]     ComparatorRoutine  Name of the comparator search function to use on the configuration descriptor.
+			 *
+			 *  \return Value of one of the members of the \ref DSearch_Comp_Return_ErrorCodes_t enum.
+			 *
+			 *  Usage Example:
+			 *  \code
+			 *  uint8_t EndpointSearcher(void* CurrentDescriptor); // Comparator Prototype
+			 *
+			 *  uint8_t EndpointSearcher(void* CurrentDescriptor)
+			 *  {
+			 *     if (DESCRIPTOR_TYPE(CurrentDescriptor) == DTYPE_Endpoint)
+			 *         return DESCRIPTOR_SEARCH_Found;
+			 *     else
+			 *         return DESCRIPTOR_SEARCH_NotFound;
+			 *  }
+			 *
+			 *  //...
+			 *  // After retrieving configuration descriptor:
+			 *  if (USB_Host_GetNextDescriptorComp(&BytesRemaining, &CurrentConfigLoc, EndpointSearcher) ==
+			 *      Descriptor_Search_Comp_Found)
+			 *  {
+			 *      // Do something with the endpoint descriptor
+			 *  }
+			 *  \endcode
+			 */
+			uint8_t USB_GetNextDescriptorComp(uint16_t* const BytesRem,
+			                                  void** const CurrConfigLoc,
+			                                  ConfigComparatorPtr_t const ComparatorRoutine);
+
 		/* Inline Functions: */
 			/** Skips over the current sub-descriptor inside the configuration descriptor, so that the pointer then
 			    points to the next sub-descriptor. The bytes remaining value is automatically decremented.
 			 *
-			 * \param[in,out] BytesRem  Pointer to the number of bytes remaining of the configuration descriptor
-			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor
+			 * \param[in,out] BytesRem       Pointer to the number of bytes remaining of the configuration descriptor.
+			 * \param[in,out] CurrConfigLoc  Pointer to the current descriptor inside the configuration descriptor.
 			 */
 			static inline void USB_GetNextDescriptor(uint16_t* const BytesRem,
-			                                         void** const CurrConfigLoc) 
-			                                         ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(2);									  
+			                                         void** CurrConfigLoc) ATTR_NON_NULL_PTR_ARG(1) ATTR_NON_NULL_PTR_ARG(2);									  
 			static inline void USB_GetNextDescriptor(uint16_t* const BytesRem,
-			                                         void** const CurrConfigLoc)
+			                                         void** CurrConfigLoc)
 			{
 				uint16_t CurrDescriptorSize = DESCRIPTOR_CAST(*CurrConfigLoc, USB_Descriptor_Header_t).Size;
-
-				*CurrConfigLoc += CurrDescriptorSize;
+				
+				*CurrConfigLoc  = ((uint8_t*)*CurrConfigLoc) + CurrDescriptorSize;
 				*BytesRem      -= CurrDescriptorSize;
 			}
-			
+		
 	/* Disable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)
 			}

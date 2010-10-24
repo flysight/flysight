@@ -99,7 +99,13 @@
 
 			/** SPI data sample mode mask for SPI_Init(). Indicates that the data should be sampled on the trailing edge. */
 			#define SPI_SAMPLE_TRAILING            (1 << CPHA)
-			
+
+			/** SPI data order mask for SPI_Init(). Indicates that data should be shifted out MSB first. */
+			#define SPI_ORDER_MSB_FIRST            (0 << DORD)
+
+			/** SPI data order mask for SPI_Init(). Indicates that data should be shifted out MSB first. */
+			#define SPI_ORDER_LSB_FIRST            (1 << DORD)
+
 			/** SPI mode mask for SPI_Init(). Indicates that the SPI interface should be initialized into slave mode. */
 			#define SPI_MODE_SLAVE                 (0 << MSTR)
 
@@ -107,11 +113,11 @@
 			#define SPI_MODE_MASTER                (1 << MSTR)
 
 		/* Inline Functions: */
-			/** Initializes the SPI subsystem, ready for transfers. Must be called before calling any other
+			/** Initialises the SPI subsystem, ready for transfers. Must be called before calling any other
 			 *  SPI routines.
 			 *
 			 *  \param[in] SPIOptions  SPI Options, a mask consisting of one of each of the SPI_SPEED_*,
-			 *                         SPI_SCK_*, SPI_SAMPLE_* and SPI_MODE_* masks
+			 *                         SPI_SCK_*, SPI_SAMPLE_*, SPI_ORDER_* and SPI_MODE_* masks.
 			 */
 			static inline void SPI_Init(const uint8_t SPIOptions)
 			{
@@ -138,9 +144,9 @@
 			
 			/** Sends and receives a byte through the SPI interface, blocking until the transfer is complete.
 			 *
-			 *  \param[in] Byte  Byte to send through the SPI interface
+			 *  \param[in] Byte  Byte to send through the SPI interface.
 			 *
-			 *  \return Response byte from the attached SPI device
+			 *  \return Response byte from the attached SPI device.
 			 */
 			static inline uint8_t SPI_TransferByte(const uint8_t Byte) ATTR_ALWAYS_INLINE;
 			static inline uint8_t SPI_TransferByte(const uint8_t Byte)
@@ -153,7 +159,7 @@
 			/** Sends a byte through the SPI interface, blocking until the transfer is complete. The response
 			 *  byte sent to from the attached SPI device is ignored.
 			 *
-			 *  \param[in] Byte Byte to send through the SPI interface
+			 *  \param[in] Byte  Byte to send through the SPI interface.
 			 */
 			static inline void SPI_SendByte(const uint8_t Byte) ATTR_ALWAYS_INLINE;
 			static inline void SPI_SendByte(const uint8_t Byte)
@@ -165,7 +171,7 @@
 			/** Sends a dummy byte through the SPI interface, blocking until the transfer is complete. The response
 			 *  byte from the attached SPI device is returned.
 			 *
-			 *  \return The response byte from the attached SPI device
+			 *  \return The response byte from the attached SPI device.
 			 */
 			static inline uint8_t SPI_ReceiveByte(void) ATTR_ALWAYS_INLINE ATTR_WARN_UNUSED_RESULT;
 			static inline uint8_t SPI_ReceiveByte(void)

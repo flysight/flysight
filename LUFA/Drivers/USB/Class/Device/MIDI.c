@@ -62,14 +62,15 @@ bool MIDI_Device_ConfigureEndpoints(USB_ClassInfo_MIDI_Device_t* const MIDIInter
 	return true;
 }
 
-uint8_t MIDI_Device_SendEventPacket(USB_ClassInfo_MIDI_Device_t* const MIDIInterfaceInfo, MIDI_EventPacket_t* const Event)
+uint8_t MIDI_Device_SendEventPacket(USB_ClassInfo_MIDI_Device_t* const MIDIInterfaceInfo,
+                                    const MIDI_EventPacket_t* const Event)
 {
 	if (USB_DeviceState != DEVICE_STATE_Configured)
 	  return ENDPOINT_RWSTREAM_DeviceDisconnected;
 	
 	Endpoint_SelectEndpoint(MIDIInterfaceInfo->Config.DataINEndpointNumber);
 
-	if (Endpoint_IsReadWriteAllowed());
+	if (Endpoint_IsReadWriteAllowed())
 	{
 		uint8_t ErrorCode;
 
@@ -103,7 +104,8 @@ uint8_t MIDI_Device_Flush(USB_ClassInfo_MIDI_Device_t* const MIDIInterfaceInfo)
 	return ENDPOINT_READYWAIT_NoError;
 }
 
-bool MIDI_Device_ReceiveEventPacket(USB_ClassInfo_MIDI_Device_t* const MIDIInterfaceInfo, MIDI_EventPacket_t* const Event)
+bool MIDI_Device_ReceiveEventPacket(USB_ClassInfo_MIDI_Device_t* const MIDIInterfaceInfo,
+                                    MIDI_EventPacket_t* const Event)
 {
 	if (USB_DeviceState != DEVICE_STATE_Configured)
 	  return false;

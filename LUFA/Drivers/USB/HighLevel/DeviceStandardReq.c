@@ -29,12 +29,12 @@
 */
 
 #define  __INCLUDE_FROM_USB_DRIVER
-#include "../HighLevel/USBMode.h"
+#include "USBMode.h"
 
 #if defined(USB_CAN_BE_DEVICE)
 
-#define  __INCLUDE_FROM_DEVCHAPTER9_C
-#include "DevChapter9.h"
+#define  __INCLUDE_FROM_DEVICESTDREQ_C
+#include "DeviceStandardReq.h"
 
 uint8_t USB_ConfigurationNumber;
 
@@ -138,7 +138,7 @@ static void USB_Device_SetAddress(void)
 
 	USB_DeviceState = (DeviceAddress) ? DEVICE_STATE_Addressed : DEVICE_STATE_Default;
 
-	UDADDR = ((1 << ADDEN) | DeviceAddress);
+	USB_Device_SetDeviceAddress(DeviceAddress);
 
 	return;
 }
@@ -208,7 +208,7 @@ void USB_Device_GetConfiguration(void)
 	Endpoint_ClearStatusStage();
 }
 
-#if !defined(NO_INTERNAL_SERIAL) && (defined(USB_SERIES_6_AVR) || defined(USB_SERIES_7_AVR))
+#if !defined(NO_INTERNAL_SERIAL) && (USE_INTERNAL_SERIAL != NO_DESCRIPTOR)
 static char USB_Device_NibbleToASCII(uint8_t Nibble)
 {
 	Nibble = ((Nibble & 0x0F) + '0');
@@ -261,7 +261,7 @@ static void USB_Device_GetDescriptor(void)
 	uint8_t  DescriptorAddressSpace;
 	#endif
 	
-	#if !defined(NO_INTERNAL_SERIAL) && (defined(USB_SERIES_6_AVR) || defined(USB_SERIES_7_AVR))
+	#if !defined(NO_INTERNAL_SERIAL) && (USE_INTERNAL_SERIAL != NO_DESCRIPTOR)
 	if (USB_ControlRequest.wValue == ((DTYPE_String << 8) | USE_INTERNAL_SERIAL))
 	{
 		USB_Device_GetInternalSerialDescriptor();

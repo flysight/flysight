@@ -90,7 +90,7 @@
 
 	/* Pseudo-Functions for Doxygen: */
 	#if defined(__DOXYGEN__)
-		/** Initializes the joystick driver so that the joystick position can be read. This sets the appropriate
+		/** Initialises the joystick driver so that the joystick position can be read. This sets the appropriate
 		 *  I/O pins to inputs with their pull-ups enabled.
 		 */
 		static inline void Joystick_Init(void);
@@ -99,7 +99,7 @@
 		 *  currently facing in (multiple bits can be set).
 		 *
 		 *  \return Mask indicating the joystick direction - see corresponding board specific Joystick.h file
-		 *          for direction masks
+		 *          for direction masks.
 		 */
 		static inline uint8_t Joystick_GetStatus(void) ATTR_WARN_UNUSED_RESULT;
 	#endif

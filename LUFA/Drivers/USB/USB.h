@@ -37,20 +37,21 @@
  *  including any headers in the USB/LowLevel/ or USB/HighLevel/ subdirectories.
  */
 
-/** @defgroup Group_USB USB - LUFA/Drivers/USB/USB.h
+/** @defgroup Group_USB USB Core - LUFA/Drivers/USB/USB.h
  *
  *  \section Sec_Dependencies Module Source Dependencies
  *  The following files must be built with any user project that uses this module:
- *    - LUFA/Drivers/USB/LowLevel/DevChapter9.c
- *    - LUFA/Drivers/USB/LowLevel/Endpoint.c
- *    - LUFA/Drivers/USB/LowLevel/Host.c
- *    - LUFA/Drivers/USB/LowLevel/HostChapter9.c
- *    - LUFA/Drivers/USB/LowLevel/LowLevel.c
- *    - LUFA/Drivers/USB/LowLevel/Pipe.c
- *    - LUFA/Drivers/USB/LowLevel/USBInterrupt.c
- *    - LUFA/Drivers/USB/HighLevel/ConfigDescriptor.c
- *    - LUFA/Drivers/USB/HighLevel/Events.c
- *    - LUFA/Drivers/USB/HighLevel/USBTask.c
+ *    - LUFA/Drivers/USB/LowLevel/Device.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/LowLevel/Endpoint.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/LowLevel/Host.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/LowLevel/Pipe.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/LowLevel/USBController.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/LowLevel/USBInterrupt.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/HighLevel/ConfigDescriptor.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/HighLevel/DeviceStandardReq.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/HighLevel/Events.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/HighLevel/HostStandardReq.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
+ *    - LUFA/Drivers/USB/HighLevel/USBTask.c <i>(Makefile source module name: LUFA_SRC_USB)</i>
  *
  *  \section Module Description
  *  Driver and framework for the USB controller hardware on the USB series of AVR microcontrollers. This module
@@ -67,8 +68,7 @@
  *  of USB management functions found \ref Group_USBManagement.
  */
 
-/** \ingroup Group_USB
- *  @defgroup Group_USBClassDrivers USB Class Drivers
+/** @defgroup Group_USBClassDrivers USB Class Drivers
  *
  *  Drivers for both host and device mode of the standard USB classes, for rapid application development.
  *  Class drivers give a framework which sits on top of the low level library API, allowing for standard
@@ -173,8 +173,8 @@
  *
  *  To initialize the Class driver instance, the driver's <i><b>{Class Name}</b>_Device_ConfigureEndpoints()</i> function
  *  should be called in response to the \ref EVENT_USB_Device_ConfigurationChanged() event. This function will return a
- *  boolean value if the driver sucessfully initialized the instance. Like all the class driver functions, this function
- *  takes in the address of the specific instance you wish to initialize - in this manner, multiple seperate instances of
+ *  boolean value if the driver successfully initialized the instance. Like all the class driver functions, this function
+ *  takes in the address of the specific instance you wish to initialize - in this manner, multiple separate instances of
  *  the same class type can be initialized like thus:
  *
  *  \code
@@ -191,7 +191,7 @@
  *  <i><b>{Class Name}</b>_Device_USBTask()</i> function in the main program loop. The exact implementation of this
  *  function varies between class drivers, and can be used for any internal class driver purpose to maintain each
  *  instance. Again, this function uses the address of the instance to operate on, and thus needs to be called for each
- *  seperate instance, just like the main USB maintenance routine \ref USB_USBTask():
+ *  separate instance, just like the main USB maintenance routine \ref USB_USBTask():
  *
  *  \code
  *  int main(void)
@@ -271,9 +271,9 @@
  *  To initialize the Class driver instance, the driver's <i><b>{Class Name}</b>_Host_ConfigurePipes()</i> function
  *  should be called in response to the host state machine entering the \ref HOST_STATE_Addressed state. This function
  *  will return an error code from the class driver's <i><b>{Class Name}</b>_EnumerationFailure_ErrorCodes_t</i> enum
- *  to indicate if the driver sucessfully initialized the instance and bound it to an interface in the attached device.
- *  Like all the class driver functions, this function takes in the address of the specific instance you wish to initialize
- *  - in this manner, multiple seperate instances of the same class type can be initialized. A fragment of a Class Driver
+ *  to indicate if the driver successfully initialized the instance and bound it to an interface in the attached device.
+ *  Like all the class driver functions, this function takes in the address of the specific instance you wish to initialize - 
+ *  in this manner, multiple separate instances of the same class type can be initialized. A fragment of a Class Driver
  *  based Host mode application may look like the following:
  *
  *  \code
@@ -315,7 +315,7 @@
  *  <i><b>{Class Name}</b>_Host_USBTask()</i> function in the main program loop. The exact implementation of this
  *  function varies between class drivers, and can be used for any internal class driver purpose to maintain each
  *  instance. Again, this function uses the address of the instance to operate on, and thus needs to be called for each
- *  seperate instance, just like the main USB maintenance routine \ref USB_USBTask():
+ *  separate instance, just like the main USB maintenance routine \ref USB_USBTask():
  *
  *  \code
  *  int main(void)
@@ -372,19 +372,19 @@
 		#include "HighLevel/StdDescriptors.h"
 		#include "HighLevel/ConfigDescriptor.h"
 
-		#include "LowLevel/LowLevel.h"
+		#include "LowLevel/USBController.h"
 		#include "LowLevel/USBInterrupt.h"
 	
 		#if defined(USB_CAN_BE_HOST) || defined(__DOXYGEN__)
 			#include "LowLevel/Host.h"
-			#include "LowLevel/HostChapter9.h"
 			#include "LowLevel/Pipe.h"
+			#include "HighLevel/HostStandardReq.h"
 		#endif
 		
 		#if defined(USB_CAN_BE_DEVICE) || defined(__DOXYGEN__)
 			#include "LowLevel/Device.h"
-			#include "LowLevel/DevChapter9.h"
 			#include "LowLevel/Endpoint.h"
+			#include "HighLevel/DeviceStandardReq.h"
 		#endif
 		
 		#if defined(USB_CAN_BE_BOTH) || defined(__DOXYGEN__)
