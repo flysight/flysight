@@ -8,4 +8,9 @@
 *.sym
 *.tmp
 *.lss
+*.suo
+*.opensdf
+*.sdf
+*.log
+*.user
 /WinAVR/
