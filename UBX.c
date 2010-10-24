@@ -562,7 +562,10 @@ static void UBX_HandleVelocity(void)
 		}
 	}
 
-	UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
+	if (UBX_hasFix)
+	{
+		UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
+	}
 }
 
 static void UBX_HandleNavSol(void)
@@ -581,7 +584,7 @@ static void UBX_HandleNavSol(void)
 	}
 	else
 	{
-		UBX_SetTone(-1, 0, 0, 0, 0, 0);
+		UBX_SetTone(UBX_INVALID_VALUE, 0, 0, 0, 0, 0);
 		UBX_hasFix = 0;
 	}
 }
