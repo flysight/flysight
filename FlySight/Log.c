@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "Board/LEDs.h"
@@ -26,45 +27,51 @@ void Log_Flush(void)
 	}
 }
 
-void Log_WriteCSV(
-	char *format,
-	...)
+void Log_WriteChar(char ch)
 {
-	if (Log_initialized)
-	{
-		char    buffer[150];
-		va_list args;
-
-		va_start(args, format);
-		vsprintf(buffer, format, args);
-		
-		f_puts(buffer, &Log_csv);
-		
-		va_end(args);
-	}
+    f_putc(ch, &Log_csv);
 }
 
-void Log_WriteInt32(
-	int32_t val,
-	int8_t  dec)
+void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter)
 {
-	char    fmt[10];
-	char    buf[20];
-	uint8_t len;
-	char    temp;
-	
-	sprintf(fmt, "%%0%dld", dec + 1);
-	sprintf(buf, fmt, val);
-	len = strlen(buf);
-	
-	temp = buf[len - dec];
-	buf[len - dec] = 0;
-	f_puts(buf, &Log_csv);
+	char    buf[32];
+    char*   ptr   = buf + sizeof(buf);
+    int32_t value = val > 0 ? val : -val;
 
-	f_puts(".", &Log_csv);
-	
-	buf[len - dec] = temp;
-	f_puts(&buf[len - dec], &Log_csv);
+    *--ptr = 0;
+    *--ptr = delimiter;
+    while (value > 0 || dec > 0)
+    {
+        div_t res = div(value, 10);
+        *--ptr = res.rem + '0';
+        value = res.quot;
+        if (--dec == 0 && dot)
+        {
+            *--ptr = '.';
+        }
+    }
+    if (*ptr == '.')
+    {
+        *--ptr = '0';
+    }
+    if (val < 0)
+    {
+        *--ptr = '-';
+    }
+    f_puts(ptr, &Log_csv);
+}
+
+static void Log_ToDate(char* name, uint8_t a, uint8_t b, uint8_t c)
+{
+    name[0] = '0' + (a / 10); 
+    name[1] = '0' + (a % 10); 
+    name[2] = '-';
+    name[3] = '0' + (b / 10); 
+    name[4] = '0' + (b % 10); 
+    name[5] = '-';
+    name[6] = '0' + (c / 10); 
+    name[7] = '0' + (c % 10);
+    name[8] = 0;
 }
 
 void Log_Init(
@@ -88,12 +95,20 @@ void Log_Init(
 	              ((DWORD) min           << 5)  + 
 	              ((DWORD) (sec / 2));
 
-	sprintf(fname, "%02u-%02u-%02u", year % 100, month, day);
-	
+    // create folder.
+    year = year % 100;
+    Log_ToDate(fname, year, month, day);
+
 	res = f_mkdir(fname);
 	res = f_chdir(fname);
 
-	sprintf(fname, "%02u-%02u-%02u.csv", hour, min, sec);
+    // create file.
+    Log_ToDate(fname, hour, min, sec);
+    fname[ 8] = '.';
+    fname[ 9] = 'c';
+    fname[10] = 's';
+    fname[11] = 'v';
+    fname[12] = 0;
 
 	res = f_open(&Log_csv, fname, FA_WRITE | FA_CREATE_ALWAYS);
 	if (res != FR_OK)
@@ -103,9 +118,8 @@ void Log_Init(
 		return ;
 	}
 
-	f_puts("time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n", 
-		   &Log_csv);
-	f_puts(",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n", 
+	f_puts("time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n"
+           ",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n", 
 		   &Log_csv);
 	
 	Log_initialized = 1;
