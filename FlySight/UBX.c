@@ -483,11 +483,11 @@ static void UBX_SetTone(
 		}
 		else if (OVER(val_1, min_1, max_1))
 		{
-			Tone_SetPitch(Tone_max_pitch - 1);
+			Tone_SetPitch(TONE_MAX_PITCH - 1);
 		}
 		else
 		{
-			Tone_SetPitch(Tone_max_pitch * (val_1 - min_1) / (max_1 - min_1));
+			Tone_SetPitch(TONE_MAX_PITCH * (val_1 - min_1) / (max_1 - min_1));
 		}
 		
 		#undef OVER
@@ -576,7 +576,7 @@ static void UBX_HandleNavSol(void)
 	{
 		if (!UBX_hasBeeped)
 		{
-			Tone_Beep(Tone_max_pitch - 1, TONE_LENGTH_125_MS);
+			Tone_Beep(TONE_MAX_PITCH - 1, TONE_LENGTH_125_MS);
 			UBX_hasBeeped = 1;
 		}
 	
