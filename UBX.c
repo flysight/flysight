@@ -609,30 +609,30 @@ static void UBX_HandleTimeUTC(void)
 				nav_timeutc.min,
 				nav_timeutc.sec);
 		}
-		
-		Log_WriteCSV("%04u-%02u-%02uT%02u:%02u:%02u.%02ldZ,", 
-		             nav_timeutc.year,
-		             nav_timeutc.month,
-		             nav_timeutc.day,
-		             nav_timeutc.hour,
-		             nav_timeutc.min,
-		             nav_timeutc.sec,
-					 (nav_timeutc.nano + 5000000) / 10000000);
 
-		Log_WriteInt32(UBX_nav_pos_llh_saved.lat,  7); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_pos_llh_saved.lon,  7); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_pos_llh_saved.hMSL, 3); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_velned_saved.velN,  2); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_velned_saved.velE,  2); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_velned_saved.velD,  2); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_pos_llh_saved.hAcc, 3); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_pos_llh_saved.vAcc, 3); Log_WriteCSV(",");
-		Log_WriteInt32(UBX_nav_velned_saved.sAcc,  2); Log_WriteCSV(",");
+        int32_t ms = (nav_timeutc.nano + 5000000) / 10000000;
 		
-		Log_WriteCSV("%u,%u\r\n", 
-					 (unsigned int) UBX_nav_sol_saved.gpsFix,
-					 (unsigned int) UBX_nav_sol_saved.numSV);
-
+        Log_WriteInt32(nav_timeutc.year,  4, 0, '-');
+        Log_WriteInt32(nav_timeutc.month, 2, 0, '-');
+        Log_WriteInt32(nav_timeutc.day,   2, 0, 'T');
+        Log_WriteInt32(nav_timeutc.hour,  2, 0, ':');
+        Log_WriteInt32(nav_timeutc.min,   2, 0, ':');
+        Log_WriteInt32(nav_timeutc.sec,   2, 0, '.');
+        Log_WriteInt32(ms,                2, 0, 'Z');
+        Log_WriteChar(',');		
+		Log_WriteInt32(UBX_nav_pos_llh_saved.lat,  7, 1, ',');
+		Log_WriteInt32(UBX_nav_pos_llh_saved.lon,  7, 1, ',');
+		Log_WriteInt32(UBX_nav_pos_llh_saved.hMSL, 3, 1, ',');
+		Log_WriteInt32(UBX_nav_velned_saved.velN,  2, 1, ',');
+		Log_WriteInt32(UBX_nav_velned_saved.velE,  2, 1, ',');
+		Log_WriteInt32(UBX_nav_velned_saved.velD,  2, 1, ',');
+		Log_WriteInt32(UBX_nav_pos_llh_saved.hAcc, 3, 1, ',');
+		Log_WriteInt32(UBX_nav_pos_llh_saved.vAcc, 3, 1, ',');
+		Log_WriteInt32(UBX_nav_velned_saved.sAcc,  2, 1, ',');
+        Log_WriteInt32(UBX_nav_sol_saved.gpsFix,   0, 0, ',');
+        Log_WriteInt32(UBX_nav_sol_saved.numSV,    0, 0, '\r'); 
+        Log_WriteChar('\n');
+		
 		Log_Flush();
 		
 		Power_Release();
