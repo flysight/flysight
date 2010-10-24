@@ -7,9 +7,8 @@
 #define TONE_RATE_FLATLINE UINT16_MAX
 
 #define TONE_LENGTH_125_MS 3906
+#define TONE_MAX_PITCH     65280
 
-extern const    uint16_t Tone_max_pitch;
-extern const    uint16_t Tone_one_semitone;
 extern volatile uint16_t Tone_volume;
 
 void Tone_Init(void);
