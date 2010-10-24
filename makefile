@@ -123,6 +123,8 @@ LUFA_OPTS += -D USE_FLASH_DESCRIPTORS
 LUFA_OPTS += -D USE_STATIC_OPTIONS="(USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENABLED | USB_OPT_AUTO_PLL)"
 LUFA_OPTS += -D INTERRUPT_CONTROL_ENDPOINT
 
+# Create the LUFA source path variables by including the LUFA root makefile
+include $(LUFA_PATH)/LUFA/makefile
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c                                                 \
@@ -139,18 +141,8 @@ SRC = $(TARGET).c                                                 \
 	  FatFS/mmc.c                                                 \
 	  Lib/MMC.c                                                   \
 	  Lib/SCSI.c                                                  \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/LowLevel/DevChapter9.c        \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/LowLevel/Endpoint.c           \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/LowLevel/Host.c               \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/LowLevel/HostChapter9.c       \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/LowLevel/LowLevel.c           \
- 	  $(LUFA_PATH)/LUFA/Drivers/USB/LowLevel/Pipe.c               \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/LowLevel/USBInterrupt.c       \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/HighLevel/ConfigDescriptor.c  \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/HighLevel/Events.c            \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/HighLevel/USBTask.c           \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/Class/Device/MassStorage.c    \
-	  $(LUFA_PATH)/LUFA/Drivers/USB/Class/Host/MassStorage.c      \
+	  $(LUFA_SRC_USB)                                             \
+	  $(LUFA_SRC_USBCLASS)
 
 
 # List C++ source files here. (C dependencies are automatically generated.)
@@ -511,17 +503,6 @@ sizebefore:
 sizeafter:
 	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
 	2>/dev/null; echo; fi
-
-$(LUFA_PATH)/LUFA/LUFA_Events.lst:
-	@$(MAKE) -C $(LUFA_PATH)/LUFA/ LUFA_Events.lst
-
-checkinvalidevents: $(LUFA_PATH)/LUFA/LUFA_Events.lst
-	@echo
-	@echo Checking for invalid events...
-	@$(shell) avr-nm $(OBJ) | sed -n -e 's/^.*EVENT_/EVENT_/p' | \
-	                 grep -F -v --file=$(LUFA_PATH)/LUFA/LUFA_Events.lst > InvalidEvents.tmp || true
-	@sed -n -e 's/^/  WARNING - INVALID EVENT NAME: /p' InvalidEvents.tmp
-	@if test -s InvalidEvents.tmp; then exit 1; fi
 
 showliboptions:
 	@echo
