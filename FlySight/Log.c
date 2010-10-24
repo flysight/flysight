@@ -42,7 +42,7 @@ void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter)
     *--ptr = delimiter;
     while (value > 0 || dec > 0)
     {
-        div_t res = div(value, 10);
+        ldiv_t res = ldiv(value, 10);
         *--ptr = res.rem + '0';
         value = res.quot;
         if (--dec == 0 && dot)
