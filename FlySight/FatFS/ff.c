@@ -85,7 +85,8 @@
 
 #include "ff.h"			/* FatFs configurations and declarations */
 #include "diskio.h"		/* Declarations of low level disk I/O functions */
-
+#include <stdlib.h>
+#include <string.h>
 
 /*--------------------------------------------------------------------------
 
@@ -226,42 +227,6 @@ static WCHAR LfnBuf[_MAX_LFN + 1];
 /*-----------------------------------------------------------------------*/
 /* String functions                                                      */
 /*-----------------------------------------------------------------------*/
-
-/* Copy memory to memory */
-static
-void mem_cpy (void* dst, const void* src, int cnt) {
-	BYTE *d = (BYTE*)dst;
-	const BYTE *s = (const BYTE*)src;
-
-#if _WORD_ACCESS == 1
-	while (cnt >= sizeof(int)) {
-		*(int*)d = *(int*)s;
-		d += sizeof(int); s += sizeof(int);
-		cnt -= sizeof(int);
-	}
-#endif
-	while (cnt--)
-		*d++ = *s++;
-}
-
-/* Fill memory */
-static
-void mem_set (void* dst, int val, int cnt) {
-	BYTE *d = (BYTE*)dst;
-
-	while (cnt--)
-		*d++ = (BYTE)val;
-}
-
-/* Compare memory to memory */
-static
-int mem_cmp (const void* dst, const void* src, int cnt) {
-	const BYTE *d = (const BYTE *)dst, *s = (const BYTE *)src;
-	int r = 0;
-
-	while (cnt-- && (r = *d++ - *s++) == 0) ;
-	return r;
-}
 
 /* Check if chr is contained in the string */
 static
@@ -460,7 +425,7 @@ FRESULT sync (	/* FR_OK: successful, FR_DISK_ERR: failed */
 		/* Update FSInfo sector if needed */
 		if (fs->fs_type == FS_FAT32 && fs->fsi_flag) {
 			fs->winsect = 0;
-			mem_set(fs->win, 0, 512);
+			memset(fs->win, 0, 512);
 			ST_WORD(fs->win+BS_55AA, 0xAA55);
 			ST_DWORD(fs->win+FSI_LeadSig, 0x41615252);
 			ST_DWORD(fs->win+FSI_StrucSig, 0x61417272);
@@ -792,7 +757,7 @@ FRESULT dir_next (	/* FR_OK:Succeeded, FR_NO_FILE:End of table, FR_DENIED:EOT an
 					if (clst == 0xFFFFFFFF) return FR_DISK_ERR;
 					/* Clean-up stretched table */
 					if (move_window(dj->fs, 0)) return FR_DISK_ERR;	/* Flush active window */
-					mem_set(dj->fs->win, 0, SS(dj->fs));			/* Clear window buffer */
+					memset(dj->fs->win, 0, SS(dj->fs));			/* Clear window buffer */
 					dj->fs->winsect = clust2sect(dj->fs, clst);	/* Cluster start sector */
 					for (c = 0; c < dj->fs->csize; c++) {		/* Fill the new cluster with 0 */
 						dj->fs->wflag = 1;
@@ -939,7 +904,7 @@ void gen_numname (
 	int i, j;
 
 
-	mem_cpy(dst, src, 11);
+	memcpy(dst, src, 11);
 
 	if (seq > 5) {	/* On many collisions, generate a hash number instead of sequential number */
 		do seq = (seq >> 1) + (seq << 15) + (WORD)*lfn++; while (*lfn);
@@ -1036,11 +1001,11 @@ FRESULT dir_find (
 			} else {					/* An SFN entry is found */
 				if (!ord && sum == sum_sfn(dir)) break;	/* LFN matched? */
 				ord = 0xFF; dj->lfn_idx = 0xFFFF;	/* Reset LFN sequence */
-				if (!(dj->fn[NS] & NS_LOSS) && !mem_cmp(dir, dj->fn, 11)) break;	/* SFN matched? */
+				if (!(dj->fn[NS] & NS_LOSS) && !memcmp(dir, dj->fn, 11)) break;	/* SFN matched? */
 			}
 		}
 #else		/* Non LFN configuration */
-		if (!(dir[DIR_Attr] & AM_VOL) && !mem_cmp(dir, dj->fn, 11)) /* Is it a valid entry? */
+		if (!(dir[DIR_Attr] & AM_VOL) && !memcmp(dir, dj->fn, 11)) /* Is it a valid entry? */
 			break;
 #endif
 		res = dir_next(dj, 0);		/* Next entry */
@@ -1127,7 +1092,7 @@ FRESULT dir_register (	/* FR_OK:Successful, FR_DENIED:No free entry or too many 
 
 
 	fn = dj->fn; lfn = dj->lfn;
-	mem_cpy(sn, fn, 12);
+	memcpy(sn, fn, 12);
 
 	if (_FS_RPATH && (sn[NS] & NS_DOT)) return FR_INVALID_NAME;	/* Cannot create dot entry */
 
@@ -1199,8 +1164,8 @@ FRESULT dir_register (	/* FR_OK:Successful, FR_DENIED:No free entry or too many 
 		res = move_window(dj->fs, dj->sect);
 		if (res == FR_OK) {
 			dir = dj->dir;
-			mem_set(dir, 0, 32);		/* Clean the entry */
-			mem_cpy(dir, dj->fn, 11);	/* Put SFN */
+			memset(dir, 0, 32);		/* Clean the entry */
+			memcpy(dir, dj->fn, 11);	/* Put SFN */
 #if _USE_LFN
 			dir[DIR_NTres] = *(dj->fn+NS) & (NS_BODY | NS_EXT);	/* Put NT flag */
 #endif
@@ -1326,7 +1291,7 @@ FRESULT create_name (
 	lfn[di] = 0;						/* LFN is created */
 
 	/* Create SFN in directory form */
-	mem_set(dj->fn, ' ', 11);
+	memset(dj->fn, ' ', 11);
 	for (si = 0; lfn[si] == ' ' || lfn[si] == '.'; si++) ;	/* Strip leading spaces and dots */
 	if (si) cf |= NS_LOSS | NS_LFN;
 	while (di && lfn[di - 1] != '.') di--;	/* Find extension (di<=si: no extension) */
@@ -1402,7 +1367,7 @@ FRESULT create_name (
 
 	/* Create file name in directory form */
 	sfn = dj->fn;
-	mem_set(sfn, ' ', 11);
+	memset(sfn, ' ', 11);
 	si = i = b = 0; ni = 8;
 	p = *path;
 #if _FS_RPATH
@@ -2062,10 +2027,10 @@ FRESULT f_read (
 #if !_FS_READONLY && _FS_MINIMIZE <= 2				/* Replace one of the read sectors with cached data if it contains a dirty sector */
 #if _FS_TINY
 				if (fp->fs->wflag && fp->fs->winsect - sect < cc)
-					mem_cpy(rbuff + ((fp->fs->winsect - sect) * SS(fp->fs)), fp->fs->win, SS(fp->fs));
+					memcpy(rbuff + ((fp->fs->winsect - sect) * SS(fp->fs)), fp->fs->win, SS(fp->fs));
 #else
 				if ((fp->flag & FA__DIRTY) && fp->dsect - sect < cc)
-					mem_cpy(rbuff + ((fp->dsect - sect) * SS(fp->fs)), fp->buf, SS(fp->fs));
+					memcpy(rbuff + ((fp->dsect - sect) * SS(fp->fs)), fp->buf, SS(fp->fs));
 #endif
 #endif
 				rcnt = SS(fp->fs) * cc;				/* Number of bytes transferred */
@@ -2091,9 +2056,9 @@ FRESULT f_read (
 #if _FS_TINY
 		if (move_window(fp->fs, fp->dsect))			/* Move sector window */
 			ABORT(fp->fs, FR_DISK_ERR);
-		mem_cpy(rbuff, &fp->fs->win[fp->fptr % SS(fp->fs)], rcnt);	/* Pick partial sector */
+		memcpy(rbuff, &fp->fs->win[fp->fptr % SS(fp->fs)], rcnt);	/* Pick partial sector */
 #else
-		mem_cpy(rbuff, &fp->buf[fp->fptr % SS(fp->fs)], rcnt);	/* Pick partial sector */
+		memcpy(rbuff, &fp->buf[fp->fptr % SS(fp->fs)], rcnt);	/* Pick partial sector */
 #endif
 	}
 
@@ -2170,12 +2135,12 @@ FRESULT f_write (
 					ABORT(fp->fs, FR_DISK_ERR);
 #if _FS_TINY
 				if (fp->fs->winsect - sect < cc) {	/* Refill sector cache if it gets dirty by the direct write */
-					mem_cpy(fp->fs->win, wbuff + ((fp->fs->winsect - sect) * SS(fp->fs)), SS(fp->fs));
+					memcpy(fp->fs->win, wbuff + ((fp->fs->winsect - sect) * SS(fp->fs)), SS(fp->fs));
 					fp->fs->wflag = 0;
 				}
 #else
 				if (fp->dsect - sect < cc) {		/* Refill sector cache if it gets dirty by the direct write */
-					mem_cpy(fp->buf, wbuff + ((fp->dsect - sect) * SS(fp->fs)), SS(fp->fs));
+					memcpy(fp->buf, wbuff + ((fp->dsect - sect) * SS(fp->fs)), SS(fp->fs));
 					fp->flag &= ~FA__DIRTY;
 				}
 #endif
@@ -2201,10 +2166,10 @@ FRESULT f_write (
 #if _FS_TINY
 		if (move_window(fp->fs, fp->dsect))			/* Move sector window */
 			ABORT(fp->fs, FR_DISK_ERR);
-		mem_cpy(&fp->fs->win[fp->fptr % SS(fp->fs)], wbuff, wcnt);	/* Fit partial sector */
+		memcpy(&fp->fs->win[fp->fptr % SS(fp->fs)], wbuff, wcnt);	/* Fit partial sector */
 		fp->fs->wflag = 1;
 #else
-		mem_cpy(&fp->buf[fp->fptr % SS(fp->fs)], wbuff, wcnt);	/* Fit partial sector */
+		memcpy(&fp->buf[fp->fptr % SS(fp->fs)], wbuff, wcnt);	/* Fit partial sector */
 		fp->flag |= FA__DIRTY;
 #endif
 	}
@@ -2793,7 +2758,7 @@ FRESULT f_unlink (
 				if (dclst < 2) {
 					res = FR_INT_ERR;
 				} else {
-					mem_cpy(&sdj, &dj, sizeof(DIR));	/* Check if the sub-dir is empty or not */
+					memcpy(&sdj, &dj, sizeof(DIR));	/* Check if the sub-dir is empty or not */
 					sdj.sclust = dclst;
 					res = dir_sdi(&sdj, 2);		/* Exclude dot entries */
 					if (res == FR_OK) {
@@ -2857,14 +2822,14 @@ FRESULT f_mkdir (
 			if (res == FR_OK) {					/* Initialize the new directory table */
 				dsc = clust2sect(dj.fs, dcl);
 				dir = dj.fs->win;
-				mem_set(dir, 0, SS(dj.fs));
-				mem_set(dir+DIR_Name, ' ', 8+3);	/* Create "." entry */
+				memset(dir, 0, SS(dj.fs));
+				memset(dir+DIR_Name, ' ', 8+3);	/* Create "." entry */
 				dir[DIR_Name] = '.';
 				dir[DIR_Attr] = AM_DIR;
 				ST_DWORD(dir+DIR_WrtTime, tim);
 				ST_WORD(dir+DIR_FstClusLO, dcl);
 				ST_WORD(dir+DIR_FstClusHI, dcl >> 16);
-				mem_cpy(dir+32, dir, 32); 			/* Create ".." entry */
+				memcpy(dir+32, dir, 32); 			/* Create ".." entry */
 				dir[33] = '.'; pcl = dj.sclust;
 				if (dj.fs->fs_type == FS_FAT32 && pcl == dj.fs->dirbase)
 					pcl = 0;
@@ -2875,7 +2840,7 @@ FRESULT f_mkdir (
 					dj.fs->wflag = 1;
 					res = move_window(dj.fs, 0);
 					if (res != FR_OK) break;
-					mem_set(dir, 0, SS(dj.fs));
+					memset(dir, 0, SS(dj.fs));
 				}
 			}
 			if (res == FR_OK) res = dir_register(&dj);	/* Register the object to the directoy */
@@ -3013,8 +2978,8 @@ FRESULT f_rename (
 			if (!djo.dir) {						/* Is root dir? */
 				res = FR_NO_FILE;
 			} else {
-				mem_cpy(buf, djo.dir+DIR_Attr, 21);		/* Save the object information except for name */
-				mem_cpy(&djn, &djo, sizeof(DIR));		/* Check new object */
+				memcpy(buf, djo.dir+DIR_Attr, 21);		/* Save the object information except for name */
+				memcpy(&djn, &djo, sizeof(DIR));		/* Check new object */
 				res = follow_path(&djn, path_new);
 				if (res == FR_OK) res = FR_EXIST;			/* The new object name is already existing */
 				if (res == FR_NO_FILE) { 					/* Is it a valid path and no name collision? */
@@ -3022,7 +2987,7 @@ FRESULT f_rename (
 					res = dir_register(&djn);			/* Register the new entry */
 					if (res == FR_OK) {
 						dir = djn.dir;					/* Copy object information except for name */
-						mem_cpy(dir+13, buf+2, 19);
+						memcpy(dir+13, buf+2, 19);
 						dir[DIR_Attr] = buf[0] | AM_ARC;
 						djo.fs->wflag = 1;
 						if (djo.sclust != djn.sclust && (dir[DIR_Attr] & AM_DIR)) {		/* Update .. entry in the directory if needed */
@@ -3224,7 +3189,7 @@ FRESULT f_mkfs (
 	} else {
 		DWORD n_disk = b_vol + n_vol;
 
-		mem_set(fs->win, 0, SS(fs));
+		memset(fs->win, 0, SS(fs));
 		tbl = fs->win+MBR_Table;
 		ST_DWORD(tbl, 0x00010180);		/* Partition start in CHS */
 		if (n_disk < 63UL * 255 * 1024) {	/* Partition end in CHS */
@@ -3249,7 +3214,7 @@ FRESULT f_mkfs (
 
 	/* Create VBR */
 	tbl = fs->win;								/* Clear buffer */
-	mem_set(tbl, 0, SS(fs));
+	memset(tbl, 0, SS(fs));
 	ST_DWORD(tbl+BS_jmpBoot, 0x90FEEB);			/* Boot code (jmp $, nop) */
 	as = SS(fs);								/* Sector size */
 	ST_WORD(tbl+BPB_BytsPerSec, as);
@@ -3276,13 +3241,13 @@ FRESULT f_mkfs (
 		ST_WORD(tbl+BPB_BkBootSec, 6);			/* Backup boot record offset (VBR+6) */
 		tbl[BS_DrvNum32] = 0x80;				/* Drive number */
 		tbl[BS_BootSig32] = 0x29;				/* Extended boot signature */
-		mem_cpy(tbl+BS_VolLab32, "NO NAME    FAT32   ", 19);	/* Volume label, FAT signature */
+		memcpy(tbl+BS_VolLab32, "NO NAME    FAT32   ", 19);	/* Volume label, FAT signature */
 	} else {
 		ST_DWORD(tbl+BS_VolID, n);				/* VSN */
 		ST_WORD(tbl+BPB_FATSz16, n_fat);		/* Number of sectors per FAT */
 		tbl[BS_DrvNum] = 0x80;					/* Drive number */
 		tbl[BS_BootSig] = 0x29;					/* Extended boot signature */
-		mem_cpy(tbl+BS_VolLab, "NO NAME    FAT     ", 19);	/* Volume label, FAT signature */
+		memcpy(tbl+BS_VolLab, "NO NAME    FAT     ", 19);	/* Volume label, FAT signature */
 	}
 	ST_WORD(tbl+BS_55AA, 0xAA55);				/* Signature (Offset is fixed here regardless of sector size) */
 	if (disk_write(drv, tbl, b_vol, 1) != RES_OK)	/* Original (VBR) */
@@ -3292,7 +3257,7 @@ FRESULT f_mkfs (
 
 	/* Initialize FAT area */
 	for (i = 0; i < N_FATS; i++) {
-		mem_set(tbl, 0, SS(fs));			/* 1st sector of the FAT  */
+		memset(tbl, 0, SS(fs));			/* 1st sector of the FAT  */
 		n = md;								/* Media descriptor byte */
 		if (fmt != FS_FAT32) {
 			n |= (fmt == FS_FAT12) ? 0x00FFFF00 : 0xFFFFFF00;
@@ -3305,7 +3270,7 @@ FRESULT f_mkfs (
 		}
 		if (disk_write(drv, tbl, b_fat++, 1) != RES_OK)
 			return FR_DISK_ERR;
-		mem_set(tbl, 0, SS(fs));		/* Fill following FAT entries with zero */
+		memset(tbl, 0, SS(fs));		/* Fill following FAT entries with zero */
 		for (n = 1; n < n_fat; n++) {	/* This loop may take a time on FAT32 volume due to many single sector write */
 			if (disk_write(drv, tbl, b_fat++, 1) != RES_OK)
 				return FR_DISK_ERR;
