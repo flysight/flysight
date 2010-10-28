@@ -120,11 +120,9 @@ void Tone_SetRate(
 void Tone_SetPitch(
 	uint16_t index)
 {
-    int pitch = (((int)index * 3242) + 30212096) >> 16;
-
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		Tone_next_step = pitch;
+		Tone_next_step = ((int32_t) index * 3242 + 30212096) >> 16;
 	}
 }
 
