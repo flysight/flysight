@@ -51,6 +51,8 @@ namespace FlySightLog
           this.tabPage2 = new System.Windows.Forms.TabPage();
           this.tabPage3 = new System.Windows.Forms.TabPage();
           this.mRawData = new System.Windows.Forms.DataGridView();
+          this.mMetric = new System.Windows.Forms.RadioButton();
+          this.mImperial = new System.Windows.Forms.RadioButton();
           this.splitContainer1.Panel1.SuspendLayout();
           this.splitContainer1.Panel2.SuspendLayout();
           this.splitContainer1.SuspendLayout();
@@ -222,6 +224,8 @@ namespace FlySightLog
           // 
           // tabPage1
           // 
+          this.tabPage1.Controls.Add(this.mImperial);
+          this.tabPage1.Controls.Add(this.mMetric);
           this.tabPage1.Controls.Add(this.mAltitudeGraph);
           this.tabPage1.Controls.Add(this.mGraphMode);
           this.tabPage1.Controls.Add(this.mGraph);
@@ -301,6 +305,30 @@ namespace FlySightLog
           this.mRawData.Size = new System.Drawing.Size(655, 303);
           this.mRawData.TabIndex = 0;
           // 
+          // mMetric
+          // 
+          this.mMetric.AutoSize = true;
+          this.mMetric.Checked = true;
+          this.mMetric.Location = new System.Drawing.Point(157, 7);
+          this.mMetric.Name = "mMetric";
+          this.mMetric.Size = new System.Drawing.Size(54, 17);
+          this.mMetric.TabIndex = 3;
+          this.mMetric.TabStop = true;
+          this.mMetric.Text = "Metric";
+          this.mMetric.UseVisualStyleBackColor = true;
+          this.mMetric.CheckedChanged += new System.EventHandler(this.OnUnitCheckedChanged);
+          // 
+          // mImperial
+          // 
+          this.mImperial.AutoSize = true;
+          this.mImperial.Location = new System.Drawing.Point(217, 7);
+          this.mImperial.Name = "mImperial";
+          this.mImperial.Size = new System.Drawing.Size(61, 17);
+          this.mImperial.TabIndex = 4;
+          this.mImperial.Text = "Imperial";
+          this.mImperial.UseVisualStyleBackColor = true;
+          this.mImperial.CheckedChanged += new System.EventHandler(this.OnUnitCheckedChanged);
+          // 
           // MainForm
           // 
           this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -327,6 +355,7 @@ namespace FlySightLog
           this.splitContainer2.ResumeLayout(false);
           this.tabControl1.ResumeLayout(false);
           this.tabPage1.ResumeLayout(false);
+          this.tabPage1.PerformLayout();
           this.tabPage3.ResumeLayout(false);
           ((System.ComponentModel.ISupportInitialize)(this.mRawData)).EndInit();
           this.ResumeLayout(false);
@@ -356,6 +385,8 @@ namespace FlySightLog
       private Graph mGraph;
       private System.Windows.Forms.ComboBox mGraphMode;
       private Graph mAltitudeGraph;
+      private System.Windows.Forms.RadioButton mImperial;
+      private System.Windows.Forms.RadioButton mMetric;
 
    }
 }

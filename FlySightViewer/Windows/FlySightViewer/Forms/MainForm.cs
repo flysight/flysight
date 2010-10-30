@@ -44,6 +44,7 @@ namespace FlySightLog
                 mGraph.AllowSelect = false;
                 mAltitudeGraph.AllowSelect = true;
                 mAltitudeGraph.SelectChanged += new EventHandler(mAltitudeGraph_SelectChanged);
+                mAltitudeGraph.ShowUnits = false;
 
                 UpdateTitleBar();
             }
@@ -58,8 +59,8 @@ namespace FlySightLog
             }
             else
             {
-                mGraph.DisplayRange = new Range(-1, -1);
-                MainMap.DisplayRange = new Range(-1, -1);
+                mGraph.DisplayRange = Range.Invalid;
+                MainMap.DisplayRange = Range.Invalid;
             }
         }
 
@@ -368,6 +369,45 @@ namespace FlySightLog
             int idx = mGraphMode.SelectedIndex;
             Graph.DisplayMode[] values = (Graph.DisplayMode[])Enum.GetValues(typeof(Graph.DisplayMode));
             mGraph.Mode = values[idx];
+            UpdateGraphMode();
+        }
+
+        private void UpdateGraphMode()
+        {
+            if (mGraph.Mode == Graph.DisplayMode.GlideRatio)
+            {
+                mImperial.Hide();
+                mMetric.Hide();
+            }
+            else
+            {
+                mImperial.Show();
+                mMetric.Show();
+                switch (mGraph.Mode)
+                {
+                    case Graph.DisplayMode.HorizontalVelocity:
+                    case Graph.DisplayMode.VerticalVelocity:
+                        mImperial.Text = "MPH";
+                        mMetric.Text = "KMPH";
+                        break;
+                    case Graph.DisplayMode.Altitude:
+                        mImperial.Text = "ft (x1000)";
+                        mMetric.Text = "KM";
+                        break;
+                }
+            }
+        }
+
+        private void OnUnitCheckedChanged(object sender, EventArgs e)
+        {
+            if (mImperial.Checked)
+            {
+                mGraph.Unit = Graph.Units.Imperial;
+            }
+            else
+            {
+                mGraph.Unit = Graph.Units.Metric;
+            }
         }
     }
 }

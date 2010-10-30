@@ -31,6 +31,7 @@ namespace FlySightLog
                 if (!object.ReferenceEquals(mEntry, value))
                 {
                     mEntry = value;
+                    mShowRange = Range.Invalid;
                     Setup();
                 }
             }
