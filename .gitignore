@@ -13,4 +13,5 @@
 *.sdf
 *.log
 *.user
+Thumbs.db
 /WinAVR/
