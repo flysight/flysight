@@ -45,14 +45,16 @@ namespace FlySightLog
           this.mJumpTree = new System.Windows.Forms.TreeView();
           this.tabControl1 = new System.Windows.Forms.TabControl();
           this.tabPage1 = new System.Windows.Forms.TabPage();
+          this.mImperial = new System.Windows.Forms.RadioButton();
+          this.mMetric = new System.Windows.Forms.RadioButton();
           this.mAltitudeGraph = new FlySightLog.Source.Graph();
           this.mGraphMode = new System.Windows.Forms.ComboBox();
           this.mGraph = new FlySightLog.Source.Graph();
           this.tabPage2 = new System.Windows.Forms.TabPage();
           this.tabPage3 = new System.Windows.Forms.TabPage();
           this.mRawData = new System.Windows.Forms.DataGridView();
-          this.mMetric = new System.Windows.Forms.RadioButton();
-          this.mImperial = new System.Windows.Forms.RadioButton();
+          this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+          this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
           this.splitContainer1.Panel1.SuspendLayout();
           this.splitContainer1.Panel2.SuspendLayout();
           this.splitContainer1.SuspendLayout();
@@ -122,6 +124,8 @@ namespace FlySightLog
           this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.newToolStripMenuItem,
             this.openToolStripMenuItem,
+            this.toolStripSeparator1,
+            this.toolStripMenuItem3,
             this.toolStripMenuItem1,
             this.saveToolStripMenuItem,
             this.saveAsToolStripMenuItem,
@@ -135,7 +139,7 @@ namespace FlySightLog
           // 
           this.newToolStripMenuItem.Name = "newToolStripMenuItem";
           this.newToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-          this.newToolStripMenuItem.Text = "New";
+          this.newToolStripMenuItem.Text = "&New";
           this.newToolStripMenuItem.Click += new System.EventHandler(this.newToolStripMenuItem_Click);
           // 
           // openToolStripMenuItem
@@ -143,7 +147,7 @@ namespace FlySightLog
           this.openToolStripMenuItem.Name = "openToolStripMenuItem";
           this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
           this.openToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-          this.openToolStripMenuItem.Text = "Open...";
+          this.openToolStripMenuItem.Text = "&Open...";
           this.openToolStripMenuItem.Click += new System.EventHandler(this.OnOpenClick);
           // 
           // toolStripMenuItem1
@@ -156,7 +160,7 @@ namespace FlySightLog
           this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
           this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
           this.saveToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-          this.saveToolStripMenuItem.Text = "Save...";
+          this.saveToolStripMenuItem.Text = "&Save...";
           this.saveToolStripMenuItem.Click += new System.EventHandler(this.OnSaveClick);
           // 
           // saveAsToolStripMenuItem
@@ -165,7 +169,7 @@ namespace FlySightLog
           this.saveAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift)
                       | System.Windows.Forms.Keys.S)));
           this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-          this.saveAsToolStripMenuItem.Text = "Save as...";
+          this.saveAsToolStripMenuItem.Text = "Save &as...";
           this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.OnSaveAsClick);
           // 
           // toolStripMenuItem2
@@ -178,7 +182,7 @@ namespace FlySightLog
           this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
           this.exitToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
           this.exitToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-          this.exitToolStripMenuItem.Text = "Exit";
+          this.exitToolStripMenuItem.Text = "E&xit";
           this.exitToolStripMenuItem.Click += new System.EventHandler(this.OnExit);
           // 
           // splitContainer2
@@ -237,6 +241,30 @@ namespace FlySightLog
           this.tabPage1.Text = "Graphs";
           this.tabPage1.UseVisualStyleBackColor = true;
           // 
+          // mImperial
+          // 
+          this.mImperial.AutoSize = true;
+          this.mImperial.Location = new System.Drawing.Point(217, 7);
+          this.mImperial.Name = "mImperial";
+          this.mImperial.Size = new System.Drawing.Size(61, 17);
+          this.mImperial.TabIndex = 4;
+          this.mImperial.Text = "Imperial";
+          this.mImperial.UseVisualStyleBackColor = true;
+          this.mImperial.CheckedChanged += new System.EventHandler(this.OnUnitCheckedChanged);
+          // 
+          // mMetric
+          // 
+          this.mMetric.AutoSize = true;
+          this.mMetric.Checked = true;
+          this.mMetric.Location = new System.Drawing.Point(157, 7);
+          this.mMetric.Name = "mMetric";
+          this.mMetric.Size = new System.Drawing.Size(54, 17);
+          this.mMetric.TabIndex = 3;
+          this.mMetric.TabStop = true;
+          this.mMetric.Text = "Metric";
+          this.mMetric.UseVisualStyleBackColor = true;
+          this.mMetric.CheckedChanged += new System.EventHandler(this.OnUnitCheckedChanged);
+          // 
           // mAltitudeGraph
           // 
           this.mAltitudeGraph.AllowSelect = false;
@@ -246,8 +274,10 @@ namespace FlySightLog
           this.mAltitudeGraph.LogEntry = null;
           this.mAltitudeGraph.Mode = FlySightLog.Source.Graph.DisplayMode.Altitude;
           this.mAltitudeGraph.Name = "mAltitudeGraph";
+          this.mAltitudeGraph.ShowUnits = true;
           this.mAltitudeGraph.Size = new System.Drawing.Size(649, 61);
           this.mAltitudeGraph.TabIndex = 2;
+          this.mAltitudeGraph.Unit = FlySightLog.Source.Graph.Units.Metric;
           // 
           // mGraphMode
           // 
@@ -270,8 +300,10 @@ namespace FlySightLog
           this.mGraph.LogEntry = null;
           this.mGraph.Mode = FlySightLog.Source.Graph.DisplayMode.Altitude;
           this.mGraph.Name = "mGraph";
+          this.mGraph.ShowUnits = true;
           this.mGraph.Size = new System.Drawing.Size(649, 200);
           this.mGraph.TabIndex = 0;
+          this.mGraph.Unit = FlySightLog.Source.Graph.Units.Metric;
           // 
           // tabPage2
           // 
@@ -305,29 +337,17 @@ namespace FlySightLog
           this.mRawData.Size = new System.Drawing.Size(655, 303);
           this.mRawData.TabIndex = 0;
           // 
-          // mMetric
+          // toolStripSeparator1
           // 
-          this.mMetric.AutoSize = true;
-          this.mMetric.Checked = true;
-          this.mMetric.Location = new System.Drawing.Point(157, 7);
-          this.mMetric.Name = "mMetric";
-          this.mMetric.Size = new System.Drawing.Size(54, 17);
-          this.mMetric.TabIndex = 3;
-          this.mMetric.TabStop = true;
-          this.mMetric.Text = "Metric";
-          this.mMetric.UseVisualStyleBackColor = true;
-          this.mMetric.CheckedChanged += new System.EventHandler(this.OnUnitCheckedChanged);
+          this.toolStripSeparator1.Name = "toolStripSeparator1";
+          this.toolStripSeparator1.Size = new System.Drawing.Size(190, 6);
           // 
-          // mImperial
+          // toolStripMenuItem3
           // 
-          this.mImperial.AutoSize = true;
-          this.mImperial.Location = new System.Drawing.Point(217, 7);
-          this.mImperial.Name = "mImperial";
-          this.mImperial.Size = new System.Drawing.Size(61, 17);
-          this.mImperial.TabIndex = 4;
-          this.mImperial.Text = "Imperial";
-          this.mImperial.UseVisualStyleBackColor = true;
-          this.mImperial.CheckedChanged += new System.EventHandler(this.OnUnitCheckedChanged);
+          this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+          this.toolStripMenuItem3.Size = new System.Drawing.Size(193, 22);
+          this.toolStripMenuItem3.Text = "&Import CSV";
+          this.toolStripMenuItem3.Click += new System.EventHandler(this.OnImportCSVClick);
           // 
           // MainForm
           // 
@@ -387,6 +407,8 @@ namespace FlySightLog
       private Graph mAltitudeGraph;
       private System.Windows.Forms.RadioButton mImperial;
       private System.Windows.Forms.RadioButton mMetric;
+      private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+      private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem3;
 
    }
 }

@@ -114,17 +114,29 @@ namespace FlySightLog
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             if (files != null)
             {
-                mJumpTree.BeginUpdate();
+                ImportFiles(files);
+            }
+        }
 
-                foreach (string file in files)
+        private void ImportFiles(string[] aPaths)
+        {
+            mJumpTree.BeginUpdate();
+
+            try
+            {
+                foreach (string file in aPaths)
                 {
                     ImportFile(file);
                 }
-
-                mJumpTree.Sort();
-                mJumpTree.EndUpdate();
-                mJumpTree.ExpandAll();
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Error importing.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            mJumpTree.Sort();
+            mJumpTree.EndUpdate();
+            mJumpTree.ExpandAll();
         }
 
         private void ImportFile(string aPath)
@@ -407,6 +419,22 @@ namespace FlySightLog
             else
             {
                 mGraph.Unit = Graph.Units.Metric;
+            }
+        }
+
+        private void OnImportCSVClick(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Title = "Import file";
+            dialog.Filter = "FlySight csv file (*.csv)|*.csv";
+            dialog.CheckFileExists = true;
+            dialog.CheckPathExists = true;
+            dialog.Multiselect = true;
+            dialog.ShowHelp = true;
+
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                ImportFiles(dialog.FileNames);
             }
         }
     }
