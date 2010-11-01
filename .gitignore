@@ -16,4 +16,5 @@
 Thumbs.db
 /WinAVR/
 /Docs/
-/obj/
+obj/
+Build/
