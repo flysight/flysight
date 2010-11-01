@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlySightViewer", "FlySightViewer\FlySightViewer.csproj", "{A2E07A76-8B2C-41A2-B23E-EA31AE94D706}"
 EndProject
+Project("{6141683F-8A12-4E36-9623-2EB02B2C2303}") = "FlySightViewerSetup", "FlySightViewerSetup\FlySightViewerSetup.isproj", "{5A10C2F4-A402-4739-B26F-65FED1BFB27A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A2E07A76-8B2C-41A2-B23E-EA31AE94D706} = {A2E07A76-8B2C-41A2-B23E-EA31AE94D706}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -13,6 +18,10 @@ Global
 		{A2E07A76-8B2C-41A2-B23E-EA31AE94D706}.Debug|x86.Build.0 = Debug|x86
 		{A2E07A76-8B2C-41A2-B23E-EA31AE94D706}.Release|x86.ActiveCfg = Release|x86
 		{A2E07A76-8B2C-41A2-B23E-EA31AE94D706}.Release|x86.Build.0 = Release|x86
+		{5A10C2F4-A402-4739-B26F-65FED1BFB27A}.Debug|x86.ActiveCfg = SingleImage
+		{5A10C2F4-A402-4739-B26F-65FED1BFB27A}.Debug|x86.Build.0 = SingleImage
+		{5A10C2F4-A402-4739-B26F-65FED1BFB27A}.Release|x86.ActiveCfg = SingleImage
+		{5A10C2F4-A402-4739-B26F-65FED1BFB27A}.Release|x86.Build.0 = SingleImage
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
