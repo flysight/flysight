@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using GMap.NET;
-using System.IO;
 using System.ComponentModel;
+using System.IO;
+using GMap.NET;
 
-namespace FlySightLog
+namespace FlySightViewer
 {
     public struct Record
     {
@@ -59,12 +58,64 @@ namespace FlySightLog
         }
     }
 
-    public interface LogEntry
+    public class LogEntry
     {
-        int ID { get; }
-        DateTime DateTime { get; }
-        IList<Record> Records { get; }
+        private DateTime mDate;
+        private List<Record> mRecords;
 
-        void Write(BinaryWriter aWriter);
+        public LogEntry(DateTime aDate, int aCapacity)
+        {
+            mDate = aDate;
+            mRecords = new List<Record>(aCapacity);
+        }
+
+        public DateTime DateTime
+        {
+            get { return mDate; }
+        }
+
+        public IList<Record> Records
+        {
+            get { return mRecords; }
+        }
+
+        public void Write(BinaryWriter aWriter)
+        {
+            aWriter.Write((byte)1);
+            aWriter.Write(mDate.ToBinary());
+            aWriter.Write(mRecords.Count);
+            foreach (Record rec in mRecords)
+            {
+                aWriter.Write(rec.Time.ToBinary());
+                aWriter.Write(rec.Location.Lat);
+                aWriter.Write(rec.Location.Lng);
+                aWriter.Write(rec.Altitude);
+                aWriter.Write(rec.VelocityNorth);
+                aWriter.Write(rec.VelocityEast);
+                aWriter.Write(rec.VelocityDown);
+            }
+        }
+
+        public static LogEntry Read(BinaryReader aReader)
+        {
+            int version = aReader.ReadByte();
+            DateTime date = DateTime.FromBinary(aReader.ReadInt64());
+            int count = aReader.ReadInt32();
+            LogEntry result = new LogEntry(date, count);
+
+            for (int i = 0; i < count; ++i)
+            {
+                Record rec = new Record();
+                rec.Time = DateTime.FromBinary(aReader.ReadInt64());
+                rec.Location = new PointLatLng(aReader.ReadDouble(), aReader.ReadDouble());
+                rec.Altitude = aReader.ReadSingle();
+                rec.VelocityNorth = aReader.ReadSingle();
+                rec.VelocityEast = aReader.ReadSingle();
+                rec.VelocityDown = aReader.ReadSingle();
+                result.Records.Add(rec);
+            }
+
+            return result;
+        }
     }
 }

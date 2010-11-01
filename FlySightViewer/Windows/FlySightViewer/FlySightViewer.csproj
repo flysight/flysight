@@ -8,17 +8,19 @@
     <ProjectGuid>{A2E07A76-8B2C-41A2-B23E-EA31AE94D706}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FlySightLog</RootNamespace>
-    <AssemblyName>FlySightLog</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <RootNamespace>FlySightViewer</RootNamespace>
+    <AssemblyName>FlySightViewer</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <ApplicationIcon>Resources\ImageReady.ico</ApplicationIcon>
+    <ApplicationIcon>ImageReady.ico</ApplicationIcon>
     <TargetFrameworkSubset>
     </TargetFrameworkSubset>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -29,10 +31,12 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
+    <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
+    <WebPage>publish.htm</WebPage>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -55,7 +59,7 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>
@@ -71,48 +75,279 @@
   <PropertyGroup />
   <PropertyGroup />
   <PropertyGroup />
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>67EB2082A8B93D9FACE23320790FB486660A1356</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>FlySightViewer_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\AboutBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AboutBox.Designer.cs">
+      <DependentUpon>AboutBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\DataForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\DataForm.Designer.cs">
+      <DependentUpon>DataForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Source\FlySight.cs" />
-    <Compile Include="Source\Graph.cs">
+    <Compile Include="Forms\GraphForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\GraphForm.Designer.cs">
+      <DependentUpon>GraphForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\JumpForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\JumpForm.Designer.cs">
+      <DependentUpon>JumpForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\MapForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\MapForm.Designer.cs">
+      <DependentUpon>MapForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GMap\Core.cs" />
+    <Compile Include="GMap\Delegates.cs" />
+    <Compile Include="GMap\FastReaderWriterLock.cs" />
+    <Compile Include="GMap\GMapControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Source\Graph.Designer.cs">
+    <Compile Include="GMap\GMaps.cs" />
+    <Compile Include="GMap\IGControl.cs" />
+    <Compile Include="GMap\KiberTileCache.cs" />
+    <Compile Include="GMap\LanguageType.cs" />
+    <Compile Include="GMap\LoadTask.cs" />
+    <Compile Include="GMap\MapType.cs" />
+    <Compile Include="GMap\MercatorProjection.cs" />
+    <Compile Include="GMap\MouseWheelZoomType.cs" />
+    <Compile Include="GMap\PointLatLng.cs" />
+    <Compile Include="GMap\PureImage.cs" />
+    <Compile Include="GMap\PureProjection.cs" />
+    <Compile Include="GMap\RawTile.cs" />
+    <Compile Include="GMap\RectLatLng.cs" />
+    <Compile Include="GMap\Singleton.cs" />
+    <Compile Include="GMap\SizeLatLng.cs" />
+    <Compile Include="GMap\Stuff.cs" />
+    <Compile Include="GMap\Tile.cs" />
+    <Compile Include="GMap\TileMatrix.cs" />
+    <Compile Include="GMap\WindowsFormsImage.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Source\FlySight.cs" />
+    <Compile Include="Source\gpx11.cs" />
+    <Compile Include="Source\GpxFile.cs" />
+    <Compile Include="Controls\Graph.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Graph.Designer.cs">
       <DependentUpon>Graph.cs</DependentUpon>
     </Compile>
     <Compile Include="Source\LogEntry.cs" />
-    <Compile Include="Source\Map.cs">
+    <Compile Include="Controls\Map.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Source\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Source\Project.cs" />
+    <Compile Include="Source\Range.cs" />
+    <Compile Include="WinFormsUI\Docking\AutoHideStripBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockAreasEditor.cs" />
+    <Compile Include="WinFormsUI\Docking\DockContent.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockContentCollection.cs" />
+    <Compile Include="WinFormsUI\Docking\DockContentEventArgs.cs" />
+    <Compile Include="WinFormsUI\Docking\DockContentHandler.cs" />
+    <Compile Include="WinFormsUI\Docking\DockOutlineBase.cs" />
+    <Compile Include="WinFormsUI\Docking\DockPane.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPane.SplitterControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPaneCaptionBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPaneCollection.cs" />
+    <Compile Include="WinFormsUI\Docking\DockPanel.AutoHideWindow.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanel.DockDragHandler.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanel.DragHandler.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanel.FocusManager.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanel.MdiClientController.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanel.Persistor.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanel.SplitterDragHandler.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockPanelExtender.cs" />
+    <Compile Include="WinFormsUI\Docking\DockPanelSkin.cs" />
+    <Compile Include="WinFormsUI\Docking\DockPaneStripBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockWindow.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockWindow.SplitterControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DockWindowCollection.cs" />
+    <Compile Include="WinFormsUI\Docking\DragForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\DummyControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\Enums.cs" />
+    <Compile Include="WinFormsUI\Docking\FloatWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\FloatWindowCollection.cs" />
+    <Compile Include="WinFormsUI\Docking\Helpers\DockHelper.cs" />
+    <Compile Include="WinFormsUI\Docking\Helpers\DrawHelper.cs" />
+    <Compile Include="WinFormsUI\Docking\Helpers\ResourceHelper.cs" />
+    <Compile Include="WinFormsUI\Docking\Helpers\Win32Helper.cs" />
+    <Compile Include="WinFormsUI\Docking\InertButtonBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\Interfaces.cs" />
+    <Compile Include="WinFormsUI\Docking\Localization.cs" />
+    <Compile Include="WinFormsUI\Docking\Measures.cs" />
+    <Compile Include="WinFormsUI\Docking\NestedDockingStatus.cs" />
+    <Compile Include="WinFormsUI\Docking\NestedPaneCollection.cs" />
+    <Compile Include="WinFormsUI\Docking\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\SplitterBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\Strings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\VisibleNestedPaneCollection.cs" />
+    <Compile Include="WinFormsUI\Docking\VS2005AutoHideStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\VS2005DockPaneCaption.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\VS2005DockPaneStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="WinFormsUI\Docking\Win32\Enums.cs" />
+    <Compile Include="WinFormsUI\Docking\Win32\NativeMethods.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Forms\AboutBox.resx">
+      <DependentUpon>AboutBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\DataForm.resx">
+      <DependentUpon>DataForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\GraphForm.resx">
+      <DependentUpon>GraphForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\JumpForm.resx">
+      <DependentUpon>JumpForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\MapForm.resx">
+      <DependentUpon>MapForm.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="WinFormsUI\Docking\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="WinFormsUI\Docking\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="GMap\License.txt" />
+    <Content Include="ImageReady.ico" />
     <Content Include="Resources\ImageReady.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\GMap.NET.Core\GMap.NET.Core.csproj">
-      <Project>{D0C39D9D-BED0-418B-9A5E-713176CAF40C}</Project>
-      <Name>GMap.NET.Core</Name>
-    </ProjectReference>
+    <Content Include="WinFormsUI\Docking\DockPanel.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PaneDiamond.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PaneDiamond_Bottom.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\Dockindicator_PaneDiamond_Fill.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PaneDiamond_Hotspot.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PaneDiamond_HotspotIndex.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PaneDiamond_Left.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PaneDiamond_Right.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PaneDiamond_Top.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelBottom.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelBottom_Active.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelFill.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelFill_Active.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelLeft.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelLeft_Active.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelRight.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelRight_Active.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelTop.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockIndicator_PanelTop_Active.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockPane_AutoHide.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockPane_Close.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockPane_Dock.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockPane_Option.bmp" />
+    <Content Include="WinFormsUI\Docking\Resources\DockPane_OptionOverflow.bmp" />
+    <Content Include="WinFormsUI\license.txt" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -132,7 +367,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="Properties\app.manifest" />
+    <None Include="WinFormsUI\Docking\Resources\Thumbs.db" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

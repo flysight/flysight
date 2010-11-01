@@ -1,16 +1,15 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FlySightViewer")]
-[assembly: AssemblyDescription("FlySightViewer")]
+[assembly: AssemblyTitle("FlySight Viewer")]
+[assembly: AssemblyDescription("FlySight Viewer")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("FlySight")]
-[assembly: AssemblyProduct("FlySightViewer")]
-[assembly: AssemblyCopyright("Copyright © FlySight 2010")]
+[assembly: AssemblyProduct("FlySight Viewer")]
+[assembly: AssemblyCopyright("Copyright (c) FlySight 2010")]
 [assembly: AssemblyTrademark("support@flysight.ca")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +31,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.2.0.0")]
+[assembly: AssemblyFileVersion("0.2.0.0")]
