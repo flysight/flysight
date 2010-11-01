@@ -54,6 +54,8 @@ int main(void)
 	AppPtr_t Bootloader = (AppPtr_t) BOOTLOADER_START_ADDR; 
 
 	const uint8_t count = eeprom_read_byte(BOOTLOADER_COUNT_ADDR);
+
+	DDRB |= (1 << 6) | (1 << 5);	// pull audio pins down
 	
 	if (count == 3)
 	{
