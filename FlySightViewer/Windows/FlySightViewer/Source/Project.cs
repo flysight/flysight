@@ -89,7 +89,14 @@ namespace FlySightViewer
                 bool changed = false;
                 foreach (string file in aPaths)
                 {
-                    changed |= ImportFile(file);
+                    if (File.Exists(file))
+                    {
+                        changed |= ImportFile(file);
+                    }
+                    else if (Directory.Exists(file))
+                    {
+                        changed |= ImportFolder(file);
+                    }
                 }
                 if (changed)
                 {
@@ -100,6 +107,19 @@ namespace FlySightViewer
             {
                 MessageBox.Show(Program.Form, ex.Message, "Error importing.", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static bool ImportFolder(string aPath)
+        {
+            bool changed = false;
+            List<string> files = new List<string>();
+            files.AddRange(Directory.GetFiles(aPath, "*.csv"));
+            files.AddRange(Directory.GetFiles(aPath, "*.gpx"));
+            foreach (string file in files)
+            {
+                changed |= ImportFile(file);
+            }
+            return changed;
         }
 
         private static bool ImportFile(string aPath)
