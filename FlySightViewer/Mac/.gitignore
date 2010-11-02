@@ -1,0 +1,18 @@
+# a hidden file created by the Mac OS X Finder.
+.DS_Store
+
+# build directories
+build/
+
+# XCode user data
+*.pbxuser
+*.mode?v?
+*.perspectivev?
+
+# documentation
+*.docset/
+debug.txt
+
+# Doxygen tagfile output
+core-plot-tags.xml
+core-plot-touch-tags.xml
