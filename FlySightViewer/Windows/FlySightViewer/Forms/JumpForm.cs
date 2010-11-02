@@ -1,7 +1,7 @@
-﻿using FlySightViewer.WinFormsUI.Docking;
-using System.Windows.Forms;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
+using FlySightViewer.WinFormsUI.Docking;
 
 namespace FlySightViewer.Forms
 {
@@ -135,6 +135,33 @@ namespace FlySightViewer.Forms
                 node.ExpandAll();
                 return node;
             }
+        }
+
+        private void mJumpTree_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Right)
+            {
+                TreeNode node = mJumpTree.GetNodeAt(e.X, e.Y);
+                if (node != null)
+                {
+                    LogEntry entry = node.Tag as LogEntry;
+                    if (entry != null)
+                    {
+                        MenuItem item = new MenuItem("Delete", new EventHandler(OnDeleteClick));
+                        item.Tag = entry;
+                        
+                        ContextMenu menu = new ContextMenu(new MenuItem[] {item});
+                        menu.Show(this, new System.Drawing.Point(e.X, e.Y));
+                    }
+                }
+            }
+        }
+
+        private void OnDeleteClick(object sender, EventArgs e)
+        {
+            MenuItem item = (MenuItem)sender;
+            LogEntry entry = (LogEntry)item.Tag;
+            Project.DeleteEntry(entry);
         }
     }
 }

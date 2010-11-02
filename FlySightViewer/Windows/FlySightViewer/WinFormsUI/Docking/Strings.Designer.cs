@@ -8,10 +8,10 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace FlySightViewer.WinFormsUI.Docking {
-    using System;
-    
-    
+namespace FlySightViewer.WinFormsUI.Docking
+{
+
+
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>

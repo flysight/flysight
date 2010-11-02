@@ -92,6 +92,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Design" />
+    <Reference Include="System.DirectoryServices" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -108,6 +109,18 @@
     </Compile>
     <Compile Include="Forms\DataForm.Designer.cs">
       <DependentUpon>DataForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\DownloadDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\DownloadDialog.Designer.cs">
+      <DependentUpon>DownloadDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\GpsDownloadForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\GpsDownloadForm.Designer.cs">
+      <DependentUpon>GpsDownloadForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\MainForm.cs">
       <SubType>Form</SubType>
@@ -132,6 +145,12 @@
     </Compile>
     <Compile Include="Forms\MapForm.Designer.cs">
       <DependentUpon>MapForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SettingsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SettingsDialog.Designer.cs">
+      <DependentUpon>SettingsDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="GMap\Core.cs" />
     <Compile Include="GMap\Delegates.cs" />
@@ -158,14 +177,40 @@
     <Compile Include="GMap\Tile.cs" />
     <Compile Include="GMap\TileMatrix.cs" />
     <Compile Include="GMap\WindowsFormsImage.cs" />
+    <Compile Include="GpsLibrary\Bounds2.cs" />
+    <Compile Include="GpsLibrary\Bounds3.cs" />
+    <Compile Include="GpsLibrary\GpsBabelCommunicator.cs" />
+    <Compile Include="GpsLibrary\GpsBabelWrapper.cs" />
+    <Compile Include="GpsLibrary\GpsUtilities.cs" />
+    <Compile Include="GpsLibrary\Gpx\Filtering\FileFilterChain.cs" />
+    <Compile Include="GpsLibrary\Gpx\Filtering\IFileFilter.cs" />
+    <Compile Include="GpsLibrary\Gpx\Filtering\IPointFilter.cs" />
+    <Compile Include="GpsLibrary\Gpx\Filtering\RemoveErrorPointsFilter.cs" />
+    <Compile Include="GpsLibrary\Gpx\GpsCopyrightMetadata.cs" />
+    <Compile Include="GpsLibrary\Gpx\GpsMetadata.cs" />
+    <Compile Include="GpsLibrary\Gpx\GpsPersonMetadata.cs" />
+    <Compile Include="GpsLibrary\Gpx\GpsTrackStatistics.cs" />
+    <Compile Include="GpsLibrary\Gpx\Gpx10DataTranslator.cs" />
+    <Compile Include="GpsLibrary\Gpx\Gpx11DataTranslator.cs" />
+    <Compile Include="GpsLibrary\Gpx\GpxFile.cs" />
+    <Compile Include="GpsLibrary\Gpx\GpxSchema.1.0.cs" />
+    <Compile Include="GpsLibrary\Gpx\GpxSchema.1.1.cs" />
+    <Compile Include="GpsLibrary\Gpx\IGpxDataTranslator.cs" />
+    <Compile Include="GpsLibrary\Gpx\Link.cs" />
+    <Compile Include="GpsLibrary\Gpx\Track.cs" />
+    <Compile Include="GpsLibrary\Gpx\TrackPoint.cs" />
+    <Compile Include="GpsLibrary\Gpx\TrackSegment.cs" />
+    <Compile Include="GpsLibrary\IGpsCommunicator.cs" />
+    <Compile Include="GpsLibrary\ObjectHelper.cs" />
+    <Compile Include="GpsLibrary\Point2.cs" />
+    <Compile Include="GpsLibrary\Point3.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Source\FlySight.cs" />
-    <Compile Include="Source\gpx11.cs" />
-    <Compile Include="Source\GpxFile.cs" />
+    <Compile Include="Source\GpxImporter.cs" />
     <Compile Include="Controls\Graph.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -180,6 +225,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\Project.cs" />
     <Compile Include="Source\Range.cs" />
+    <Compile Include="Source\Settings.cs" />
     <Compile Include="WinFormsUI\Docking\AutoHideStripBase.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -293,6 +339,12 @@
     <EmbeddedResource Include="Forms\DataForm.resx">
       <DependentUpon>DataForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\DownloadDialog.resx">
+      <DependentUpon>DownloadDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\GpsDownloadForm.resx">
+      <DependentUpon>GpsDownloadForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -305,6 +357,9 @@
     <EmbeddedResource Include="Forms\MapForm.resx">
       <DependentUpon>MapForm.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\SettingsDialog.resx">
+      <DependentUpon>SettingsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -321,6 +376,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="GMap\License.txt" />
+    <Content Include="GpsLibrary\Kosmos-license.txt" />
     <Content Include="ImageReady.ico" />
     <Content Include="Resources\ImageReady.ico" />
     <Content Include="WinFormsUI\Docking\DockPanel.bmp" />
@@ -368,6 +424,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="GpsLibrary\Gpx\gpx.1.0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="GpsLibrary\Gpx\gpx.1.1.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\app.manifest" />
     <None Include="WinFormsUI\Docking\Resources\Thumbs.db" />
   </ItemGroup>

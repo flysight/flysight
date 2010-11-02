@@ -9,13 +9,13 @@ namespace FlySightViewer
     {
         #region -- Static helpers ---------------------------------------------
 
-        public static LogEntry Import(string aPath)
+        public static LogEntry Import(string aKey, string aPath)
         {
             string[] lines = File.ReadAllLines(aPath);
             if (lines.Length > 2)
             {
                 Record rec = ParseRecord(lines[2]);
-                LogEntry entry = new LogEntry(rec.Time, lines.Length);
+                LogEntry entry = new LogEntry(aKey, rec.Time, lines.Length);
                 entry.Records.Add(rec);
 
                 for (int i = 3; i < lines.Length; i++)

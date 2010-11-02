@@ -1,6 +1,6 @@
 ﻿using System;
-using FlySightViewer.WinFormsUI.Docking;
 using FlySightViewer.Controls;
+using FlySightViewer.WinFormsUI.Docking;
 
 namespace FlySightViewer.Forms
 {

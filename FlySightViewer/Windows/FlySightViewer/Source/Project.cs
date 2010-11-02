@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using System.IO;
+using Brejc.GpsLibrary.Gpx;
 
 namespace FlySightViewer
 {
@@ -81,7 +82,7 @@ namespace FlySightViewer
 
         #region -- Import methods ---------------------------------------------
 
-        public static void ImportFiles(string[] aPaths)
+        public static void ImportFiles(params string[] aPaths)
         {
             try
             {
@@ -90,9 +91,9 @@ namespace FlySightViewer
                 {
                     changed |= ImportFile(file);
                 }
-                if (changed && ProjectEntriesChanged != null)
+                if (changed)
                 {
-                    ProjectEntriesChanged(null, EventArgs.Empty);
+                    FireEntriesChanged();
                 }
             }
             catch (Exception ex)
@@ -111,12 +112,11 @@ namespace FlySightViewer
                 switch (ext)
                 {
                     case ".csv":
-                        entry = FlySight.Import(aPath);
+                        entry = FlySight.Import(name, aPath);
                         AddEntry(name, entry);
                         return true;
                     case ".gpx":
-                        entry = GpxFile.Import(aPath);
-                        AddEntry(name, entry);
+                        GpxImporter.Import(name, aPath, AddEntry);
                         return true;
                     default:
                         MessageBox.Show(Program.Form, "Unsupported fileformat");
@@ -132,7 +132,18 @@ namespace FlySightViewer
             {
                 Dirty = true;
                 mEntries.Add(aName, aEntry);
-                //AddEntryToTree(aEntry);
+            }
+        }
+
+        public static void DeleteEntry(LogEntry aEntry)
+        {
+            if (aEntry != null)
+            {
+                if (mEntries.Remove(aEntry.Key))
+                {
+                    Dirty = true;
+                    FireEntriesChanged();
+                }
             }
         }
 
@@ -148,7 +159,7 @@ namespace FlySightViewer
             FireEntriesChanged();
         }
 
-        private static void SaveProject(string aPath)
+        public static void SaveProject(string aPath)
         {
             using (FileStream file = new FileStream(aPath, FileMode.Create, FileAccess.Write))
             {
@@ -170,7 +181,7 @@ namespace FlySightViewer
             }
         }
 
-        private static void LoadProject(string aPath)
+        public static void LoadProject(string aPath)
         {
             mEntries.Clear();
             using (FileStream file = new FileStream(aPath, FileMode.Open, FileAccess.Read))
@@ -188,7 +199,7 @@ namespace FlySightViewer
                     {
                         reader.ReadInt32();
                     }
-                    mEntries.Add(name, LogEntry.Read(reader));
+                    mEntries.Add(name, LogEntry.Read(name, reader));
                 }
 
                 Name = aPath;

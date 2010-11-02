@@ -50,7 +50,7 @@ namespace FlySightViewer.Controls
         protected override void OnPaintEtc(System.Drawing.Graphics g)
         {
             base.OnPaintEtc(g);
-            if (mEntry != null)
+            if (mEntry != null && mEntry.Records.Count > 1)
             {
                 int idx = 0;
                 foreach (Record rec in mEntry.Records)

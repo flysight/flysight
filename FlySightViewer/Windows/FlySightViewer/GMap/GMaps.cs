@@ -4,10 +4,8 @@ namespace GMap.NET
     using System;
     using System.Diagnostics;
     using System.Drawing;
-    using System.Globalization;
     using System.IO;
     using System.Net;
-    using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading;
     using GMap.NET.Internals;

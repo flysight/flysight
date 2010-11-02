@@ -60,13 +60,20 @@ namespace FlySightViewer
 
     public class LogEntry
     {
+        private string mKey;
         private DateTime mDate;
         private List<Record> mRecords;
 
-        public LogEntry(DateTime aDate, int aCapacity)
+        public LogEntry(string aKey, DateTime aDate, int aCapacity)
         {
+            mKey = aKey;
             mDate = aDate;
             mRecords = new List<Record>(aCapacity);
+        }
+
+        public string Key
+        {
+            get { return mKey; }
         }
 
         public DateTime DateTime
@@ -96,12 +103,12 @@ namespace FlySightViewer
             }
         }
 
-        public static LogEntry Read(BinaryReader aReader)
+        public static LogEntry Read(string aKey, BinaryReader aReader)
         {
             int version = aReader.ReadByte();
             DateTime date = DateTime.FromBinary(aReader.ReadInt64());
             int count = aReader.ReadInt32();
-            LogEntry result = new LogEntry(date, count);
+            LogEntry result = new LogEntry(aKey, date, count);
 
             for (int i = 0; i < count; ++i)
             {

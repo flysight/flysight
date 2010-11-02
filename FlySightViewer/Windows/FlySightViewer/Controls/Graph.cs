@@ -278,7 +278,10 @@ namespace FlySightViewer.Controls
                 }
 
                 // draw actual graph.
-                g.DrawLines(mPen, mPoints);
+                if (mPoints.Length > 1)
+                {
+                    g.DrawLines(mPen, mPoints);
+                }
 
                 // draw selection box.
                 if (mSelectMin > 0 && mSelectMax > 0)
@@ -386,7 +389,7 @@ namespace FlySightViewer.Controls
         }
 
         #endregion
-        
+
         public void LowPass()
         {
             int num = mValues.Length - 1;

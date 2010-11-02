@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 using FlySightViewer.Forms;
-using System.Reflection;
-using System.Diagnostics;
 
 namespace FlySightViewer
 {
@@ -37,11 +38,23 @@ namespace FlySightViewer
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] aArguments)
         {
+            // start app.
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             mMainForm = new MainForm();
+
+            // try loading files.
+            if (aArguments.Length > 0)
+            {
+                if (Path.GetExtension(aArguments[0]) == ".fly")
+                {
+                    Project.LoadProject(aArguments[0]);
+                }
+            }
+
+            // run.
             Application.Run(mMainForm);
         }
     }

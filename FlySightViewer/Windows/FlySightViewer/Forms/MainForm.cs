@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Windows.Forms;
 using FlySightViewer.WinFormsUI.Docking;
-using System.Net;
+using Brejc.GpsLibrary;
+using Brejc.GpsLibrary.Gpx;
 
 namespace FlySightViewer.Forms
 {
@@ -18,6 +19,8 @@ namespace FlySightViewer.Forms
         private GraphForm mGraphForm = new GraphForm();
         private JumpForm mJumpForm = new JumpForm();
         private DataForm mDataForm = new DataForm();
+        private Version mOnlineVersion;
+        private object mOnlineVersionLock = new object();
 
         public MainForm()
         {
@@ -35,6 +38,9 @@ namespace FlySightViewer.Forms
 
             // update once.
             UpdateTitleBar(null, EventArgs.Empty);
+
+            // load settings.
+            Settings.Instance.Load();
         }
 
         void mJumpForm_SelectedEntryChanged(object sender, EventArgs e)
@@ -91,6 +97,9 @@ namespace FlySightViewer.Forms
                 mGraphForm.Show(mMapForm.Pane, DockAlignment.Left, 0.5f);
                 mJumpForm.Show(dockPanel, DockState.DockLeft);
             }
+
+            // do our online version check.
+            mWorker.RunWorkerAsync();
             base.OnLoad(e);
         }
 
@@ -102,6 +111,7 @@ namespace FlySightViewer.Forms
             }
             else
             {
+                Settings.Instance.Save();
                 Directory.CreateDirectory(Application.UserAppDataPath);
                 string configFile = Path.Combine(Application.UserAppDataPath, "dock.config");
                 if (mSaveLayout)
@@ -171,6 +181,43 @@ namespace FlySightViewer.Forms
                 Project.ImportFiles(dialog.FileNames);
             }
         }
+        
+        private void OnImportGPXClick(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Title = "Import file";
+            dialog.Filter = "GPX file (*.gpx)|*.gpx";
+            dialog.CheckFileExists = true;
+            dialog.CheckPathExists = true;
+            dialog.Multiselect = true;
+            dialog.ShowHelp = true;
+
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                Project.ImportFiles(dialog.FileNames);
+            }
+        }
+
+        private void OnDownloadClick(object sender, EventArgs e)
+        {
+            GpsDownloadForm dlg = new GpsDownloadForm();
+            if (dlg.ShowDialog(this) == System.Windows.Forms.DialogResult.OK)
+            {
+                GpsBabelCommunicator gpsCommunicator = new GpsBabelCommunicator();
+                gpsCommunicator.GpsBabelWrapper.GpsBabelPath = Path.Combine(Settings.Instance.GPSBabelPath, "gpsbabel.exe");
+                gpsCommunicator.GpsBabelWrapper.InputPort = dlg.InputPort;
+                gpsCommunicator.GpsBabelWrapper.SourceType = dlg.SourceType;
+
+                try
+                {
+                    Project.ImportFiles(gpsCommunicator.DownloadGpsData());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, "Error downloading.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
 
         private void OnExitClick(object sender, EventArgs e)
         {
@@ -184,6 +231,12 @@ namespace FlySightViewer.Forms
         }
 
         private void OnCheckForUpdates(object sender, EventArgs e)
+        {
+            mWorker_DoWork(null, new DoWorkEventArgs(null));
+            mWorker_RunWorkerCompleted(null, new RunWorkerCompletedEventArgs(true, null, false));
+        }
+
+        private void mWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             string url = @"http://tomvandijck.com/flysight/version.txt";
             try
@@ -200,31 +253,64 @@ namespace FlySightViewer.Forms
                     {
                         using (StreamReader read = new StreamReader(responseStream))
                         {
-                            Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
-                            Version onlineVersion = new Version(read.ReadToEnd());
-                            Debug.WriteLine(string.Format("onlineVersion: {0} ", onlineVersion));
-
-                            if (onlineVersion > currentVersion)
+                            lock (mOnlineVersionLock)
                             {
-                                if (MessageBox.Show(this, "A new version is available online, do you wish to download it?", "Perfect", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.Yes)
-                                {
-                                    string downloadUrl = string.Format("http://tomvandijck.com/flysight/FlySightViewer-{0}-setup.exe", onlineVersion);
-                                    Process.Start(downloadUrl);
-                                    Close();
-                                }
-                            }
-                            else
-                            {
-                                MessageBox.Show(this, "You are running the latest version.", "Perfect");
+                                mOnlineVersion = new Version(read.ReadToEnd());
+                                Debug.WriteLine(string.Format("onlineVersion: {0} ", mOnlineVersion));
                             }
                         }
                     }
                 }
+
+                // make sure we're silent.
+                e.Result = false;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Unable to check version", "Error");
+                Debug.WriteLine(ex.ToString());
             }
+        }
+
+        private void mWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            lock (mOnlineVersionLock)
+            {
+                Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                if (mOnlineVersion > currentVersion)
+                {
+                    if (MessageBox.Show(this, "A new version is available online, do you wish to download it?",
+                        "New version available", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.Yes)
+                    {
+                        DownloadDialog dlg = new DownloadDialog();
+                        string installPath = dlg.DownloadInstaller(this, mOnlineVersion);
+                        if (!string.IsNullOrEmpty(installPath))
+                        {
+                            Process.Start(installPath);
+                            Close();
+                        }
+                    }
+                }
+                else if ((bool)e.Result)
+                {
+                    MessageBox.Show(this, "You are running the latest version.", "Perfect");
+                }
+            }
+        }
+
+        private void OnGotoWebsite(object sender, EventArgs e)
+        {
+            Process.Start("http://www.tomvandijck.com/flysight/");
+        }
+
+        private void OnGotoFlysight(object sender, EventArgs e)
+        {
+            Process.Start("http://www.flysight.ca/");
+        }
+
+        private void toolStripMenuItem7_Click(object sender, EventArgs e)
+        {
+            SettingsDialog dlg = new SettingsDialog();
+            dlg.ShowDialog(this);
         }
     }
 }

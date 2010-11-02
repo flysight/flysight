@@ -1,4 +1,5 @@
-﻿using FlySightViewer.WinFormsUI.Docking;
+﻿using System.Windows.Forms;
+using FlySightViewer.WinFormsUI.Docking;
 
 namespace FlySightViewer.Forms
 {
@@ -16,6 +17,8 @@ namespace FlySightViewer.Forms
                 if (value != null)
                 {
                     mRawData.DataSource = value.Records;
+                    mRawData.Columns[0].DefaultCellStyle.Format = "hh:mm:ss.ff";
+                    mRawData.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.DisplayedCells);
                 }
                 else
                 {

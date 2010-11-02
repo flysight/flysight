@@ -43,6 +43,7 @@
             this.mJumpTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.mJumpTree_AfterSelect);
             this.mJumpTree.DragDrop += new System.Windows.Forms.DragEventHandler(this.mJumpTree_DragDrop);
             this.mJumpTree.DragEnter += new System.Windows.Forms.DragEventHandler(this.mJumpTree_DragEnter);
+            this.mJumpTree.MouseClick += new System.Windows.Forms.MouseEventHandler(this.mJumpTree_MouseClick);
             // 
             // JumpForm
             // 
