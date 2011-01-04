@@ -18,7 +18,11 @@
 #define CHARGE_STATUS_PIN  PINC
 #define CHARGE_STATUS_MASK (1 << 3)
 
-#define BOOTLOADER_START_ADDR (0x7800)
+#if defined(__AVR_AT90USB1286__) || defined(__AVR_AT90USB1287__)
+	#define BOOTLOADER_START_ADDR (0xF000)
+#elif defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB647__)
+	#define BOOTLOADER_START_ADDR (0x7800)
+#endif
 #define BOOTLOADER_COUNT_ADDR ((uint8_t *) 0x01)
 
 uint8_t Main_activeLED ;
