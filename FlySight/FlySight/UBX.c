@@ -191,7 +191,6 @@ uint16_t UBX_rate          = 200;
 uint8_t  UBX_mode          = 2;
 uint32_t UBX_min           = 0;
 uint32_t UBX_max           = 300;
-uint32_t UBX_threshold     = 1000;
 
 uint8_t  UBX_mode_2        = 9;
 uint32_t UBX_min_2         = 300;
@@ -200,7 +199,9 @@ uint32_t UBX_min_rate      = 100;
 uint32_t UBX_max_rate      = 500;
 uint8_t  UBX_flatline      = 0;
 
-uint32_t UBX_sAccThreshold = 100;
+uint32_t UBX_threshold     = 1000;
+uint32_t UBX_hThreshold    = 0;
+uint32_t UBX_sAccThreshold = 150;
 
 static UBX_nav_posllh UBX_nav_pos_llh_saved;
 static UBX_nav_sol    UBX_nav_sol_saved;
@@ -514,7 +515,7 @@ static void UBX_GetValues(
 		*val = UBX_nav_velned_saved.velD;
 		break;
 	case 2: // Glide ratio
-		if (ABS(UBX_nav_velned_saved.velD) > UBX_threshold)
+		if (UBX_nav_velned_saved.velD != 0)
 		{
 			*val = 10000 * (int32_t) UBX_nav_velned_saved.gSpeed / UBX_nav_velned_saved.velD;
 			*min *= 100;
@@ -522,7 +523,7 @@ static void UBX_GetValues(
 		}
 		break;
 	case 3: // Inverse glide ratio
-		if (UBX_nav_velned_saved.gSpeed > UBX_threshold)
+		if (UBX_nav_velned_saved.gSpeed != 0)
 		{
 			*val = 10000 * UBX_nav_velned_saved.velD / (int32_t) UBX_nav_velned_saved.gSpeed;
 			*min *= 100;
@@ -544,9 +545,13 @@ static void UBX_HandleVelocity(void)
 
 	UBX_nav_velned_saved = *((UBX_nav_velned *) UBX_payload);
 
-	UBX_GetValues(UBX_mode,   &val_1, &min_1, &max_1);
-	UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
-	
+	if (ABS(UBX_nav_velned_saved.velD) >= UBX_threshold && 
+	    UBX_nav_velned_saved.gSpeed >= UBX_hThreshold)
+	{
+		UBX_GetValues(UBX_mode,   &val_1, &min_1, &max_1);
+		UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
+	}
+
 	if (UBX_mode_2 == 9)
 	{
 		x2 = x1;
