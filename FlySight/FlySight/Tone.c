@@ -46,12 +46,14 @@ static const uint8_t Tone_sine_table[] PROGMEM =
 	106, 109, 112, 115, 118, 121, 124, 128
 };
 
-static volatile uint16_t Tone_next_step = 461;
-static volatile uint16_t Tone_step      = 461;
-static volatile uint16_t Tone_rate      = 0;
-       volatile uint16_t Tone_volume    = 0;
-static volatile uint16_t Tone_length    = TONE_LENGTH_125_MS;
-static volatile uint16_t Tone_count     = 0;
+static volatile uint16_t Tone_next_step  = 461;
+static volatile uint32_t Tone_step       = (uint32_t) 461 << 16;
+static volatile uint16_t Tone_rate       = 0;
+       volatile uint16_t Tone_volume     = 0;
+static volatile uint16_t Tone_length     = TONE_LENGTH_125_MS;
+static volatile uint16_t Tone_count      = 0;
+static volatile uint32_t Tone_next_chirp = 0;
+static volatile uint32_t Tone_chirp      = 0; 
 
 static uint8_t Tone_enabled = 0;
 
@@ -63,7 +65,8 @@ ISR(TIMER1_OVF_vect)
 	{
 		uint8_t val = pgm_read_byte(&Tone_sine_table[phase >> 8]);
 		OCR1A = OCR1B = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
-		phase += Tone_step;
+		phase += (Tone_step >> 16);
+		Tone_step += Tone_chirp;
 	}
 	else
 	{
@@ -92,7 +95,8 @@ void Tone_Update(void)
 
 		if (0 - tone_timer < Tone_rate)
 		{
-			Tone_step = Tone_next_step;
+			Tone_step = (uint32_t) Tone_next_step << 16;
+			Tone_chirp = Tone_next_chirp;
 			Tone_count = 0;
 
 			if (TIMSK1 == 0)
@@ -126,23 +130,35 @@ void Tone_SetPitch(
 	}
 }
 
+void Tone_SetChirp(
+	uint32_t chirp)
+{
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		Tone_next_chirp = chirp;
+	}
+}
+
 void Tone_Beep(
 	uint16_t pitch,
 	uint16_t length)
 {
 	uint16_t prev_step   = Tone_next_step;
+	uint32_t prev_chirp  = Tone_next_chirp;
 	uint16_t prev_length = Tone_length;
 
 	while (TIMSK1);
 
 	Tone_SetPitch(pitch);
+	Tone_SetChirp(0);
 
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		Tone_length = length;
 	}
 
-	Tone_step = Tone_next_step;
+	Tone_step = (uint32_t) Tone_next_step << 16;
+	Tone_chirp = Tone_next_chirp;
 	Tone_count = 0;
 
 	TCCR1A = (1 << COM1A1) | (1 << COM1A0) | (1 << COM1B1) | (1 << WGM10);
@@ -154,7 +170,8 @@ void Tone_Beep(
 	
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		Tone_next_step = prev_step;
-		Tone_length    = prev_length;
+		Tone_next_step  = prev_step;
+		Tone_next_chirp = prev_chirp;
+		Tone_length     = prev_length;
 	}
 }

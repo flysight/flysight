@@ -15,6 +15,8 @@ extern uint32_t UBX_max_2;
 extern uint32_t UBX_min_rate;
 extern uint32_t UBX_max_rate;
 extern uint8_t  UBX_flatline;
+extern uint8_t  UBX_chirp;
+extern uint8_t  UBX_use_sas;
 
 extern uint32_t UBX_threshold;
 extern uint32_t UBX_hThreshold;
