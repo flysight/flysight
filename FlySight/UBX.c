@@ -3,6 +3,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 
 #include "Board/LEDs.h"
 #include "Log.h"
@@ -44,6 +45,13 @@
 #define UBX_NMEA_GPGSV      0x03
 #define UBX_NMEA_GPRMC      0x04
 #define UBX_NMEA_GPVTG      0x05
+
+static const uint16_t UBX_sas_table[] PROGMEM =
+{
+	1024, 1077, 1135, 1197,
+	1265, 1338, 1418, 1505,
+	1600, 1704, 1818, 1944
+};
 
 static uint8_t  UBX_msg_class;
 static uint8_t  UBX_msg_id;
@@ -189,15 +197,17 @@ UBX_ack_nak;
 uint8_t  UBX_model         = 6;
 uint16_t UBX_rate          = 200;
 uint8_t  UBX_mode          = 2;
-uint32_t UBX_min           = 0;
-uint32_t UBX_max           = 300;
+int32_t  UBX_min           = 0;
+int32_t  UBX_max           = 300;
 
 uint8_t  UBX_mode_2        = 9;
-uint32_t UBX_min_2         = 300;
-uint32_t UBX_max_2         = 1500;
+int32_t  UBX_min_2         = 300;
+int32_t  UBX_max_2         = 1500;
 uint32_t UBX_min_rate      = 100;
 uint32_t UBX_max_rate      = 500;
 uint8_t  UBX_flatline      = 0;
+uint8_t  UBX_chirp         = 0;
+uint8_t  UBX_use_sas       = 1;
 
 uint32_t UBX_threshold     = 1000;
 uint32_t UBX_hThreshold    = 0;
@@ -452,12 +462,12 @@ static void UBX_SetTone(
 	int32_t min_2,
 	int32_t max_2)
 {
+	#define UNDER(val,min,max) ((min < max) ? (val <= min) : (val >= min))
+	#define OVER(val,min,max)  ((min < max) ? (val >= max) : (val <= max))
+
 	if (val_1 != UBX_INVALID_VALUE &&
 	    val_2 != UBX_INVALID_VALUE)
 	{
-		#define UNDER(val,min,max) ((min < max) ? (val <= min) : (val >= min))
-		#define OVER(val,min,max)  ((min < max) ? (val >= max) : (val <= max))
-
 		if (UNDER(val_2, min_2, max_2))
 		{
 			if (UBX_flatline)
@@ -490,14 +500,34 @@ static void UBX_SetTone(
 		{
 			Tone_SetPitch(TONE_MAX_PITCH * (val_1 - min_1) / (max_1 - min_1));
 		}
-		
-		#undef OVER
-		#undef UNDER
+
+		if (UBX_chirp)
+		{
+			if (UNDER(val_1, min_1, max_1))
+			{
+				Tone_SetChirp(TONE_CHIRP_MAX);
+			}
+			else if (OVER(val_1, min_1, max_1))
+			{
+				Tone_SetChirp(-TONE_CHIRP_MAX);
+			}
+			else
+			{
+				Tone_SetChirp(0);
+			}
+		}
+		else
+		{
+			Tone_SetChirp(0);
+		}
 	}
 	else
 	{
 		Tone_SetRate(0);
 	}
+		
+	#undef OVER
+	#undef UNDER
 }
 
 static void UBX_GetValues(
@@ -506,13 +536,36 @@ static void UBX_GetValues(
 	int32_t *min, 
 	int32_t *max)
 {
+	uint16_t speed_mul = 1024;
+
+	if (UBX_use_sas)
+	{
+		if (UBX_nav_pos_llh_saved.height < 0)
+		{
+			speed_mul = pgm_read_word(&UBX_sas_table[0]);
+		}
+		else if (UBX_nav_pos_llh_saved.height >= 11534336L)
+		{
+			speed_mul = pgm_read_word(&UBX_sas_table[11]);
+		}
+		else
+		{
+			int32_t h = UBX_nav_pos_llh_saved.height / 1024	;
+			uint16_t i = h / 1024;
+			uint16_t j = h % 1024;
+			uint16_t y1 = pgm_read_word(&UBX_sas_table[i]);
+			uint16_t y2 = pgm_read_word(&UBX_sas_table[i + 1]);
+			speed_mul = y1 + ((y2 - y1) * j) / 1024;
+		}
+	}
+
 	switch (mode)
 	{
 	case 0: // Horizontal speed
-		*val = UBX_nav_velned_saved.gSpeed;
+		*val = (UBX_nav_velned_saved.gSpeed * 1024) / speed_mul;
 		break;
 	case 1: // Vertical speed
-		*val = UBX_nav_velned_saved.velD;
+		*val = (UBX_nav_velned_saved.velD * 1024) / speed_mul;
 		break;
 	case 2: // Glide ratio
 		if (UBX_nav_velned_saved.velD != 0)
@@ -531,7 +584,7 @@ static void UBX_GetValues(
 		}
 		break;
 	case 4: // Total speed
-		*val = UBX_nav_velned_saved.speed;
+		*val = (UBX_nav_velned_saved.speed * 1024) / speed_mul;
 		break;
 	}
 }

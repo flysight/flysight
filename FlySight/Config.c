@@ -13,6 +13,8 @@
 #define TRUE  (!FALSE)
 
 static const char Config_default[] PROGMEM = "\
+; Firmware version 20110811\r\n\
+\r\n\
 ; GPS settings\r\n\
 \r\n\
 Model:     6    ; Dynamic model\r\n\
@@ -40,6 +42,9 @@ Min:       0    ; Lowest pitch value\r\n\
 Max:       300  ; Highest pitch value\r\n\
                 ;   cm/s        in Mode 0, 1, or 4\r\n\
                 ;   ratio * 100 in Mode 2 or 3\r\n\
+Chirp:     0    ; Chirp when outside bounds\r\n\
+                ;   0 = No\r\n\
+                ;   1 = Yes\r\n\
 Volume:    6    ; 0 (min) to 8 (max)\r\n\
 \r\n\
 ; Rate settings\r\n\
@@ -69,7 +74,13 @@ Flatline:  0    ; Flatline at minimum rate\r\n\
 \r\n\
 Threshold: 1000 ; Minimum vertical speed for tone (cm/s)\r\n\
 H_Thresh:  0    ; Minimum horiztonal speed for tone (cm/s)\r\n\
-Speed_Acc: 150  ; Speed accuracy threshold (cm/s)";
+Speed_Acc: 150  ; Speed accuracy threshold (cm/s)\r\n\
+\r\n\
+; Miscellaneous\r\n\
+\r\n\
+Use_SAS:   1    ; Use skydiver's airspeed\r\n\
+                ;   0 = No\r\n\
+                ;   1 = Yes";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -143,6 +154,7 @@ void Config_Read(void)
 		HANDLE_VALUE("Min",       UBX_min,           val,     TRUE);
 		HANDLE_VALUE("Max",       UBX_max,           val,     TRUE);
 		HANDLE_VALUE("Volume",    Tone_volume,       8 - val, val >= 0 && val <= 8);
+		HANDLE_VALUE("Chirp",     UBX_chirp,         val,     val == 0 || val == 1);
 		HANDLE_VALUE("Mode_2",    UBX_mode_2,        val,     (val >= 0 && val <= 4) || (val == 9));
 		HANDLE_VALUE("Min_Val_2", UBX_min_2,         val,     TRUE);
 		HANDLE_VALUE("Max_Val_2", UBX_max_2,         val,     TRUE);
@@ -152,6 +164,7 @@ void Config_Read(void)
 		HANDLE_VALUE("Threshold", UBX_threshold,     val,     TRUE);
 		HANDLE_VALUE("H_Thresh",  UBX_hThreshold,    val,     TRUE);
 		HANDLE_VALUE("Speed_Acc", UBX_sAccThreshold, val,     TRUE);
+		HANDLE_VALUE("Use_SAS",   UBX_use_sas,       val,     val == 0 || val == 1);
 		
 		#undef HANDLE_VALUE
 	}
