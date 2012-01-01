@@ -3,12 +3,23 @@
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
 
+#include "FatFS/ff.h"
 #include "Tone.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
 #define AUDIO_DDR  DDRB
 #define AUDIO_MASK (1 << 6)
+
+#define TONE_PLAY_BUF_SIZE 512
+#define TONE_PLAY_BUF_HALF (TONE_PLAY_BUF_SIZE / 2)
+
+#define TONE_PLAY_IDLE   0
+#define TONE_PLAY_ACTIVE 1
+#define TONE_PLAY_READ   2
+
+#define TONE_SOURCE_BEEP 1
+#define TONE_SOURCE_FILE 2
 
 static const uint8_t Tone_sine_table[] PROGMEM =
 {
@@ -55,25 +66,84 @@ static volatile uint16_t Tone_count      = 0;
 static volatile uint32_t Tone_next_chirp = 0;
 static volatile uint32_t Tone_chirp      = 0; 
 
-static uint8_t Tone_enabled = 0;
+static          uint8_t  Tone_enabled      = 0;
+static volatile uint8_t  Tone_source_flags = 0;
+
+static          uint8_t  Tone_play_buf[TONE_PLAY_BUF_SIZE];
+static volatile uint16_t Tone_play_pos;
+static volatile uint16_t Tone_play_pos_end;
+static volatile uint16_t Tone_play_pos_read;
+static volatile uint8_t  Tone_play_status = TONE_PLAY_IDLE;
+
+static FIL Tone_play_file;
+
+static void Tone_EnableSource(
+	uint8_t flags)
+{
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		if (!Tone_source_flags)
+		{
+			TCCR1A = (1 << COM1A1) | (1 << COM1A0) | (1 << COM1B1) | (1 << WGM10);
+			TCCR1B = (1 << WGM12) | (1 << CS10);
+			TIMSK1 = (1 << TOIE1);
+			OCR1B  = 128;
+		}
+
+		Tone_source_flags |= flags;
+	}
+}
+
+static void Tone_DisableSource(
+	uint8_t flags)
+{
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		Tone_source_flags &= ~flags;
+		
+		if (!Tone_source_flags)
+		{
+			TCCR1A = 0;
+			TCCR1B = 0;
+			TIMSK1 = 0;
+		}
+	}
+}
 
 ISR(TIMER1_OVF_vect)
-{	
-	static uint16_t phase = 0;
+{
+	if (Tone_source_flags & TONE_SOURCE_BEEP)
+	{
+		static uint16_t phase = 0;
 
-	if (++Tone_count < Tone_length)
-	{
-		uint8_t val = pgm_read_byte(&Tone_sine_table[phase >> 8]);
-		OCR1A = OCR1B = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
-		phase += (Tone_step >> 16);
-		Tone_step += Tone_chirp;
+		if (++Tone_count < Tone_length)
+		{
+			uint8_t val = pgm_read_byte(&Tone_sine_table[phase >> 8]);
+			OCR1A = OCR1B = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
+			phase += (Tone_step >> 16);
+			Tone_step += Tone_chirp;
+		}
+		else
+		{
+			Tone_DisableSource(TONE_SOURCE_BEEP);
+			phase = 0;
+		}
 	}
-	else
+	else if (Tone_source_flags & TONE_SOURCE_FILE)
 	{
-		TCCR1A = 0;
-		TCCR1B = 0;
-		TIMSK1 = 0;
-		phase = 0;
+		uint8_t val = Tone_play_buf[Tone_play_pos];
+		OCR1A = OCR1B = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
+		Tone_play_pos = (Tone_play_pos + 1) % TONE_PLAY_BUF_SIZE;
+		
+		if (Tone_play_pos == Tone_play_pos_end)
+		{
+			Tone_DisableSource(TONE_SOURCE_FILE);
+			Tone_play_status = TONE_PLAY_IDLE;
+		}
+		else if (Tone_play_pos == Tone_play_pos_read)
+		{
+			Tone_play_status = TONE_PLAY_READ;
+		}
 	}
 }
 
@@ -95,17 +165,13 @@ void Tone_Update(void)
 
 		if (0 - tone_timer < Tone_rate)
 		{
+			while (Tone_source_flags & TONE_SOURCE_BEEP);
+		
 			Tone_step = (uint32_t) Tone_next_step << 16;
 			Tone_chirp = Tone_next_chirp;
 			Tone_count = 0;
-
-			if (TIMSK1 == 0)
-			{
-				TCCR1A = (1 << COM1A1) | (1 << COM1A0) | (1 << COM1B1) | (1 << WGM10);
-				TCCR1B = (1 << WGM12) | (1 << CS10);
-				TIMSK1 = (1 << TOIE1);
-				OCR1B  = 128;
-			}
+			
+			Tone_EnableSource (TONE_SOURCE_BEEP);
 		}
 
 		tone_timer += Tone_rate;
@@ -147,31 +213,70 @@ void Tone_Beep(
 	uint32_t prev_chirp  = Tone_next_chirp;
 	uint16_t prev_length = Tone_length;
 
-	while (TIMSK1);
+	while (Tone_source_flags & TONE_SOURCE_BEEP);
 
 	Tone_SetPitch(pitch);
 	Tone_SetChirp(0);
 
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-	{
-		Tone_length = length;
-	}
+	Tone_length = length;
 
 	Tone_step = (uint32_t) Tone_next_step << 16;
 	Tone_chirp = Tone_next_chirp;
 	Tone_count = 0;
 
-	TCCR1A = (1 << COM1A1) | (1 << COM1A0) | (1 << COM1B1) | (1 << WGM10);
-	TCCR1B = (1 << WGM12) | (1 << CS10);
-	TIMSK1 = (1 << TOIE1);
-	OCR1B  = 128;
+	Tone_EnableSource (TONE_SOURCE_BEEP);
 	
-	while (TIMSK1);
+	while (Tone_source_flags & TONE_SOURCE_BEEP);
 	
+	Tone_next_step  = prev_step;
+	Tone_next_chirp = prev_chirp;
+	Tone_length     = prev_length;
+}
+
+static void Tone_ReadData (
+	uint16_t start)
+{
+	UINT br;
+	
+	f_read(&Tone_play_file, Tone_play_buf + start, TONE_PLAY_BUF_HALF, &br);
+
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		Tone_next_step  = prev_step;
-		Tone_next_chirp = prev_chirp;
-		Tone_length     = prev_length;
+		Tone_play_pos_read = start;
+		Tone_play_status = TONE_PLAY_ACTIVE;
+	}
+
+	if (f_eof (&Tone_play_file))
+	{
+		Tone_play_pos_end = (start + br) % TONE_PLAY_BUF_SIZE;
+		f_close(&Tone_play_file);
+	}
+}
+
+void Tone_Play(
+	const char *fname)
+{
+	FRESULT res;
+
+	while (Tone_source_flags & TONE_SOURCE_FILE);
+	
+	res = f_open(&Tone_play_file, fname, FA_READ);
+	if (res != FR_OK) return;
+	
+	f_lseek(&Tone_play_file, 44);
+
+	Tone_ReadData (0);
+	
+	Tone_play_pos     = 0;
+	Tone_play_pos_end = TONE_PLAY_BUF_SIZE;
+
+	Tone_EnableSource (TONE_SOURCE_FILE);
+}
+
+void Tone_Task(void)
+{
+	if (Tone_play_status == TONE_PLAY_READ)
+	{
+		Tone_ReadData ((Tone_play_pos_read + TONE_PLAY_BUF_HALF) % TONE_PLAY_BUF_SIZE);
 	}
 }

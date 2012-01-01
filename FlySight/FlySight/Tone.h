@@ -20,4 +20,7 @@ void Tone_SetPitch(uint16_t index);
 void Tone_SetChirp(uint32_t chirp);
 void Tone_Beep(uint16_t pitch, uint16_t length);
 
+void Tone_Play(const char *fname);
+void Tone_Task(void);
+
 #endif

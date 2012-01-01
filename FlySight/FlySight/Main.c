@@ -123,9 +123,12 @@ int main(void)
 		Timer_Init();
 		UBX_Init();
 
+		// Tone_Play("test.wav");
+
 		for (;;)
 		{
 			UBX_Task();
+			Tone_Task();
 		}
 	}
 }
