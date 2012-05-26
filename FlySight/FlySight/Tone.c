@@ -125,11 +125,15 @@ ISR(TIMER1_OVF_vect)
 	{
 		if (++Tone_alarm_count < Tone_alarm_length)
 		{
-			alarm_phase += (Tone_alarm_step >> 16);
-			Tone_alarm_step += Tone_alarm_chirp;
+			uint32_t step = Tone_alarm_step;
+		
+			alarm_phase += (step >> 16);
+			step += Tone_alarm_chirp;
 
-			while (Tone_alarm_step <  TONE_MIN_STEP) Tone_alarm_step += TONE_RGE_STEP;
-			while (Tone_alarm_step >= TONE_MAX_STEP) Tone_alarm_step -= TONE_RGE_STEP;
+			while (step <  TONE_MIN_STEP) step += TONE_RGE_STEP;
+			while (step >= TONE_MAX_STEP) step -= TONE_RGE_STEP;
+			
+			Tone_alarm_step = step;
 		}
 		else
 		{
@@ -143,11 +147,15 @@ ISR(TIMER1_OVF_vect)
 	{
 		if (++Tone_beep_count < Tone_beep_length)
 		{
-			beep_phase += (Tone_beep_step >> 16);
-			Tone_beep_step += Tone_beep_chirp;
+			uint32_t step = Tone_beep_step;
+		
+			beep_phase += (step >> 16);
+			step += Tone_beep_chirp;
 
-			while (Tone_beep_step <  TONE_MIN_STEP) Tone_beep_step += TONE_RGE_STEP;
-			while (Tone_beep_step >= TONE_MAX_STEP) Tone_beep_step -= TONE_RGE_STEP;
+			while (step <  TONE_MIN_STEP) step += TONE_RGE_STEP;
+			while (step >= TONE_MAX_STEP) step -= TONE_RGE_STEP;
+
+			Tone_beep_step = step;
 		}
 		else
 		{
