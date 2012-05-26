@@ -12,6 +12,7 @@
 #include "Timer.h"
 #include "Tone.h"
 #include "uart.h"
+#include "UBX.h"
 
 #define UBX_INVALID_VALUE INT32_MAX
 
@@ -206,19 +207,24 @@ int32_t  UBX_max_2         = 1500;
 uint32_t UBX_min_rate      = 100;
 uint32_t UBX_max_rate      = 500;
 uint8_t  UBX_flatline      = 0;
-uint8_t  UBX_chirp         = 0;
+uint8_t  UBX_limits        = 1;
 uint8_t  UBX_use_sas       = 1;
 
 uint32_t UBX_threshold     = 1000;
 uint32_t UBX_hThreshold    = 0;
-uint32_t UBX_sAccThreshold = 150;
+
+UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
+uint8_t   UBX_num_alarms   = 0;
+uint32_t  UBX_alarm_window = 0;
 
 static UBX_nav_posllh UBX_nav_pos_llh_saved;
 static UBX_nav_sol    UBX_nav_sol_saved;
 static UBX_nav_velned UBX_nav_velned_saved;
 
-static volatile uint8_t UBX_hasFix    = 0;
-static          uint8_t UBX_hasBeeped = 0;
+static volatile uint8_t UBX_hasFix        = 0;
+static volatile uint8_t UBX_prevFix       = 0;
+static          uint8_t UBX_hasBeeped     = 0;
+static          uint8_t UBX_suppress_tone = 0;
 
 void UBX_Update(void)
 {
@@ -451,7 +457,64 @@ static uint8_t UBX_SendMessage(
 
 static void UBX_HandlePosition(void)
 {
+	const int32_t prev_hMSL = UBX_nav_pos_llh_saved.hMSL;
+	int32_t hMSL;
+
 	UBX_nav_pos_llh_saved = *((UBX_nav_posllh *) UBX_payload);
+	hMSL = UBX_nav_pos_llh_saved.hMSL;
+
+	if (UBX_hasFix && UBX_prevFix)
+	{
+		int32_t min = MIN(prev_hMSL, hMSL);
+		int32_t max = MAX(prev_hMSL, hMSL);
+
+		int i;
+	
+		for (i = 0; i < UBX_num_alarms; ++i)
+		{
+			const int32_t elev = UBX_alarms[i].elev;
+		
+			if (elev >= min && elev <  max)
+			{
+				switch (UBX_alarms[i].type)
+				{
+				case 1:	// beep
+					Tone_Alarm(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+					break ;
+				case 2:	// chirp up
+					Tone_Alarm(0, TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					break ;
+				case 3:	// chirp down
+					Tone_Alarm(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					break ;
+				case 4:	// warble
+					Tone_Alarm(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					break ;
+				}
+				
+				break;
+			}
+		}
+	}
+
+	UBX_suppress_tone = 0;
+	
+	if (UBX_hasFix)
+	{
+		int i;
+	
+		for (i = 0; i < UBX_num_alarms; ++i)
+		{
+			const int32_t diff = UBX_alarms[i].elev - UBX_nav_pos_llh_saved.hMSL;
+		
+			if (ABS (diff) < UBX_alarm_window)
+			{
+				Tone_SetRate(0);
+				UBX_suppress_tone = 1;
+				break;
+			}
+		}
+	}
 }
 
 static void UBX_SetTone(
@@ -462,6 +525,8 @@ static void UBX_SetTone(
 	int32_t min_2,
 	int32_t max_2)
 {
+	if (UBX_suppress_tone) return;
+
 	#define UNDER(val,min,max) ((min < max) ? (val <= min) : (val >= min))
 	#define OVER(val,min,max)  ((min < max) ? (val >= max) : (val <= max))
 
@@ -490,34 +555,41 @@ static void UBX_SetTone(
 
 		if (UNDER(val_1, min_1, max_1))
 		{
-			Tone_SetPitch(0);
+			if (UBX_limits == 0)
+			{
+				Tone_SetRate(0);
+			}
+			else if (UBX_limits == 1)
+			{
+				Tone_SetPitch(0);
+				Tone_SetChirp(0);
+			}
+			else
+			{
+				Tone_SetPitch(0);
+				Tone_SetChirp(TONE_CHIRP_MAX);
+			}
 		}
 		else if (OVER(val_1, min_1, max_1))
 		{
-			Tone_SetPitch(TONE_MAX_PITCH - 1);
+			if (UBX_limits == 0)
+			{
+				Tone_SetRate(0);
+			}
+			else if (UBX_limits == 1)
+			{
+				Tone_SetPitch(TONE_MAX_PITCH - 1);
+				Tone_SetChirp(0);
+			}
+			else
+			{
+				Tone_SetPitch(TONE_MAX_PITCH - 1);
+				Tone_SetChirp(-TONE_CHIRP_MAX);
+			}
 		}
 		else
 		{
 			Tone_SetPitch(TONE_MAX_PITCH * (val_1 - min_1) / (max_1 - min_1));
-		}
-
-		if (UBX_chirp)
-		{
-			if (UNDER(val_1, min_1, max_1))
-			{
-				Tone_SetChirp(TONE_CHIRP_MAX);
-			}
-			else if (OVER(val_1, min_1, max_1))
-			{
-				Tone_SetChirp(-TONE_CHIRP_MAX);
-			}
-			else
-			{
-				Tone_SetChirp(0);
-			}
-		}
-		else
-		{
 			Tone_SetChirp(0);
 		}
 	}
@@ -630,11 +702,13 @@ static void UBX_HandleNavSol(void)
 {
 	UBX_nav_sol_saved = *((UBX_nav_sol *) UBX_payload);
 
+	UBX_prevFix = UBX_hasFix;
+
 	if (UBX_nav_sol_saved.gpsFix == 0x03)
 	{
 		if (!UBX_hasBeeped)
 		{
-			Tone_Beep(TONE_MAX_PITCH - 1, TONE_LENGTH_125_MS);
+			Tone_Alarm(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 			UBX_hasBeeped = 1;
 		}
 	
@@ -653,8 +727,7 @@ static void UBX_HandleTimeUTC(void)
 
 	UBX_nav_timeutc nav_timeutc = *((UBX_nav_timeutc *) UBX_payload);
 
-	if (UBX_nav_sol_saved.gpsFix == 0x03 && 
-	    UBX_nav_velned_saved.sAcc < UBX_sAccThreshold)
+	if (UBX_nav_sol_saved.gpsFix == 0x03)
 	{
 		Power_Hold();
 	
