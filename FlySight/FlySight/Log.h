@@ -6,6 +6,7 @@ extern uint8_t Log_enable_csv;
 
 void Log_Flush(void);
 void Log_WriteChar(char ch);
+char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char delimiter);
 void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter);
 
 void Log_Init(uint16_t year, uint8_t month, uint8_t day, 

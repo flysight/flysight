@@ -37,14 +37,16 @@ static inline void LEDs_TurnOffLEDs(
 static inline void LEDs_SetAllLEDs(
 	const uint8_t LEDMask)
 {
-	PORTC = (PORTC & ~LEDS_ALL_LEDS) | LEDMask;
+	PORTC &= ~LEDS_ALL_LEDS;
+	PORTC |= LEDMask;
 }
 
 static inline void LEDs_ChangeLEDs(
 	const uint8_t LEDMask, 
 	const uint8_t ActiveMask)
 {
-	PORTC = (PORTC & ~LEDMask) | ActiveMask;
+	PORTC &= ~LEDMask;
+	PORTC |= ActiveMask;
 }
 
 static inline void LEDs_ToggleLEDs(
@@ -57,5 +59,5 @@ static inline uint8_t LEDs_GetLEDs(void)
 {
 	return PORTC & LEDS_ALL_LEDS;
 }
-		
+
 #endif

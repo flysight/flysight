@@ -4,6 +4,7 @@
 
 #include "../FatFS/diskio.h"
 #include "../FatFS/ff.h"
+#include "Main.h"
 #include "MMC.h"
 
 #define GREEN_LED_DDR  DDRC
@@ -15,7 +16,6 @@
 #define RED_LED_MASK   (1 << 6)
 
 static uint32_t MMC_mediaBlocks;
-static uint8_t  MMC_buffer[VIRTUAL_MEMORY_BLOCK_SIZE];
 
 ISR(TIMER0_COMPA_vect)
 {
@@ -24,7 +24,6 @@ ISR(TIMER0_COMPA_vect)
 
 uint8_t MMC_Init(void)
 {
-	static FATFS fs;
 	DSTATUS stat;
 
 	TCCR0A |= (1 << WGM01);
@@ -39,8 +38,6 @@ uint8_t MMC_Init(void)
 
 	SPCR = (1 << SPE) | (1 << MSTR) | (1 << SPR1);
 	SPSR = (1 << SPI2X);
-	
-	f_mount(0, &fs);
 	
 	stat = disk_initialize(0);
 	if (stat & STA_NOINIT)
@@ -67,7 +64,7 @@ void MMC_WriteBlocks(
 	while (TotalBlocks)
 	{
 		uint8_t BytesInBlockDiv16 = 0;
-		uint8_t *buf = MMC_buffer;
+		uint8_t *buf = Main_buffer;
 		
 		/* Write an endpoint packet sized data block to the dataflash */
 		while (BytesInBlockDiv16 < (VIRTUAL_MEMORY_BLOCK_SIZE >> 4))
@@ -111,7 +108,7 @@ void MMC_WriteBlocks(
 		}
 
 		/* Write a single sector */
-		disk_write(0, MMC_buffer, BlockAddress, 1);
+		disk_write(0, Main_buffer, BlockAddress, 1);
 			
 		/* Increment the block address */
 		BlockAddress++;
@@ -140,10 +137,10 @@ void MMC_ReadBlocks(
 	while (TotalBlocks)
 	{
 		uint8_t BytesInBlockDiv16 = 0;
-		uint8_t *buf = MMC_buffer;
+		uint8_t *buf = Main_buffer;
 		
 		/* read a single sector */
-		disk_read(0, MMC_buffer, BlockAddress, 1);
+		disk_read(0, Main_buffer, BlockAddress, 1);
 			
 		/* Increment the block address */
 		BlockAddress++;

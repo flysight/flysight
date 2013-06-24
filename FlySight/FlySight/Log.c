@@ -10,7 +10,6 @@
 
 #define FILE_NUMBER_ADDR 0
 
-static FIL     Log_csv;
 static uint8_t Log_initialized = 0;
 static DWORD   Log_fattime;
 
@@ -23,19 +22,17 @@ void Log_Flush(void)
 {
 	if (Log_initialized)
 	{
-		f_sync(&Log_csv);
+		f_sync(&Main_file);
 	}
 }
 
 void Log_WriteChar(char ch)
 {
-    f_putc(ch, &Log_csv);
+    f_putc(ch, &Main_file);
 }
 
-void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter)
+char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char delimiter)
 {
-	char    buf[32];
-    char*   ptr   = buf + sizeof(buf);
     int32_t value = val > 0 ? val : -val;
 
     *--ptr = 0;
@@ -58,7 +55,15 @@ void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter)
     {
         *--ptr = '-';
     }
-    f_puts(ptr, &Log_csv);
+	
+	return ptr;
+}
+
+void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter)
+{
+	char buf[16];
+
+    f_puts(Log_WriteInt32ToBuf(buf + sizeof(buf), val, dec, dot, delimiter), &Main_file);
 }
 
 static void Log_ToDate(char* name, uint8_t a, uint8_t b, uint8_t c)
@@ -110,7 +115,7 @@ void Log_Init(
     fname[11] = 'v';
     fname[12] = 0;
 
-	res = f_open(&Log_csv, fname, FA_WRITE | FA_CREATE_ALWAYS);
+	res = f_open(&Main_file, fname, FA_WRITE | FA_CREATE_ALWAYS);
 	if (res != FR_OK)
 	{
 		Main_activeLED = LEDS_RED;
@@ -120,7 +125,7 @@ void Log_Init(
 
 	f_puts("time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n"
            ",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n", 
-		   &Log_csv);
+		   &Main_file);
 	
 	Log_initialized = 1;
 }

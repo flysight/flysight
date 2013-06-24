@@ -13,7 +13,7 @@
 #define TRUE  (!FALSE)
 
 static const char Config_default[] PROGMEM = "\
-; Firmware version 20120521\r\n\
+; Firmware version 20130623\r\n\
 \r\n\
 ; GPS settings\r\n\
 \r\n\
@@ -70,6 +70,21 @@ Max_Rate:  500   ; Maximum rate (Hz * 100)\r\n\
 Flatline:  0     ; Flatline at minimum rate\r\n\
                  ;   0 = No\r\n\
                  ;   1 = Yes\r\n\
+\r\n\
+; Speech settings\r\n\
+\r\n\
+Sp_Mode:   2     ; Speech mode\r\n\
+                 ;   0 = Horizontal speed\r\n\
+                 ;   1 = Vertical speed\r\n\
+                 ;   2 = Glide ratio\r\n\
+                 ;   3 = Inverse glide ratio\r\n\
+                 ;   4 = Total speed\r\n\
+Sp_Units:  1     ; Speech units\r\n\
+                 ;   0 = km/h\r\n\
+                 ;   1 = mph\r\n\
+Sp_Rate:   0     ; Speech rate (s)\r\n\
+                 ;   0 = No speech\r\n\
+\r\n\
 ; Thresholds\r\n\
 \r\n\
 V_Thresh:  1000  ; Minimum vertical speed for tone (cm/s)\r\n\
@@ -118,8 +133,6 @@ static void Config_WriteString_P(
 
 void Config_Read(void)
 {
-	FIL     cfg_file;
-	
 	char    buf[80];
 	size_t  len;
 	char    *name;
@@ -129,10 +142,10 @@ void Config_Read(void)
 
 	FRESULT res;
 	
-	res = f_open(&cfg_file, "config.txt", FA_READ);
+	res = f_open(&Main_file, "config.txt", FA_READ);
 	if (res != FR_OK)
 	{
-		res = f_open(&cfg_file, "config.txt", FA_WRITE | FA_CREATE_ALWAYS);
+		res = f_open(&Main_file, "config.txt", FA_WRITE | FA_CREATE_ALWAYS);
 		if (res != FR_OK) 
 		{
 			Main_activeLED = LEDS_RED;
@@ -140,10 +153,10 @@ void Config_Read(void)
 			return ;
 		}
 
-		Config_WriteString_P(Config_default, &cfg_file);
-		f_close(&cfg_file);
+		Config_WriteString_P(Config_default, &Main_file);
+		f_close(&Main_file);
 
-		res = f_open(&cfg_file, "config.txt", FA_READ);
+		res = f_open(&Main_file, "config.txt", FA_READ);
 		if (res != FR_OK)
 		{
 			Main_activeLED = LEDS_RED;
@@ -152,9 +165,9 @@ void Config_Read(void)
 		}
 	}
 	
-	while (!f_eof(&cfg_file))
+	while (!f_eof(&Main_file))
 	{
-		f_gets(buf, sizeof(buf), &cfg_file);
+		f_gets(buf, sizeof(buf), &Main_file);
 
 		len = strcspn(buf, ";");
 		buf[len] = 0;
@@ -187,6 +200,9 @@ void Config_Read(void)
 		HANDLE_VALUE("H_Thresh",  UBX_hThreshold,    val,     TRUE);
 		HANDLE_VALUE("Use_SAS",   UBX_use_sas,       val,     val == 0 || val == 1);
 		HANDLE_VALUE("Window",    UBX_alarm_window,  val * 1000, TRUE);
+		HANDLE_VALUE("Sp_Mode",   UBX_sp_mode,       val,     val >= 0 && val <= 4);
+		HANDLE_VALUE("Sp_Units",  UBX_sp_units,      val,     val >= 0 && val <= 1);
+		HANDLE_VALUE("Sp_Rate",   UBX_sp_rate,       val * 1000, val >= 0 && val <= 32);
 		
 		#undef HANDLE_VALUE
 		
@@ -201,5 +217,5 @@ void Config_Read(void)
 		}
 	}
 	
-	f_close(&cfg_file);
+	f_close(&Main_file);
 }

@@ -47,6 +47,12 @@
 #define UBX_NMEA_GPRMC      0x04
 #define UBX_NMEA_GPVTG      0x05
 
+#define UBX_WRITE_IDLE      0
+#define UBX_WRITE_START     1
+
+#define UBX_UNITS_KMH       0
+#define UBX_UNITS_MPH       1
+
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
 	1024, 1077, 1135, 1197,
@@ -210,6 +216,10 @@ uint8_t  UBX_flatline      = 0;
 uint8_t  UBX_limits        = 1;
 uint8_t  UBX_use_sas       = 1;
 
+uint8_t  UBX_sp_mode       = 2;
+uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
+uint16_t UBX_sp_rate       = 0;
+
 uint32_t UBX_threshold     = 1000;
 uint32_t UBX_hThreshold    = 0;
 
@@ -217,14 +227,19 @@ UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
 uint8_t   UBX_num_alarms   = 0;
 uint32_t  UBX_alarm_window = 0;
 
-static UBX_nav_posllh UBX_nav_pos_llh_saved;
-static UBX_nav_sol    UBX_nav_sol_saved;
-static UBX_nav_velned UBX_nav_velned_saved;
+static UBX_nav_posllh  UBX_nav_pos_llh_saved;
+static UBX_nav_sol     UBX_nav_sol_saved;
+static UBX_nav_velned  UBX_nav_velned_saved;
+static UBX_nav_timeutc UBX_nav_timeutc_saved;
 
 static volatile uint8_t UBX_hasFix        = 0;
 static volatile uint8_t UBX_prevFix       = 0;
-static          uint8_t UBX_hasBeeped     = 0;
 static          uint8_t UBX_suppress_tone = 0;
+
+static int8_t   UBX_write_state = UBX_WRITE_IDLE;
+
+static char UBX_speech_buf[16] = "\0";
+static char *UBX_speech_ptr = UBX_speech_buf;
 
 void UBX_Update(void)
 {
@@ -479,16 +494,16 @@ static void UBX_HandlePosition(void)
 				switch (UBX_alarms[i].type)
 				{
 				case 1:	// beep
-					Tone_Alarm(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+					Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 					break ;
 				case 2:	// chirp up
-					Tone_Alarm(0, TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					Tone_Beep(0, TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
 					break ;
 				case 3:	// chirp down
-					Tone_Alarm(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
 					break ;
 				case 4:	// warble
-					Tone_Alarm(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					Tone_Beep(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
 					break ;
 				}
 				
@@ -661,8 +676,74 @@ static void UBX_GetValues(
 	}
 }
 
+static void UBX_SpeakValue(void)
+{
+	uint16_t speed_mul = 1024;
+
+	if (UBX_use_sas)
+	{
+		if (UBX_nav_pos_llh_saved.height < 0)
+		{
+			speed_mul = pgm_read_word(&UBX_sas_table[0]);
+		}
+		else if (UBX_nav_pos_llh_saved.height >= 11534336L)
+		{
+			speed_mul = pgm_read_word(&UBX_sas_table[11]);
+		}
+		else
+		{
+			int32_t h = UBX_nav_pos_llh_saved.height / 1024	;
+			uint16_t i = h / 1024;
+			uint16_t j = h % 1024;
+			uint16_t y1 = pgm_read_word(&UBX_sas_table[i]);
+			uint16_t y2 = pgm_read_word(&UBX_sas_table[i + 1]);
+			speed_mul = y1 + ((y2 - y1) * j) / 1024;
+		}
+	}
+
+	switch (UBX_sp_units)
+	{
+	case UBX_UNITS_KMH:
+		speed_mul = (uint16_t) ((speed_mul * 65536UL) / 18204);
+		break;
+	case UBX_UNITS_MPH:
+		speed_mul = (uint16_t) ((speed_mul * 65536UL) / 29297);
+		break;
+	}
+
+	UBX_speech_ptr = UBX_speech_buf + sizeof(UBX_speech_buf) - 1;
+	*UBX_speech_ptr = 0;
+
+	switch (UBX_sp_mode)
+	{
+	case 0: // Horizontal speed
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr + 1, (UBX_nav_velned_saved.gSpeed * 1024) / speed_mul, 2, 1, 0);
+		break;
+	case 1: // Vertical speed
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr + 1, (UBX_nav_velned_saved.velD * 1024) / speed_mul, 2, 1, 0);
+		break;
+	case 2: // Glide ratio
+		if (UBX_nav_velned_saved.velD != 0)
+		{
+			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr + 1, 100 * (int32_t) UBX_nav_velned_saved.gSpeed / UBX_nav_velned_saved.velD, 2, 1, 0);
+		}
+		break;
+	case 3: // Inverse glide ratio
+		if (UBX_nav_velned_saved.gSpeed != 0)
+		{
+			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr + 1, 100 * (int32_t) UBX_nav_velned_saved.velD / UBX_nav_velned_saved.gSpeed, 2, 1, 0);
+		}
+		break;
+	case 4: // Total speed
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr + 1, (UBX_nav_velned_saved.speed * 1024) / speed_mul, 2, 1, 0);
+		break;
+	}
+}
+
 static void UBX_HandleVelocity(void)
 {
+	static uint16_t sp_counter = 0;
+	
 	static int32_t x0 = -1, x1, x2;
 	
 	int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
@@ -695,6 +776,20 @@ static void UBX_HandleVelocity(void)
 	if (UBX_hasFix)
 	{
 		UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
+		
+		sp_counter += UBX_rate;
+		if (sp_counter >= UBX_sp_rate)
+		{
+			if (val_1 != UBX_INVALID_VALUE)
+			{
+				UBX_SpeakValue();
+			}
+			sp_counter -= UBX_sp_rate;
+		}
+	}
+	else
+	{
+		sp_counter = 0 ;
 	}
 }
 
@@ -706,12 +801,6 @@ static void UBX_HandleNavSol(void)
 
 	if (UBX_nav_sol_saved.gpsFix == 0x03)
 	{
-		if (!UBX_hasBeeped)
-		{
-			Tone_Alarm(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
-			UBX_hasBeeped = 1;
-		}
-	
 		UBX_hasFix = 1;
 	}
 	else
@@ -723,53 +812,28 @@ static void UBX_HandleNavSol(void)
 
 static void UBX_HandleTimeUTC(void)
 {
-	static uint8_t initializeLog = 1;
+	UBX_nav_timeutc_saved = *((UBX_nav_timeutc *) UBX_payload);
 
-	UBX_nav_timeutc nav_timeutc = *((UBX_nav_timeutc *) UBX_payload);
-
-	if (UBX_nav_sol_saved.gpsFix == 0x03)
+	if (UBX_hasFix)
 	{
-		Power_Hold();
-	
-		if (initializeLog)
+		if (!Log_IsInitialized())
 		{
-			initializeLog = 0;
+			Power_Hold();
 			
 			Log_Init(
-				nav_timeutc.year,
-				nav_timeutc.month,
-				nav_timeutc.day,
-				nav_timeutc.hour,
-				nav_timeutc.min,
-				nav_timeutc.sec);
-		}
+				UBX_nav_timeutc_saved.year,
+				UBX_nav_timeutc_saved.month,
+				UBX_nav_timeutc_saved.day,
+				UBX_nav_timeutc_saved.hour,
+				UBX_nav_timeutc_saved.min,
+				UBX_nav_timeutc_saved.sec);
+		
+			Tone_FlushWhenReady();
 
-        int32_t ms = (nav_timeutc.nano + 5000000) / 10000000;
+			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+		}
 		
-        Log_WriteInt32(nav_timeutc.year,  4, 0, '-');
-        Log_WriteInt32(nav_timeutc.month, 2, 0, '-');
-        Log_WriteInt32(nav_timeutc.day,   2, 0, 'T');
-        Log_WriteInt32(nav_timeutc.hour,  2, 0, ':');
-        Log_WriteInt32(nav_timeutc.min,   2, 0, ':');
-        Log_WriteInt32(nav_timeutc.sec,   2, 0, '.');
-        Log_WriteInt32(ms,                2, 0, 'Z');
-        Log_WriteChar(',');		
-		Log_WriteInt32(UBX_nav_pos_llh_saved.lat,  7, 1, ',');
-		Log_WriteInt32(UBX_nav_pos_llh_saved.lon,  7, 1, ',');
-		Log_WriteInt32(UBX_nav_pos_llh_saved.hMSL, 3, 1, ',');
-		Log_WriteInt32(UBX_nav_velned_saved.velN,  2, 1, ',');
-		Log_WriteInt32(UBX_nav_velned_saved.velE,  2, 1, ',');
-		Log_WriteInt32(UBX_nav_velned_saved.velD,  2, 1, ',');
-		Log_WriteInt32(UBX_nav_pos_llh_saved.hAcc, 3, 1, ',');
-		Log_WriteInt32(UBX_nav_pos_llh_saved.vAcc, 3, 1, ',');
-		Log_WriteInt32(UBX_nav_velned_saved.sAcc,  2, 1, ',');
-        Log_WriteInt32(UBX_nav_sol_saved.gpsFix,   0, 0, ',');
-        Log_WriteInt32(UBX_nav_sol_saved.numSV,    0, 0, '\r'); 
-        Log_WriteChar('\n');
-		
-		Log_Flush();
-		
-		Power_Release();
+		UBX_write_state = UBX_WRITE_START;
 	}
 }
 
@@ -863,6 +927,7 @@ void UBX_Init(void)
 void UBX_Task(void)
 {
 	unsigned int ch;
+	char fname[13];
 
 	if ((ch = uart_getc()) != UART_NO_DATA)
 	{
@@ -870,5 +935,82 @@ void UBX_Task(void)
 		{
 			UBX_HandleMessage();
 		}
+	}
+	
+	if (UBX_write_state != UBX_WRITE_IDLE && Tone_CanWrite())
+	{
+		Power_Hold();
+		
+		switch (UBX_write_state++)
+		{
+			case 1:
+				Log_WriteInt32(UBX_nav_timeutc_saved.year,  4, 0, '-');
+				Log_WriteInt32(UBX_nav_timeutc_saved.month, 2, 0, '-');
+				break;
+			case 2:
+				Log_WriteInt32(UBX_nav_timeutc_saved.day,   2, 0, 'T');
+				Log_WriteInt32(UBX_nav_timeutc_saved.hour,  2, 0, ':');
+				break;
+			case 3:
+				Log_WriteInt32(UBX_nav_timeutc_saved.min,   2, 0, ':');
+				Log_WriteInt32(UBX_nav_timeutc_saved.sec,   2, 0, '.');
+				break;
+			case 4:
+				Log_WriteInt32((UBX_nav_timeutc_saved.nano + 5000000) / 10000000, 2, 0, 'Z');
+				Log_WriteChar(',');
+				break;
+			case 5:
+				Log_WriteInt32(UBX_nav_pos_llh_saved.lat,   7, 1, ',');
+				Log_WriteInt32(UBX_nav_pos_llh_saved.lon,   7, 1, ',');
+				break;
+			case 6:
+				Log_WriteInt32(UBX_nav_pos_llh_saved.hMSL,  3, 1, ',');
+				Log_WriteInt32(UBX_nav_velned_saved.velN,   2, 1, ',');
+				break;
+			case 7:
+				Log_WriteInt32(UBX_nav_velned_saved.velE,   2, 1, ',');
+				Log_WriteInt32(UBX_nav_velned_saved.velD,   2, 1, ',');
+				break;
+			case 8:
+				Log_WriteInt32(UBX_nav_pos_llh_saved.hAcc,  3, 1, ',');
+				Log_WriteInt32(UBX_nav_pos_llh_saved.vAcc,  3, 1, ',');
+				break;
+			case 9:
+				Log_WriteInt32(UBX_nav_velned_saved.sAcc,   2, 1, ',');
+				Log_WriteInt32(UBX_nav_sol_saved.gpsFix,    0, 0, ',');
+				break;
+			case 10:
+				Log_WriteInt32(UBX_nav_sol_saved.numSV,     0, 0, '\r');
+				Log_WriteChar('\n');
+				UBX_write_state = UBX_WRITE_IDLE;
+				break;
+		}
+
+		Tone_FlushWhenReady();
+	}
+	
+	if (*UBX_speech_ptr && Tone_IsIdle())
+	{
+		if (*UBX_speech_ptr == '-')
+		{
+			Tone_Play("minus.wav");
+		}
+		else if (*UBX_speech_ptr == '.')
+		{
+			Tone_Play("dot.wav");
+		}
+		else if (*UBX_speech_ptr >= '0' && *UBX_speech_ptr <= '9')
+		{
+			fname[0] = *UBX_speech_ptr;
+			fname[1] = '.';
+			fname[2] = 'w';
+			fname[3] = 'a';
+			fname[4] = 'v';
+			fname[5] = 0;
+			
+			Tone_Play(fname);
+		}
+		
+		++UBX_speech_ptr;
 	}
 }
