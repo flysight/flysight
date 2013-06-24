@@ -7,6 +7,7 @@
 #include "Lib/MMC.h"
 #include "Config.h"
 #include "Log.h"
+#include "Main.h"
 #include "MassStorage.h"
 #include "Power.h"
 #include "Timer.h"
@@ -25,7 +26,12 @@
 #endif
 #define BOOTLOADER_COUNT_ADDR ((uint8_t *) 0x01)
 
-uint8_t Main_activeLED ;
+uint8_t Main_activeLED;
+
+static FATFS    Main_fs;
+       FIL      Main_file;
+       uint8_t  Main_buffer[MAIN_BUFFER_SIZE];
+
 static uint8_t Main_mmcInitialized;
 
 static void delay_ms(
@@ -48,7 +54,10 @@ void SetupHardware(void)
 
 	USB_Init();
 	LEDs_Init();
+	
+	f_mount(0, &Main_fs);
 	Main_mmcInitialized = MMC_Init();
+	
 	Tone_Init();
 }
 
@@ -126,6 +135,7 @@ int main(void)
 		for (;;)
 		{
 			UBX_Task();
+			Tone_Task();
 		}
 	}
 }

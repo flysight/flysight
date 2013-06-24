@@ -34,6 +34,10 @@ extern UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
 extern uint8_t   UBX_num_alarms;
 extern uint32_t  UBX_alarm_window;
 
+extern uint8_t   UBX_sp_mode;
+extern uint8_t   UBX_sp_units;
+extern uint16_t  UBX_sp_rate;
+
 void UBX_Init(void);
 void UBX_Task(void);
 void UBX_Update(void);
