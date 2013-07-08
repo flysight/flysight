@@ -56,6 +56,7 @@ Mode_2:    9     ; Determines tone rate\r\n\
                  ;   2 = Glide ratio\r\n\
                  ;   3 = Inverse glide ratio\r\n\
                  ;   4 = Total speed\r\n\
+                 ;   8 = Magnitude of Value 1\r\n\
                  ;   9 = Change in Value 1\r\n\
 Min_Val_2: 300   ; Lowest rate value\r\n\
                  ;   cm/s          when Mode 2 = 0, 1, or 4\r\n\
@@ -84,6 +85,7 @@ Sp_Units:  1     ; Speech units\r\n\
                  ;   1 = mph\r\n\
 Sp_Rate:   0     ; Speech rate (s)\r\n\
                  ;   0 = No speech\r\n\
+Sp_Dec:    0     ; Decimal places for speech\r\n\
 \r\n\
 ; Thresholds\r\n\
 \r\n\
@@ -190,7 +192,7 @@ void Config_Read(void)
 		HANDLE_VALUE("Max",       UBX_max,           val,     TRUE);
 		HANDLE_VALUE("Volume",    Tone_volume,       8 - val, val >= 0 && val <= 8);
 		HANDLE_VALUE("Limits",    UBX_limits,        val,     val >= 0 && val <= 2);
-		HANDLE_VALUE("Mode_2",    UBX_mode_2,        val,     (val >= 0 && val <= 4) || (val == 9));
+		HANDLE_VALUE("Mode_2",    UBX_mode_2,        val,     (val >= 0 && val <= 4) || (val >= 8 && val <= 9));
 		HANDLE_VALUE("Min_Val_2", UBX_min_2,         val,     TRUE);
 		HANDLE_VALUE("Max_Val_2", UBX_max_2,         val,     TRUE);
 		HANDLE_VALUE("Min_Rate",  UBX_min_rate,      val * TONE_RATE_ONE_HZ / 100, val >= 0);
@@ -203,6 +205,7 @@ void Config_Read(void)
 		HANDLE_VALUE("Sp_Mode",   UBX_sp_mode,       val,     val >= 0 && val <= 4);
 		HANDLE_VALUE("Sp_Units",  UBX_sp_units,      val,     val >= 0 && val <= 1);
 		HANDLE_VALUE("Sp_Rate",   UBX_sp_rate,       val * 1000, val >= 0 && val <= 32);
+		HANDLE_VALUE("Sp_Dec",    UBX_sp_decimals,   val,     val >= 0 && val <= 2);
 		
 		#undef HANDLE_VALUE
 		

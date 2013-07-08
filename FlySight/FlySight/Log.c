@@ -47,7 +47,7 @@ char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char d
             *--ptr = '.';
         }
     }
-    if (*ptr == '.')
+    if (*ptr == '.' || *ptr == 0)
     {
         *--ptr = '0';
     }

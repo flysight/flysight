@@ -14,9 +14,12 @@
 #include "uart.h"
 #include "UBX.h"
 
-#define UBX_INVALID_VALUE INT32_MAX
+#define UBX_VERSION         6
 
-#define UBX_TIMEOUT         500 // ACK/NAK timeout (ms)
+#define UBX_INVALID_VALUE   INT32_MAX
+
+#define UBX_TIMEOUT         100 // ACK/NAK timeout (ms)
+#define UBX_RETRIES         5
 #define UBX_MAX_PAYLOAD_LEN 64
 
 #define UBX_SYNC_1          0xb5
@@ -36,6 +39,7 @@
 #define UBX_CFG             0x06
 #define UBX_CFG_MSG         0x01
 #define UBX_CFG_RST         0x04
+#define UBX_CFG_PRT         0x06
 #define UBX_CFG_RATE        0x08
 #define UBX_CFG_NAV5        0x24
 
@@ -72,6 +76,20 @@ typedef struct
 	uint8_t rate;      // Send rate
 }
 UBX_cfg_msg;
+
+typedef struct
+{
+	uint8_t  portID;       // Port identifier number
+	uint8_t  reserved0;    // Reserved
+	uint16_t txReady;      // TX ready pin configuration
+	uint32_t mode;         // UART mode
+	uint32_t baudRate;     // Baud rate (bits/sec)
+	uint16_t inProtoMask;  // Input protocols
+	uint16_t outProtoMask; // Output protocols
+	uint16_t flags;        // Flags
+	uint16_t reserved5;    // Always set to zero
+}
+UBX_cfg_prt;
 
 typedef struct
 {
@@ -219,6 +237,9 @@ uint8_t  UBX_use_sas       = 1;
 uint8_t  UBX_sp_mode       = 2;
 uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
 uint16_t UBX_sp_rate       = 0;
+uint8_t  UBX_sp_decimals   = 0;
+
+static uint16_t UBX_sp_counter = 0;
 
 uint32_t UBX_threshold     = 1000;
 uint32_t UBX_hThreshold    = 0;
@@ -470,68 +491,6 @@ static uint8_t UBX_SendMessage(
 		   1;
 }
 
-static void UBX_HandlePosition(void)
-{
-	const int32_t prev_hMSL = UBX_nav_pos_llh_saved.hMSL;
-	int32_t hMSL;
-
-	UBX_nav_pos_llh_saved = *((UBX_nav_posllh *) UBX_payload);
-	hMSL = UBX_nav_pos_llh_saved.hMSL;
-
-	if (UBX_hasFix && UBX_prevFix)
-	{
-		int32_t min = MIN(prev_hMSL, hMSL);
-		int32_t max = MAX(prev_hMSL, hMSL);
-
-		int i;
-	
-		for (i = 0; i < UBX_num_alarms; ++i)
-		{
-			const int32_t elev = UBX_alarms[i].elev;
-		
-			if (elev >= min && elev <  max)
-			{
-				switch (UBX_alarms[i].type)
-				{
-				case 1:	// beep
-					Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
-					break ;
-				case 2:	// chirp up
-					Tone_Beep(0, TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
-					break ;
-				case 3:	// chirp down
-					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
-					break ;
-				case 4:	// warble
-					Tone_Beep(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
-					break ;
-				}
-				
-				break;
-			}
-		}
-	}
-
-	UBX_suppress_tone = 0;
-	
-	if (UBX_hasFix)
-	{
-		int i;
-	
-		for (i = 0; i < UBX_num_alarms; ++i)
-		{
-			const int32_t diff = UBX_alarms[i].elev - UBX_nav_pos_llh_saved.hMSL;
-		
-			if (ABS (diff) < UBX_alarm_window)
-			{
-				Tone_SetRate(0);
-				UBX_suppress_tone = 1;
-				break;
-			}
-		}
-	}
-}
-
 static void UBX_SetTone(
 	int32_t val_1,
 	int32_t min_1,
@@ -615,6 +574,85 @@ static void UBX_SetTone(
 		
 	#undef OVER
 	#undef UNDER
+}
+
+static void UBX_HandleNavSol(void)
+{
+	UBX_nav_sol_saved = *((UBX_nav_sol *) UBX_payload);
+
+	UBX_prevFix = UBX_hasFix;
+
+	if (UBX_nav_sol_saved.gpsFix == 0x03)
+	{
+		UBX_hasFix = 1;
+	}
+	else
+	{
+		UBX_SetTone(UBX_INVALID_VALUE, 0, 0, 0, 0, 0);
+		UBX_hasFix = 0;
+	}
+}
+
+static void UBX_HandlePosition(void)
+{
+	const int32_t prev_hMSL = UBX_nav_pos_llh_saved.hMSL;
+	int32_t hMSL;
+
+	UBX_nav_pos_llh_saved = *((UBX_nav_posllh *) UBX_payload);
+	hMSL = UBX_nav_pos_llh_saved.hMSL;
+
+	if (UBX_hasFix && UBX_prevFix)
+	{
+		int32_t min = MIN(prev_hMSL, hMSL);
+		int32_t max = MAX(prev_hMSL, hMSL);
+
+		int i;
+	
+		for (i = 0; i < UBX_num_alarms; ++i)
+		{
+			const int32_t elev = UBX_alarms[i].elev;
+		
+			if (elev >= min && elev <  max)
+			{
+				switch (UBX_alarms[i].type)
+				{
+				case 1:	// beep
+					Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+					break ;
+				case 2:	// chirp up
+					Tone_Beep(0, TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					break ;
+				case 3:	// chirp down
+					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					break ;
+				case 4:	// warble
+					Tone_Beep(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+					break ;
+				}
+				
+				break;
+			}
+		}
+	}
+
+	UBX_suppress_tone = 0;
+	
+	if (UBX_hasFix)
+	{
+		int i;
+	
+		for (i = 0; i < UBX_num_alarms; ++i)
+		{
+			const int32_t diff = UBX_alarms[i].elev - UBX_nav_pos_llh_saved.hMSL;
+		
+			if (ABS (diff) < UBX_alarm_window)
+			{
+				Tone_SetRate(0);
+				UBX_suppress_tone = 1;
+				break;
+			}
+		}
+	}
 }
 
 static void UBX_GetValues(
@@ -704,10 +742,10 @@ static void UBX_SpeakValue(void)
 	switch (UBX_sp_units)
 	{
 	case UBX_UNITS_KMH:
-		speed_mul = (uint16_t) ((speed_mul * 65536UL) / 18204);
+		speed_mul = (uint16_t) (((uint32_t) speed_mul * 18204) / 65536);
 		break;
 	case UBX_UNITS_MPH:
-		speed_mul = (uint16_t) ((speed_mul * 65536UL) / 29297);
+		speed_mul = (uint16_t) (((uint32_t) speed_mul * 29297) / 65536);
 		break;
 	}
 
@@ -738,12 +776,19 @@ static void UBX_SpeakValue(void)
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr + 1, (UBX_nav_velned_saved.speed * 1024) / speed_mul, 2, 1, 0);
 		break;
 	}
+
+	if (UBX_sp_decimals == 0)
+	{
+		UBX_speech_buf[sizeof(UBX_speech_buf) - 5] = 0;
+	}
+	else
+	{
+		UBX_speech_buf[sizeof(UBX_speech_buf) - 4 + UBX_sp_decimals] = 0;
+	}
 }
 
 static void UBX_HandleVelocity(void)
 {
-	static uint16_t sp_counter = 0;
-	
 	static int32_t x0 = -1, x1, x2;
 	
 	int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
@@ -757,8 +802,20 @@ static void UBX_HandleVelocity(void)
 		UBX_GetValues(UBX_mode,   &val_1, &min_1, &max_1);
 		UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
 	}
+	else
+	{
+		UBX_sp_counter = 0;
+	}
 
-	if (UBX_mode_2 == 9)
+	if (UBX_mode_2 == 8)
+	{
+		UBX_GetValues(UBX_mode, &val_2, &min_2, &max_2);
+		if (val_2 != UBX_INVALID_VALUE)
+		{
+			val_2 = ABS(val_2);
+		}
+	}
+	else if (UBX_mode_2 == 9)
 	{
 		x2 = x1;
 		x1 = x0;
@@ -776,38 +833,17 @@ static void UBX_HandleVelocity(void)
 	if (UBX_hasFix)
 	{
 		UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
+	}
 		
-		sp_counter += UBX_rate;
-		if (sp_counter >= UBX_sp_rate)
-		{
-			if (val_1 != UBX_INVALID_VALUE)
-			{
-				UBX_SpeakValue();
-			}
-			sp_counter -= UBX_sp_rate;
-		}
-	}
-	else
+	if (UBX_hasFix && 
+	    UBX_sp_rate != 0 && 
+	    UBX_sp_counter >= UBX_sp_rate)
 	{
-		sp_counter = 0 ;
+		UBX_SpeakValue();
+		UBX_sp_counter = 0;
 	}
-}
 
-static void UBX_HandleNavSol(void)
-{
-	UBX_nav_sol_saved = *((UBX_nav_sol *) UBX_payload);
-
-	UBX_prevFix = UBX_hasFix;
-
-	if (UBX_nav_sol_saved.gpsFix == 0x03)
-	{
-		UBX_hasFix = 1;
-	}
-	else
-	{
-		UBX_SetTone(UBX_INVALID_VALUE, 0, 0, 0, 0, 0);
-		UBX_hasFix = 0;
-	}
+	UBX_sp_counter += UBX_rate;
 }
 
 static void UBX_HandleTimeUTC(void)
@@ -839,19 +875,21 @@ static void UBX_HandleTimeUTC(void)
 
 static void UBX_HandleMessage(void)
 {
+	// NOTE: Messages come in the order below.
+
 	switch (UBX_msg_class)
 	{
 	case UBX_NAV:
 		switch (UBX_msg_id)
 		{
+		case UBX_NAV_SOL:
+			UBX_HandleNavSol();
+			break;
 		case UBX_NAV_POSLLH:
 			UBX_HandlePosition();
 			break;
 		case UBX_NAV_VELNED:
 			UBX_HandleVelocity();
-			break;
-		case UBX_NAV_SOL:
-			UBX_HandleNavSol();
 			break;
 		case UBX_NAV_TIMEUTC:
 			UBX_HandleTimeUTC();
@@ -861,7 +899,7 @@ static void UBX_HandleMessage(void)
 	}
 }
 
-void UBX_Init(void)
+static uint8_t UBX_SendInit(void)
 {
 	UBX_cfg_msg cfg_msg[] =
 	{
@@ -871,14 +909,13 @@ void UBX_Init(void)
 		{UBX_NMEA, UBX_NMEA_GPGSV,  0},
 		{UBX_NMEA, UBX_NMEA_GPRMC,  0},
 		{UBX_NMEA, UBX_NMEA_GPVTG,  0},
+		{UBX_NAV,  UBX_NAV_SOL,     1},
 		{UBX_NAV,  UBX_NAV_POSLLH,  1},
 		{UBX_NAV,  UBX_NAV_VELNED,  1},
-		{UBX_NAV,  UBX_NAV_SOL,     1},
 		{UBX_NAV,  UBX_NAV_TIMEUTC, 1}
 	};
 
-	size_t n = sizeof(cfg_msg) / sizeof(UBX_cfg_msg);
-	size_t i;
+	size_t i, j, n = sizeof(cfg_msg) / sizeof(UBX_cfg_msg);
 
 	UBX_cfg_rate cfg_rate =
 	{
@@ -898,13 +935,10 @@ void UBX_Init(void)
 		.mask       = 0x0001,   // Apply dynamic model settings
 		.dynModel   = UBX_model // Airborne with < 1 g acceleration
 	};
-	
-	uint8_t success = 1;
-	
-	uart_init(12); // 38400 baud
 
 	#define SEND_MESSAGE(c,m,d) \
-		if (!UBX_SendMessage(c,m,sizeof(d),&d)) { success = 0; }
+		for (j = 0; j < UBX_RETRIES; ++j) { if (UBX_SendMessage(c,m,sizeof(d),&d)) break; } \
+		if (j == UBX_RETRIES) return 0;
 
 	for (i = 0; i < n; ++i)
 	{
@@ -916,8 +950,19 @@ void UBX_Init(void)
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_RST,  cfg_rst);
 	
 	#undef SEND_MESSAGE
+	
+	return 1;
+}
 
-	if (!success)
+void UBX_Init(void)
+{
+#if (UBX_VERSION < 7)
+	uart_init(12); // 38400 baud
+#else
+	uart_init(51); // 9600 baud
+#endif
+
+	if (!UBX_SendInit())
 	{
 		LEDs_ChangeLEDs(LEDS_ALL_LEDS, LEDS_RED);
 		while (1);
@@ -946,40 +991,34 @@ void UBX_Task(void)
 			case 1:
 				Log_WriteInt32(UBX_nav_timeutc_saved.year,  4, 0, '-');
 				Log_WriteInt32(UBX_nav_timeutc_saved.month, 2, 0, '-');
-				break;
-			case 2:
 				Log_WriteInt32(UBX_nav_timeutc_saved.day,   2, 0, 'T');
 				Log_WriteInt32(UBX_nav_timeutc_saved.hour,  2, 0, ':');
 				break;
-			case 3:
+			case 2:
 				Log_WriteInt32(UBX_nav_timeutc_saved.min,   2, 0, ':');
 				Log_WriteInt32(UBX_nav_timeutc_saved.sec,   2, 0, '.');
-				break;
-			case 4:
 				Log_WriteInt32((UBX_nav_timeutc_saved.nano + 5000000) / 10000000, 2, 0, 'Z');
 				Log_WriteChar(',');
 				break;
-			case 5:
+			case 3:
 				Log_WriteInt32(UBX_nav_pos_llh_saved.lat,   7, 1, ',');
+				break;
+			case 4:
 				Log_WriteInt32(UBX_nav_pos_llh_saved.lon,   7, 1, ',');
 				break;
-			case 6:
+			case 5:
 				Log_WriteInt32(UBX_nav_pos_llh_saved.hMSL,  3, 1, ',');
 				Log_WriteInt32(UBX_nav_velned_saved.velN,   2, 1, ',');
 				break;
-			case 7:
+			case 6:
 				Log_WriteInt32(UBX_nav_velned_saved.velE,   2, 1, ',');
 				Log_WriteInt32(UBX_nav_velned_saved.velD,   2, 1, ',');
-				break;
-			case 8:
 				Log_WriteInt32(UBX_nav_pos_llh_saved.hAcc,  3, 1, ',');
-				Log_WriteInt32(UBX_nav_pos_llh_saved.vAcc,  3, 1, ',');
 				break;
-			case 9:
+			case 7:
+				Log_WriteInt32(UBX_nav_pos_llh_saved.vAcc,  3, 1, ',');
 				Log_WriteInt32(UBX_nav_velned_saved.sAcc,   2, 1, ',');
 				Log_WriteInt32(UBX_nav_sol_saved.gpsFix,    0, 0, ',');
-				break;
-			case 10:
 				Log_WriteInt32(UBX_nav_sol_saved.numSV,     0, 0, '\r');
 				Log_WriteChar('\n');
 				UBX_write_state = UBX_WRITE_IDLE;
