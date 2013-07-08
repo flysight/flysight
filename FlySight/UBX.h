@@ -37,6 +37,7 @@ extern uint32_t  UBX_alarm_window;
 extern uint8_t   UBX_sp_mode;
 extern uint8_t   UBX_sp_units;
 extern uint16_t  UBX_sp_rate;
+extern uint8_t   UBX_sp_decimals;
 
 void UBX_Init(void);
 void UBX_Task(void);
