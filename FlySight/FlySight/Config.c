@@ -13,7 +13,7 @@
 #define TRUE  (!FALSE)
 
 static const char Config_default[] PROGMEM = "\
-; Firmware version 20130623\r\n\
+; Firmware version 20130707\r\n\
 \r\n\
 ; GPS settings\r\n\
 \r\n\
