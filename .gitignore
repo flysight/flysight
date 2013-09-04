@@ -18,3 +18,5 @@ Thumbs.db
 /Docs/
 obj/
 Build/
+FlySightViewer/Mac/**/project.xcworkspace
+FlySightViewer/Mac/**/xcuserdata
