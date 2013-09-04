@@ -5,6 +5,7 @@
 
 #include "Board/LEDs.h"
 #include "FatFS/ff.h"
+#include "Log.h"
 #include "Main.h"
 #include "Tone.h"
 #include "UBX.h"
@@ -98,6 +99,13 @@ H_Thresh:  0     ; Minimum horizontal speed for tone (cm/s)\r\n\
 Use_SAS:   1     ; Use skydiver's airspeed\r\n\
                  ;   0 = No\r\n\
                  ;   1 = Yes\r\n\
+TZ_Offset: 0     ; Timezone offset of output files in seconds\r\n\
+                 ;   -14400 = UTC-4 (EDT)\r\n\
+                 ;   -18000 = UTC-5 (EST, CDT)\r\n\
+                 ;   -21600 = UTC-6 (CST, MDT)\r\n\
+                 ;   -25200 = UTC-7 (MST, PDT)\r\n\
+                 ;   -28800 = UTC-8 (PST)\r\n\
+\r\n\
 \r\n\
 ; Alarm settings\r\n\
 \r\n\
@@ -145,6 +153,7 @@ static const char Config_Use_SAS[] PROGMEM    = "Use_SAS";
 static const char Config_Window[] PROGMEM     = "Window";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
+static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -231,6 +240,7 @@ void Config_Read(void)
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
 		HANDLE_VALUE(Config_Use_SAS,   UBX_use_sas,      val, val == 0 || val == 1);
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
+		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
 		
 		#undef HANDLE_VALUE
 		

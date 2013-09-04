@@ -9,8 +9,11 @@
 #include "Log.h"
 #include "Main.h"
 #include "Power.h"
+#include "Time.h"
 
 #define FILE_NUMBER_ADDR 0
+
+int16_t Log_tz_offset = 0;
 
 static uint8_t Log_initialized = 0;
 static DWORD   Log_fattime;
@@ -110,6 +113,13 @@ void Log_Init(
 	FRESULT res;
 
 	if (Log_initialized) return ;
+	
+	// Convert UTC YMD-HMS to a single value, offset it, and convert back
+	{
+		uint32_t timestamp = mk_gmtime(year, month, day, hour, min, sec);
+		timestamp += Log_tz_offset;
+		gmtime_r(timestamp, &year, &month, &day, &hour, &min, &sec);
+	}
 
 	Log_fattime = ((DWORD) (year - 1980) << 25) + 
 	              ((DWORD) month         << 21) + 
