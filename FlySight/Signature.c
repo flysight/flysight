@@ -7,6 +7,7 @@
 #include "Main.h"
 #include "Config.h"
 #include "Signature.h"
+#include "Version.h"
 
 void Config_WriteString_P(const char *str, FIL *file);
 
@@ -15,7 +16,8 @@ FlySight - http://flysight.ca/\r\n\
 Processor serial number: ";
 
 static const char SignatureFooter[] PROGMEM = "\
-\r\n";
+\r\n\
+Firmware version: " FLYSIGHT_VERSION "\r\n";
 
 void Signature_WriteString(const char * string)
 {
