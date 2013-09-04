@@ -64,7 +64,7 @@
 
 // Set up graph
 		
-		graph = [[CPXYGraph alloc] initWithFrame: initBounds];
+		graph = [[CPXYGraph alloc] initWithFrame: *((CGRect*)&initBounds)];
 		
 		CPTheme *theme = [CPTheme themeNamed: kCPPlainWhiteTheme];
 		[graph applyTheme:theme];
