@@ -24,6 +24,7 @@ SRC          = Main.c                                                      \
 	           Log.c                                                       \
 	           MassStorage.c                                               \
 	           Power.c                                                     \
+	           Signature.c                                                 \
 	           Timer.c                                                     \
 	           Tone.c                                                      \
 	           uart.c                                                      \

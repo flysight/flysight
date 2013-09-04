@@ -13,6 +13,7 @@
 #include "Timer.h"
 #include "Tone.h"
 #include "UBX.h"
+#include "Signature.h"
 
 #define CHARGE_STATUS_DDR  DDRC
 #define CHARGE_STATUS_PORT PORTC
@@ -134,6 +135,7 @@ int main(void)
 		LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
 
 		Power_Hold();
+		Signature_Write();
 		Config_Read();
 		Power_Release();
 		

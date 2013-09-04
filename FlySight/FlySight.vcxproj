@@ -24,6 +24,7 @@
     <ClCompile Include="Main.c" />
     <ClCompile Include="MassStorage.c" />
     <ClCompile Include="Power.c" />
+    <ClCompile Include="Signature.c" />
     <ClCompile Include="Timer.c" />
     <ClCompile Include="Tone.c" />
     <ClCompile Include="uart.c" />
@@ -43,6 +44,7 @@
     <ClInclude Include="Main.h" />
     <ClInclude Include="MassStorage.h" />
     <ClInclude Include="Power.h" />
+    <ClInclude Include="Signature.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Tone.h" />
     <ClInclude Include="uart.h" />
