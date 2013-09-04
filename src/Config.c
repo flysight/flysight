@@ -8,6 +8,7 @@
 #include "Main.h"
 #include "Tone.h"
 #include "UBX.h"
+#include "Log.h"
 #include "Version.h"
 
 #define FALSE 0
@@ -98,6 +99,9 @@ H_Thresh:  0     ; Minimum horizontal speed for tone (cm/s)\r\n\
 Use_SAS:   1     ; Use skydiver's airspeed\r\n\
                  ;   0 = No\r\n\
                  ;   1 = Yes\r\n\
+Dir_Format: 0    ; Directory format\r\n\
+                 ;   0 = YY-MM-DD\r\n\
+                 ;   1 = YYYYMMDD\r\n\
 \r\n\
 ; Alarm settings\r\n\
 \r\n\
@@ -145,6 +149,7 @@ static const char Config_Use_SAS[] PROGMEM    = "Use_SAS";
 static const char Config_Window[] PROGMEM     = "Window";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
+static const char Config_Dir_Format[] PROGMEM = "Dir_Format";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -231,6 +236,7 @@ void Config_Read(void)
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
 		HANDLE_VALUE(Config_Use_SAS,   UBX_use_sas,      val, val == 0 || val == 1);
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Dir_Format,Log_dir_format,   val, val >= 0 && val <= 1);
 		
 		#undef HANDLE_VALUE
 		

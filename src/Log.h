@@ -4,6 +4,8 @@
 extern uint8_t Log_enable_raw;
 extern uint8_t Log_enable_csv;
 
+extern uint8_t Log_dir_format;
+
 void Log_Flush(void);
 void Log_WriteChar(char ch);
 char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char delimiter);
