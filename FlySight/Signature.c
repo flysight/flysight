@@ -32,7 +32,7 @@ void Signature_WriteHexNibble(char nibble)
         f_putc(nibble + '0', &Main_file);
 }
 
-void Signature_Write()
+void Signature_Write(void)
 {
     FRESULT res;
     
