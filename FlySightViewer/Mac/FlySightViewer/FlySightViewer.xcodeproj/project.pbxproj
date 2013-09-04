@@ -38,7 +38,6 @@
 		CAC279D811EA2D1100AF0726 /* FSUnit.m in Sources */ = {isa = PBXBuildFile; fileRef = CAC279D711EA2D1100AF0726 /* FSUnit.m */; };
 		CAD4956A11C1D9B000E85B46 /* PlotController.m in Sources */ = {isa = PBXBuildFile; fileRef = CAD4956911C1D9B000E85B46 /* PlotController.m */; };
 		CAD495A011C1DAFB00E85B46 /* CorePlot.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CAD4959411C1DAA600E85B46 /* CorePlot.framework */; };
-		CAD495B511C1DC5700E85B46 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CAD495B411C1DC5700E85B46 /* QuartzCore.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -137,7 +136,6 @@
 			files = (
 				CAD495A011C1DAFB00E85B46 /* CorePlot.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
-				CAD495B511C1DC5700E85B46 /* QuartzCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -295,7 +293,11 @@
 			isa = PBXProject;
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "FlySightViewer" */;
 			compatibilityVersion = "Xcode 3.1";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 29B97314FDCFA39411CA2CEA /* FlysightViewer */;
 			projectDirPath = "";
 			projectReferences = (
@@ -417,7 +419,6 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)/../CorePlot/framework/build/$(CONFIGURATION)\"/**";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
@@ -427,7 +428,6 @@
 				INFOPLIST_FILE = "FlySightViewer-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				PRODUCT_NAME = FlySightViewer;
-				SDKROOT = macosx10.5;
 			};
 			name = Debug;
 		};
@@ -436,15 +436,12 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)/../CorePlot/framework/build/$(CONFIGURATION)\"/**";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = FlySightViewer_Prefix.pch;
-				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = "FlySightViewer-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				PRODUCT_NAME = FlySightViewer;
-				SDKROOT = macosx10.5;
 			};
 			name = Release;
 		};
@@ -452,7 +449,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				FRAMEWORK_SEARCH_PATHS = "/Users/jcooper/Programming/Personal/CorePlot/framework/**";
+				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)/../CorePlot/build/$(CONFIGURATION)\"";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -461,7 +458,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "-ObjC";
 				PREBINDING = NO;
-				SDKROOT = macosx10.6;
+				SDKROOT = "";
 			};
 			name = Debug;
 		};
@@ -469,13 +466,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)/../CorePlot/framework/build/$(CONFIGURATION)\"/**";
+				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)/../CorePlot/build/$(CONFIGURATION)\"";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "";
 				PREBINDING = NO;
-				SDKROOT = macosx10.6;
+				SDKROOT = "";
 			};
 			name = Release;
 		};
