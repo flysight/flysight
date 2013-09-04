@@ -9,6 +9,9 @@
 #         LUFA Project Makefile.
 # --------------------------------------
 
+# Define FLYSIGHT_VERSION automatically from source control
+VERSION_OPT = -DFLYSIGHT_VERSION='"$(shell git describe --abbrev=6 --dirty --always)"'
+
 # Run "make help" for target help.
 
 MCU          = at90usb646
@@ -36,7 +39,7 @@ SRC          = Main.c                                                      \
 	           $(LUFA_SRC_USB)                                             \
 	           $(LUFA_SRC_USBCLASS) 
 LUFA_PATH    = ../vendor/lufa/LUFA
-CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/ -fdata-sections
+CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/ -fdata-sections $(VERSION_OPT)
 LD_FLAGS     =
 
 # Default target

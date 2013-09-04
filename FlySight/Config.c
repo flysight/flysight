@@ -8,12 +8,13 @@
 #include "Main.h"
 #include "Tone.h"
 #include "UBX.h"
+#include "Version.h"
 
 #define FALSE 0
 #define TRUE  (!FALSE)
 
 static const char Config_default[] PROGMEM = "\
-; Firmware version 20140304\r\n\
+; Firmware version " FLYSIGHT_VERSION "\r\n\
 \r\n\
 ; GPS settings\r\n\
 \r\n\
