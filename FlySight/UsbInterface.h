@@ -30,11 +30,11 @@
 
 /** \file
  *
- *  Header file for MassStorage.c.
+ *  Header file for UsbInterface.c.
  */
 
-#ifndef _MASS_STORAGE_H_
-#define _MASS_STORAGE_H_
+#ifndef _USB_INTERFACE_H_
+#define _USB_INTERFACE_H_
 
 	/* Includes: */
 		#include <avr/io.h>
@@ -70,14 +70,8 @@
 		/** LED mask for the library LED driver, to indicate that the USB interface is busy. */
 		#define LEDMASK_USB_BUSY         0
 		
-	/* Function Prototypes: */
-		void EVENT_USB_Device_Connect(void);
-		void EVENT_USB_Device_Disconnect(void);
-		void EVENT_USB_Device_ConfigurationChanged(void);
-		void EVENT_USB_Device_UnhandledControlRequest(void);
-
 		bool CALLBACK_MS_Device_SCSICommandReceived(USB_ClassInfo_MS_Device_t* const MSInterfaceInfo);
 
-		extern USB_ClassInfo_MS_Device_t Disk_MS_Interface;
+    void USBInterfaceTask(void);
 
 #endif
