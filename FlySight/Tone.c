@@ -245,7 +245,7 @@ static void Tone_Start(
 	}
 }
 
-static void Tone_Stop(void)
+void Tone_Stop(void)
 {
 	if (Tone_state != TONE_STATE_IDLE)
 	{

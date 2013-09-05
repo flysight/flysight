@@ -14,12 +14,11 @@
 #include "uart.h"
 #include "UBX.h"
 
-#define UBX_VERSION         6
+#define UBX_VERSION         7
 
 #define UBX_INVALID_VALUE   INT32_MAX
 
-#define UBX_TIMEOUT         100 // ACK/NAK timeout (ms)
-#define UBX_RETRIES         5
+#define UBX_TIMEOUT         (-1) // ACK/NAK timeout (ms)
 #define UBX_MAX_PAYLOAD_LEN 64
 
 #define UBX_SYNC_1          0xb5
@@ -499,8 +498,6 @@ static void UBX_SetTone(
 	int32_t min_2,
 	int32_t max_2)
 {
-	if (UBX_suppress_tone) return;
-
 	#define UNDER(val,min,max) ((min < max) ? (val <= min) : (val >= min))
 	#define OVER(val,min,max)  ((min < max) ? (val >= max) : (val <= max))
 
@@ -597,6 +594,8 @@ static void UBX_HandlePosition(void)
 {
 	const int32_t prev_hMSL = UBX_nav_pos_llh_saved.hMSL;
 	int32_t hMSL;
+	
+	uint8_t i, suppress_tone;
 
 	UBX_nav_pos_llh_saved = *((UBX_nav_posllh *) UBX_payload);
 	hMSL = UBX_nav_pos_llh_saved.hMSL;
@@ -635,11 +634,9 @@ static void UBX_HandlePosition(void)
 		}
 	}
 
-	UBX_suppress_tone = 0;
-	
 	if (UBX_hasFix)
 	{
-		int i;
+		suppress_tone = 0;
 	
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
@@ -647,11 +644,18 @@ static void UBX_HandlePosition(void)
 		
 			if (ABS (diff) < UBX_alarm_window)
 			{
-				Tone_SetRate(0);
-				UBX_suppress_tone = 1;
+				suppress_tone = 1;
 				break;
 			}
 		}
+		
+		if (suppress_tone && !UBX_suppress_tone)
+		{
+			Tone_SetRate(0);
+			Tone_Stop();
+		}
+		
+		UBX_suppress_tone = suppress_tone;
 	}
 }
 
@@ -830,17 +834,16 @@ static void UBX_HandleVelocity(void)
 		}
 	}
 
-	if (UBX_hasFix)
+	if (UBX_hasFix && !UBX_suppress_tone)
 	{
 		UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
-	}
-		
-	if (UBX_hasFix && 
-	    UBX_sp_rate != 0 && 
-	    UBX_sp_counter >= UBX_sp_rate)
-	{
-		UBX_SpeakValue();
-		UBX_sp_counter = 0;
+			
+		if (UBX_sp_rate != 0 && 
+		    UBX_sp_counter >= UBX_sp_rate)
+		{
+			UBX_SpeakValue();
+			UBX_sp_counter = 0;
+		}
 	}
 
 	UBX_sp_counter += UBX_rate;
@@ -937,8 +940,7 @@ static uint8_t UBX_SendInit(void)
 	};
 
 	#define SEND_MESSAGE(c,m,d) \
-		for (j = 0; j < UBX_RETRIES; ++j) { if (UBX_SendMessage(c,m,sizeof(d),&d)) break; } \
-		if (j == UBX_RETRIES) return 0;
+		if (!UBX_SendMessage(c,m,sizeof(d),&d)) return 0;
 
 	for (i = 0; i < n; ++i)
 	{
