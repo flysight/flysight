@@ -14,7 +14,7 @@
 #include "uart.h"
 #include "UBX.h"
 
-#define UBX_VERSION         7
+#define UBX_VERSION         6
 
 #define UBX_INVALID_VALUE   INT32_MAX
 
