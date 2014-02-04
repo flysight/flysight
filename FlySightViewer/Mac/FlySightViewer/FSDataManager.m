@@ -982,6 +982,7 @@ NSDictionary *parseGPGGA(NSArray *components)
 	[string appendString: @"\t\t<name>Exported track</name>\n"];
 	[string appendString: @"\t\t<styleUrl>#lineStyle</styleUrl>\n"];
 	[string appendString: @"\t\t<LineString>\n"];
+    [string appendString: @"\t\t<altitudeMode>absolute</altitudeMode>\n"];
 	[string appendString: @"\t\t\t<tessellate>1</tessellate>\n"];
 	[string appendString: @"\t\t\t<coordinates>\n"];
 	
