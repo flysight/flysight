@@ -173,6 +173,19 @@ extern void uart_puts_p(const char *s );
 #define uart_puts_P(__s)       uart_puts_p(PSTR(__s))
 
 
+/**
+ * @brief    Check if the UART's transmit buffer is empty.
+ *
+ * Returns true if the entire frame in the transmit shift register has been
+ * shifted out and there are no new data currently present in the transmit 
+ * buffer.
+ *
+ * @param    none
+ * @return   \b 0 UART transmit buffer is not empty
+  *          \b 1 UART transmit buffer is empty
+*/
+extern int uart_tx_empty(void);
+
 
 /** @brief  Initialize USART1 (only available on selected ATmegas) @see uart_init */
 extern void uart1_init(unsigned int baudrate);

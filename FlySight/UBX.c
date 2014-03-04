@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include <util/delay.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -14,11 +15,9 @@
 #include "uart.h"
 #include "UBX.h"
 
-#define UBX_VERSION         6
-
 #define UBX_INVALID_VALUE   INT32_MAX
 
-#define UBX_TIMEOUT         (-1) // ACK/NAK timeout (ms)
+#define UBX_TIMEOUT         500 // ACK/NAK timeout (ms)
 #define UBX_MAX_PAYLOAD_LEN 64
 
 #define UBX_SYNC_1          0xb5
@@ -454,7 +453,7 @@ static uint8_t UBX_WaitForAck(
 	return 0;
 }
 
-static uint8_t UBX_SendMessage(
+static void UBX_SendMessage(
 	uint8_t  msg_class,
 	uint8_t  msg_id,
 	uint16_t size,
@@ -484,10 +483,6 @@ static uint8_t UBX_SendMessage(
 	
 	uart_putc(ck_a);
 	uart_putc(ck_b);
-
-	return msg_class == UBX_CFG ? 
-	       UBX_WaitForAck(msg_class, msg_id, UBX_TIMEOUT) : 
-		   1;
 }
 
 static void UBX_SetTone(
@@ -902,7 +897,7 @@ static void UBX_HandleMessage(void)
 	}
 }
 
-static uint8_t UBX_SendInit(void)
+void UBX_Init(void)
 {
 	UBX_cfg_msg cfg_msg[] =
 	{
@@ -912,13 +907,14 @@ static uint8_t UBX_SendInit(void)
 		{UBX_NMEA, UBX_NMEA_GPGSV,  0},
 		{UBX_NMEA, UBX_NMEA_GPRMC,  0},
 		{UBX_NMEA, UBX_NMEA_GPVTG,  0},
-		{UBX_NAV,  UBX_NAV_SOL,     1},
 		{UBX_NAV,  UBX_NAV_POSLLH,  1},
 		{UBX_NAV,  UBX_NAV_VELNED,  1},
+		{UBX_NAV,  UBX_NAV_SOL,     1},
 		{UBX_NAV,  UBX_NAV_TIMEUTC, 1}
 	};
 
-	size_t i, j, n = sizeof(cfg_msg) / sizeof(UBX_cfg_msg);
+	size_t n = sizeof(cfg_msg) / sizeof(UBX_cfg_msg);
+	size_t i;
 
 	UBX_cfg_rate cfg_rate =
 	{
@@ -938,9 +934,41 @@ static uint8_t UBX_SendInit(void)
 		.mask       = 0x0001,   // Apply dynamic model settings
 		.dynModel   = UBX_model // Airborne with < 1 g acceleration
 	};
+	
+	UBX_cfg_prt cfg_prt =
+	{
+		.portID       = 1,      // UART 1
+		.reserved0    = 0,      // Reserved
+		.txReady      = 0,      // no TX ready
+		.mode         = 0x08d0, // 8N1
+		.baudRate     = 38400,  // Baudrate in bits/second
+		.inProtoMask  = 0x0001, // UBX protocol
+		.outProtoMask = 0x0001, // UBX protocol
+		.flags        = 0,      // Flags bit mask
+		.reserved5    = 0       // Reserved, set to 0
+	};
 
-	#define SEND_MESSAGE(c,m,d) \
-		if (!UBX_SendMessage(c,m,sizeof(d),&d)) return 0;
+	uint8_t success = 1;
+	
+	uart_init(51); // 9600 baud
+	
+	UBX_SendMessage(UBX_CFG, UBX_CFG_PRT, sizeof(cfg_prt), &cfg_prt);
+
+	// NOTE: We don't wait for ACK here since some FlySights will already be
+	//       set to 38400 baud.
+	
+	while (!uart_tx_empty());
+
+	uart_init(12); // 38400 baud
+
+	_delay_ms(10); // wait for GPS UART to reset
+	
+	UBX_SendMessage(UBX_CFG, UBX_CFG_PRT, sizeof(cfg_prt), &cfg_prt);
+	if (!UBX_WaitForAck(UBX_CFG, UBX_CFG_PRT, UBX_TIMEOUT)) success = 0;
+
+	#define SEND_MESSAGE(c,m,d) { \
+		UBX_SendMessage(c,m,sizeof(d),&d); \
+		if (!UBX_WaitForAck(c,m,UBX_TIMEOUT)) success = 0; }
 
 	for (i = 0; i < n; ++i)
 	{
@@ -952,24 +980,14 @@ static uint8_t UBX_SendInit(void)
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_RST,  cfg_rst);
 	
 	#undef SEND_MESSAGE
-	
-	return 1;
-}
 
-void UBX_Init(void)
-{
-#if (UBX_VERSION < 7)
-	uart_init(12); // 38400 baud
-#else
-	uart_init(51); // 9600 baud
-#endif
-
-	if (!UBX_SendInit())
+	if (!success)
 	{
 		LEDs_ChangeLEDs(LEDS_ALL_LEDS, LEDS_RED);
 		while (1);
 	}
 }
+
 
 void UBX_Task(void)
 {

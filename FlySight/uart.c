@@ -221,6 +221,7 @@ LICENSE:
  #define UART0_CONTROL  UCSR1B
  #define UART0_DATA     UDR1
  #define UART0_UDRIE    UDRIE1
+ #define UART0_TXC      TXC1
 #elif defined(__AVR_ATmega32U4__)
  /* ATmega32U4 with one USART */
  #define AT90USB_UART
@@ -501,6 +502,19 @@ void uart_puts_p(const char *progmem_s )
       uart_putc(c);
 
 }/* uart_puts_p */
+
+
+/*************************************************************************
+Function: uart_tx_empty()
+Purpose:  check if the UART's transmit buffer is empty
+Input:    none
+Returns:  0 if UART transmit buffer is not empty
+          1 if UART transmit buffer is empty
+**************************************************************************/
+int uart_tx_empty(void)
+{
+	return UART0_STATUS & _BV(UART0_TXC);
+}/* uart_tx_empty */
 
 
 /*
