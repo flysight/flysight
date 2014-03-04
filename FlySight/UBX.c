@@ -15,6 +15,10 @@
 #include "uart.h"
 #include "UBX.h"
 
+#define ABS(a)   ((a) < 0     ? -(a) : (a))
+#define MIN(a,b) (((a) < (b)) ?  (a) : (b))
+#define MAX(a,b) (((a) > (b)) ?  (a) : (b))
+
 #define UBX_INVALID_VALUE   INT32_MAX
 
 #define UBX_TIMEOUT         500 // ACK/NAK timeout (ms)
@@ -35,9 +39,9 @@
 #define UBX_ACK_ACK         0x01
 
 #define UBX_CFG             0x06
+#define UBX_CFG_PRT         0x00
 #define UBX_CFG_MSG         0x01
 #define UBX_CFG_RST         0x04
-#define UBX_CFG_PRT         0x06
 #define UBX_CFG_RATE        0x08
 #define UBX_CFG_NAV5        0x24
 

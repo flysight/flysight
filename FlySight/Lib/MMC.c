@@ -80,22 +80,22 @@ void MMC_WriteBlocks(
 			}
 
 			/* Write one 16-byte chunk of data to the dataflash */
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
-			*(buf++) = Endpoint_Read_Byte();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
+			*(buf++) = Endpoint_Read_8();
 			
 			/* Increment the dataflash page 16 byte block counter */
 			CurrDFPageByteDiv16++;
@@ -159,22 +159,22 @@ void MMC_ReadBlocks(
 			}
 
 			/* Read one 16-byte chunk of data from the dataflash */
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
-			Endpoint_Write_Byte(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
+			Endpoint_Write_8(*(buf++));
 			
 			/* Increment the dataflash page 16 byte block counter */
 			CurrDFPageByteDiv16++;

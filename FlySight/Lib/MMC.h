@@ -1,7 +1,7 @@
 #ifndef FLYSIGHT_DATAFLASH_MANAGER
 #define FLYSIGHT_DATAFLASH_MANAGER
 
-#include <LUFA/Drivers/USB/Class/MassStorage.h>
+#include <LUFA/Drivers/USB/Class/MassStorageClass.h>
 
 #define VIRTUAL_MEMORY_BLOCK_SIZE 512
 

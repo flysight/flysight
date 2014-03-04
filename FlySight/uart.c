@@ -468,6 +468,9 @@ void uart_putc(unsigned char data)
     UART_TxBuf[tmphead] = data;
     UART_TxHead = tmphead;
 
+    /* clear TXC */
+    UART0_STATUS     |= _BV(UART0_TXC);
+
     /* enable UDRE interrupt */
     UART0_CONTROL    |= _BV(UART0_UDRIE);
     

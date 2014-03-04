@@ -72,7 +72,7 @@ LICENSE:
 
 /** Size of the circular receive buffer, must be power of 2 */
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE 128
+#define UART_RX_BUFFER_SIZE 512
 #endif
 /** Size of the circular transmit buffer, must be power of 2 */
 #ifndef UART_TX_BUFFER_SIZE
@@ -166,6 +166,7 @@ extern void uart_puts(const char *s );
  * @see      uart_puts_P
  */
 extern void uart_puts_p(const char *s );
+
 
 /**
  * @brief    Macro to automatically put a string constant into program memory

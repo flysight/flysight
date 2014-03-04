@@ -86,7 +86,7 @@ int main(void)
 	{
 		if (!Main_mmcInitialized)
 		{
-			USB_ShutDown();
+			USB_Disable();
 		}
 	
 		for (;;)
@@ -113,7 +113,7 @@ int main(void)
 	}
 	else
 	{
-		USB_ShutDown();
+		USB_Disable();
 		
 		if (Main_mmcInitialized)
 		{
