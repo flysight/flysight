@@ -1,0 +1,3 @@
+[submodule "vendor/lufa"]
+	path = vendor/lufa
+	url = https://github.com/abcminiuser/lufa.git
