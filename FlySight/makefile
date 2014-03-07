@@ -34,7 +34,7 @@ SRC          = $(TARGET).c                                                 \
 	           Lib/SCSI.c                                                  \
 	           $(LUFA_SRC_USB)                                             \
 	           $(LUFA_SRC_USBCLASS) 
-LUFA_PATH    = ../LUFA
+LUFA_PATH    = ../vendor/lufa/LUFA
 CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/
 LD_FLAGS     =
 
