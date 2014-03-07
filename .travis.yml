@@ -5,6 +5,5 @@ before_install:
 install:
   - sudo apt-get install -qq gcc-avr binutils-avr avr-libc
 cache: apt
-script: make -C FlySight
-
+script: make -C FlySight build.zip all
 
