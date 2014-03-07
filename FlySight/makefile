@@ -17,8 +17,8 @@ BOARD        = USER
 F_CPU        = 8000000
 F_USB        = $(F_CPU)
 OPTIMIZATION = s
-TARGET       = Main
-SRC          = $(TARGET).c                                                 \
+TARGET       = flysight
+SRC          = Main.c                                                      \
 	           Config.c                                                    \
 	           Descriptors.c                                               \
 	           Log.c                                                       \
@@ -51,3 +51,13 @@ include $(LUFA_PATH)/Build/lufa_dfu.mk
 include $(LUFA_PATH)/Build/lufa_hid.mk
 include $(LUFA_PATH)/Build/lufa_avrdude.mk
 include $(LUFA_PATH)/Build/lufa_atprogram.mk
+
+# Target to pack the build results into a single .zip
+build.zip: version.txt $(TARGET).bin $(TARGET).eep $(TARGET).elf $(TARGET).hex $(TARGET).lss $(TARGET).map $(TARGET).sym $(TARGET).size.txt
+	zip -9q $@ $^
+
+version.txt:
+	(git describe --always --dirty; git rev-parse HEAD) > $@
+
+$(TARGET).size.txt: $(TARGET).elf
+	$(CROSS)-size --mcu=$(MCU) --format=avr $< > $@
