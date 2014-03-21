@@ -180,10 +180,18 @@ static void Tone_LoadTable(void)
 
 static void Tone_LoadWAV(void)
 {
-	      UINT     br;
-	const uint16_t size = TONE_BUFFER_READ;
+	UINT     br;
+	uint16_t size = TONE_BUFFER_READ;
+	uint16_t i = Tone_write;
 
 	f_read(&Tone_file, (void *) (Main_buffer + Tone_write), size, &br);
+	size = br;
+
+	while (size--)
+	{
+		const uint8_t val = Main_buffer[i];
+		Main_buffer[i++] = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
+	}
 	
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
