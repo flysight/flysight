@@ -1,3 +1,5 @@
+#include <avr/pgmspace.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +14,10 @@
 
 static uint8_t Log_initialized = 0;
 static DWORD   Log_fattime;
+
+static const char Log_header[] PROGMEM = 
+	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n"
+	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n";
 
 DWORD get_fattime(void)
 {
@@ -79,6 +85,18 @@ static void Log_ToDate(char* name, uint8_t a, uint8_t b, uint8_t c)
     name[8] = 0;
 }
 
+static void Log_WriteString_P(
+	const char *str,
+	FIL        *file)
+{
+	char ch;
+
+	while ((ch = pgm_read_byte(str++)))
+	{
+		f_putc(ch, file);
+	}
+}
+
 void Log_Init(
 	uint16_t year,
 	uint8_t  month,
@@ -123,9 +141,7 @@ void Log_Init(
 		return ;
 	}
 
-	f_puts("time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n"
-           ",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n", 
-		   &Main_file);
+	Log_WriteString_P(Log_header, &Main_file);
 	
 	Log_initialized = 1;
 }

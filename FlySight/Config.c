@@ -121,6 +121,30 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   3 = Chirp down\r\n\
                  ;   4 = Warble\r\n";
 
+static const char Config_Model[] PROGMEM      = "Model";
+static const char Config_Rate[] PROGMEM       = "Rate";
+static const char Config_Mode[] PROGMEM       = "Mode";
+static const char Config_Min[] PROGMEM        = "Min";
+static const char Config_Max[] PROGMEM        = "Max";
+static const char Config_Limits[] PROGMEM     = "Limits";
+static const char Config_Volume[] PROGMEM     = "Volume";
+static const char Config_Mode_2[] PROGMEM     = "Mode_2";
+static const char Config_Min_Val_2[] PROGMEM  = "Min_Val_2";
+static const char Config_Max_Val_2[] PROGMEM  = "Max_Val_2";
+static const char Config_Min_Rate[] PROGMEM   = "Min_Rate";
+static const char Config_Max_Rate[] PROGMEM   = "Max_Rate";
+static const char Config_Flatline[] PROGMEM   = "Flatline";
+static const char Config_Sp_Mode[] PROGMEM    = "Sp_Mode";
+static const char Config_Sp_Units[] PROGMEM   = "Sp_Units";
+static const char Config_Sp_Rate[] PROGMEM    = "Sp_Rate";
+static const char Config_Sp_Dec[] PROGMEM     = "Sp_Dec";
+static const char Config_V_Thresh[] PROGMEM   = "V_Thresh";
+static const char Config_H_Thresh[] PROGMEM   = "H_Thresh";
+static const char Config_Use_SAS[] PROGMEM    = "Use_SAS";
+static const char Config_Window[] PROGMEM     = "Window";
+static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
+static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
+
 static void Config_WriteString_P(
 	const char *str,
 	FIL        *file)
@@ -183,37 +207,37 @@ void Config_Read(void)
 		val = atoi(result);
 		
 		#define HANDLE_VALUE(s,w,r,t) \
-			if ((t) && !strcmp(name, (s))) { (w) = (r); }
+			if ((t) && !strcmp_P(name, (s))) { (w) = (r); }
 
-		HANDLE_VALUE("Model",     UBX_model,         val,     val >= 0 && val <= 8);
-		HANDLE_VALUE("Rate",      UBX_rate,          val,     val >= 200);
-		HANDLE_VALUE("Mode",      UBX_mode,          val,     val >= 0 && val <= 4);
-		HANDLE_VALUE("Min",       UBX_min,           val,     TRUE);
-		HANDLE_VALUE("Max",       UBX_max,           val,     TRUE);
-		HANDLE_VALUE("Volume",    Tone_volume,       8 - val, val >= 0 && val <= 8);
-		HANDLE_VALUE("Limits",    UBX_limits,        val,     val >= 0 && val <= 2);
-		HANDLE_VALUE("Mode_2",    UBX_mode_2,        val,     (val >= 0 && val <= 4) || (val >= 8 && val <= 9));
-		HANDLE_VALUE("Min_Val_2", UBX_min_2,         val,     TRUE);
-		HANDLE_VALUE("Max_Val_2", UBX_max_2,         val,     TRUE);
-		HANDLE_VALUE("Min_Rate",  UBX_min_rate,      val * TONE_RATE_ONE_HZ / 100, val >= 0);
-		HANDLE_VALUE("Max_Rate",  UBX_max_rate,      val * TONE_RATE_ONE_HZ / 100, val >= 0);
-		HANDLE_VALUE("Flatline",  UBX_flatline,      val,     val == 0 || val == 1);
-		HANDLE_VALUE("V_Thresh",  UBX_threshold,     val,     TRUE);
-		HANDLE_VALUE("H_Thresh",  UBX_hThreshold,    val,     TRUE);
-		HANDLE_VALUE("Use_SAS",   UBX_use_sas,       val,     val == 0 || val == 1);
-		HANDLE_VALUE("Window",    UBX_alarm_window,  val * 1000, TRUE);
-		HANDLE_VALUE("Sp_Mode",   UBX_sp_mode,       val,     val >= 0 && val <= 4);
-		HANDLE_VALUE("Sp_Units",  UBX_sp_units,      val,     val >= 0 && val <= 1);
-		HANDLE_VALUE("Sp_Rate",   UBX_sp_rate,       val * 1000, val >= 0 && val <= 32);
-		HANDLE_VALUE("Sp_Dec",    UBX_sp_decimals,   val,     val >= 0 && val <= 2);
+		HANDLE_VALUE(Config_Model,     UBX_model,        val, val >= 0 && val <= 8);
+		HANDLE_VALUE(Config_Rate,      UBX_rate,         val, val >= 200);
+		HANDLE_VALUE(Config_Mode,      UBX_mode,         val, val >= 0 && val <= 4);
+		HANDLE_VALUE(Config_Min,       UBX_min,          val, TRUE);
+		HANDLE_VALUE(Config_Max,       UBX_max,          val, TRUE);
+		HANDLE_VALUE(Config_Limits,    UBX_limits,       val, val >= 0 && val <= 2);
+		HANDLE_VALUE(Config_Volume,    Tone_volume,      8 - val, val >= 0 && val <= 8);
+		HANDLE_VALUE(Config_Mode_2,    UBX_mode_2,       val, (val >= 0 && val <= 4) || (val >= 8 && val <= 9));
+		HANDLE_VALUE(Config_Min_Val_2, UBX_min_2,        val, TRUE);
+		HANDLE_VALUE(Config_Max_Val_2, UBX_max_2,        val, TRUE);
+		HANDLE_VALUE(Config_Min_Rate,  UBX_min_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
+		HANDLE_VALUE(Config_Max_Rate,  UBX_max_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
+		HANDLE_VALUE(Config_Flatline,  UBX_flatline,     val, val == 0 || val == 1);
+		HANDLE_VALUE(Config_Sp_Mode,   UBX_sp_mode,      val, val >= 0 && val <= 6);
+		HANDLE_VALUE(Config_Sp_Units,  UBX_sp_units,     val, val >= 0 && val <= 1);
+		HANDLE_VALUE(Config_Sp_Rate,   UBX_sp_rate,      val * 1000, val >= 0 && val <= 32);
+		HANDLE_VALUE(Config_Sp_Dec,    UBX_sp_decimals,  val, val >= 0 && val <= 2);
+		HANDLE_VALUE(Config_V_Thresh,  UBX_threshold,    val, TRUE);
+		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
+		HANDLE_VALUE(Config_Use_SAS,   UBX_use_sas,      val, val == 0 || val == 1);
+		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
 		
 		#undef HANDLE_VALUE
 		
-		if (!strcmp(name, "Alarm_Elev"))
+		if (!strcmp_P(name, Config_Alarm_Elev))
 		{
 			UBX_alarms[UBX_num_alarms].elev = val * 1000;
 		}
-		if (!strcmp(name, "Alarm_Type") && val != 0)
+		if (!strcmp_P(name, Config_Alarm_Type) && val != 0)
 		{
 			UBX_alarms[UBX_num_alarms].type = val;
 			++UBX_num_alarms;
