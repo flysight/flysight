@@ -7,3 +7,13 @@ install:
 cache: apt
 script: make -C FlySight build.zip all
 
+before_script:
+  # warm up the Flysight-CI environment, in case it's cold
+  - "curl https://flysight-ci.herokuapp.com/builds >/dev/null 2>&1 &"
+after_success:
+  # upload build.zip
+  - "curl -T FlySight/build.zip https://flysight-ci.herokuapp.com/builds?key=$FLYSIGHT_CI_KEY\\&github_slug=$TRAVIS_REPO_SLUG"
+
+env:
+  global:
+    - FLYSIGHT_CI_KEY=KP4tvLCWjgazruiR
