@@ -12,9 +12,9 @@
 
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
 
-#define TONE_BUFFER_LEN   MAIN_BUFFER_SIZE		// size of circular buffer
-#define TONE_BUFFER_WRITE TONE_BUFFER_LEN / 16	// threshold for writing between read operations
-#define TONE_BUFFER_CHUNK TONE_BUFFER_LEN / 8   // maximum bytes read in one operation
+#define TONE_BUFFER_LEN   MAIN_BUFFER_SIZE		 // size of circular buffer
+#define TONE_BUFFER_WRITE (TONE_BUFFER_LEN / 16) // threshold for writing between read operations
+#define TONE_BUFFER_CHUNK (TONE_BUFFER_LEN / 8)  // maximum bytes read in one operation
 
 #define TONE_STATE_IDLE  0
 #define TONE_STATE_PLAY  1
