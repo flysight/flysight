@@ -12,7 +12,9 @@
 
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
 
-#define TONE_BUFFER_LEN  MAIN_BUFFER_SIZE
+#define TONE_BUFFER_LEN   MAIN_BUFFER_SIZE		// size of circular buffer
+#define TONE_BUFFER_WRITE TONE_BUFFER_LEN / 16	// threshold for writing between read operations
+#define TONE_BUFFER_CHUNK TONE_BUFFER_LEN / 8   // maximum bytes read in one operation
 
 #define TONE_STATE_IDLE  0
 #define TONE_STATE_PLAY  1
@@ -20,6 +22,7 @@
 #define TONE_FLAGS_LOAD  1
 #define TONE_FLAGS_STOP  2
 #define TONE_FLAGS_BEEP  4
+#define TONE_FLAGS_WRITE 8
 
 #define TONE_MODE_BEEP   0
 #define TONE_MODE_WAV    1
@@ -172,6 +175,10 @@ static void Tone_LoadTable(void)
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		Tone_write += size;
+		if (size > TONE_BUFFER_WRITE)
+		{
+			Tone_flags &= ~TONE_FLAGS_WRITE;
+		}
 	}
 
 	if (!Tone_len)
@@ -202,6 +209,10 @@ static void Tone_ReadFile(
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		Tone_write += br;
+		if (br > TONE_BUFFER_WRITE)
+		{
+			Tone_flags &= ~TONE_FLAGS_WRITE;
+		}
 	}
 
 	if (br != size)
@@ -216,6 +227,7 @@ static void Tone_ReadFile(
 static void Tone_LoadWAV(void)
 {
 	uint16_t read;
+	uint16_t size;
 
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
@@ -224,20 +236,27 @@ static void Tone_LoadWAV(void)
 
 	if (Tone_write != read + TONE_BUFFER_LEN)
 	{
-		if (Tone_write / TONE_BUFFER_LEN != (read + TONE_BUFFER_LEN) / TONE_BUFFER_LEN)
+		size = MIN(TONE_BUFFER_CHUNK, read + TONE_BUFFER_LEN - Tone_write);
+	
+		if (Tone_write / TONE_BUFFER_LEN != (Tone_write + size) / TONE_BUFFER_LEN)
 		{
+			size -= TONE_BUFFER_LEN - (Tone_write % TONE_BUFFER_LEN);
 			Tone_ReadFile(TONE_BUFFER_LEN - (Tone_write % TONE_BUFFER_LEN));
 		}
 
 		if (Tone_flags & TONE_FLAGS_LOAD)
 		{
-			Tone_ReadFile(read + TONE_BUFFER_LEN - Tone_write);
+			Tone_ReadFile(size);
 		}
 	}
 }
 
 static void Tone_Load(void)
 {
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 6);
+#endif
+
 	switch (Tone_mode)
 	{
 	case TONE_MODE_BEEP:
@@ -247,11 +266,19 @@ static void Tone_Load(void)
 		Tone_LoadWAV();
 		break;
 	}
+
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 6);
+#endif
 }
 
 static void Tone_Start(
 	uint8_t mode)
 {
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 4);
+#endif
+
 	if (Tone_state == TONE_STATE_IDLE)
 	{
 		Tone_state = TONE_STATE_PLAY;
@@ -275,10 +302,18 @@ static void Tone_Start(
 		TCCR1B = (1 << WGM12) | (1 << CS10);
 		TIMSK1 = (1 << TOIE1);
 	}
+
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 4);
+#endif
 }
 
 void Tone_Stop(void)
 {
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 5);
+#endif
+
 	if (Tone_state != TONE_STATE_IDLE)
 	{
 		TCCR1A = 0;
@@ -309,10 +344,23 @@ void Tone_Stop(void)
 		Tone_flags &= ~TONE_FLAGS_STOP;
 		Tone_flags &= ~TONE_FLAGS_LOAD;
 	}
+
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 5);
+#endif
 }
 
 void Tone_Task(void)
 {
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 1);
+#endif
+
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		Tone_flags |= TONE_FLAGS_WRITE;
+	}
+
 	if (Tone_flags & TONE_FLAGS_BEEP)
 	{
 		if (Tone_state == TONE_STATE_IDLE)
@@ -335,6 +383,10 @@ void Tone_Task(void)
 	{
 		Tone_Load();
 	}
+
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 1);
+#endif
 }
 
 void Tone_Beep(
@@ -342,6 +394,10 @@ void Tone_Beep(
 	uint32_t chirp,
 	uint16_t len)
 {
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 2);
+#endif
+
 	Tone_Stop();
 	
 	Tone_step  = (int32_t) index * 3242 + 30212096;
@@ -349,11 +405,19 @@ void Tone_Beep(
 	Tone_len   = len;
 	
 	Tone_Start(TONE_MODE_BEEP);
+
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 2);
+#endif
 }
 
 void Tone_Play(
 	const char *filename)
 {
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 3);
+#endif
+
 	Tone_Stop();
 
 	f_chdir("\\audio");
@@ -364,11 +428,15 @@ void Tone_Play(
 
 		Tone_Start(TONE_MODE_WAV);
 	}
+
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 3);
+#endif
 }
 
 uint8_t Tone_CanWrite(void)
 {
-	return Tone_state == TONE_STATE_IDLE;
+	return (Tone_state == TONE_STATE_IDLE) || (Tone_flags & TONE_FLAGS_WRITE);
 }
 
 uint8_t Tone_IsIdle(void)

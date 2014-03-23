@@ -52,6 +52,14 @@ void SetupHardware(void)
 	CLKPR = (1 << CLKPCE);
 	CLKPR = 0;
 
+#ifdef TONE_DEBUG
+	MCUCR |= (1 << JTD); 
+	MCUCR |= (1 << JTD); 
+   
+	DDRF  = 0xff;
+	PORTF = 0x00;
+#endif
+
 	USB_Init();
 	LEDs_Init();
 	

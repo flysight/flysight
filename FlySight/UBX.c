@@ -998,6 +998,10 @@ void UBX_Task(void)
 	unsigned int ch;
 	char fname[13];
 
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 0);
+#endif
+
 	if ((ch = uart_getc()) != UART_NO_DATA)
 	{
 		if (UBX_HandleByte(ch))
@@ -1076,4 +1080,8 @@ void UBX_Task(void)
 		
 		++UBX_speech_ptr;
 	}
+	
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 0);
+#endif
 }

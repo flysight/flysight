@@ -3,6 +3,8 @@
 
 #include <avr/io.h>
 
+// #define TONE_DEBUG // uncomment to output timing information to PORTF
+
 #define TONE_RATE_ONE_HZ   65
 #define TONE_RATE_FLATLINE UINT16_MAX
 
