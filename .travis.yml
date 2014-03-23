@@ -1,0 +1,10 @@
+---
+language: c
+before_install:
+  - sudo apt-get update -qq
+install:
+  - sudo apt-get install -qq gcc-avr binutils-avr avr-libc
+cache: apt
+script: make -C FlySight
+
+
