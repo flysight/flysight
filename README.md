@@ -10,7 +10,7 @@
 
 FlySight uses an Atmel [AT90USB646](http://www.atmel.com/devices/at90usb646.aspx) microcontroller clocked at 8 MHZ. This chip has 64 KB of flash memory, 4 KB of RAM, an onboard USB PHY, and enough I/O to connect everything else. Other components of interest include:
 
-* the GPS module (a [u-blox NEO-6Q](http://www.u-blox.com/en/gps-modules/pvt-modules/previous-generations/neo-6-family.html) or NEO-7N (https://www.u-blox.com/en/gps-modules/pvt-modules/neo-7.html)),
+* the GPS module (a [u-blox NEO-6Q](http://www.u-blox.com/en/gps-modules/pvt-modules/previous-generations/neo-6-family.html) or [NEO-7N](https://www.u-blox.com/en/gps-modules/pvt-modules/neo-7.html)),
 * a micro-SD card connected via SPI (512 MB as shipped),
 * a red and a green LED,
 * a lithium polymer battery and charging circuit,
