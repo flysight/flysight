@@ -10,7 +10,7 @@
 
 FlySight uses an Atmel [AT90USB646](http://www.atmel.com/devices/at90usb646.aspx) microcontroller clocked at 8 MHZ. This chip has 64 KB of flash memory, 4 KB of RAM, an onboard USB PHY, and enough I/O to connect everything else. Other components of interest include:
 
-* the GPS module (a [u-blox NEO-6Q](http://www.u-blox.com/en/gps-modules/pvt-modules/previous-generations/neo-6-family.html) or NEO-7),
+* the GPS module (a [u-blox NEO-6Q](http://www.u-blox.com/en/gps-modules/pvt-modules/previous-generations/neo-6-family.html) or NEO-7N (https://www.u-blox.com/en/gps-modules/pvt-modules/neo-7.html)),
 * a micro-SD card connected via SPI (512 MB as shipped),
 * a red and a green LED,
 * a lithium polymer battery and charging circuit,
@@ -34,7 +34,9 @@ On UNIXy systems, install an AVR toolchain and run `make`. Some suggestions for 
 * Ubuntu Linux: `apt-get install build-essential gcc-avr binutils-avr avr-libc`
 * Mac OS X: check out [CrossPack](http://www.obdev.at/products/crosspack/), use `homebrew` to tap e.g. [homebrew-avr](https://github.com/larsimmisch/homebrew-avr)/[homebrew-embedded](https://github.com/darconeous/homebrew-embedded), or use the binaries embedded in the [Arduino IDE](http://arduino.cc/en/Main/Software#toc1)
 
-On Windows… pray.
+On Windows, the WinAVR toolchain is recommended:
+
+* WinAVR (http://winavr.sourceforge.net/index.html)
 
 ## Contributing
 
