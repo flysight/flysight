@@ -36,7 +36,7 @@ On UNIXy systems, install an AVR toolchain and run `make`. Some suggestions for 
 
 On Windows, the WinAVR toolchain is recommended:
 
-* WinAVR (http://winavr.sourceforge.net/index.html)
+* [WinAVR](http://winavr.sourceforge.net/index.html)
 
 ## Contributing
 
