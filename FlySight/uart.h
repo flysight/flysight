@@ -70,11 +70,11 @@ LICENSE:
 #define UART_BAUD_SELECT_DOUBLE_SPEED(baudRate,xtalCpu) (((xtalCpu)/((baudRate)*8l)-1)|0x8000)
 
 
-/** Size of the circular receive buffer, must be power of 2 */
+/** Size of the circular receive buffer, must be power of 2, not greater than 256 */
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE 512
+#define UART_RX_BUFFER_SIZE 256
 #endif
-/** Size of the circular transmit buffer, must be power of 2 */
+/** Size of the circular transmit buffer, must be power of 2, not greater than 256 */
 #ifndef UART_TX_BUFFER_SIZE
 #define UART_TX_BUFFER_SIZE 64
 #endif
