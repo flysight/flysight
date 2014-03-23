@@ -183,12 +183,39 @@ static void Tone_LoadTable(void)
 	}
 }
 
+static void Tone_ReadFile(
+	uint16_t size)
+{
+	UINT     br;
+	uint16_t i;
+	uint8_t  val;
+
+	f_read(&Tone_file, &Main_buffer[Tone_write % TONE_BUFFER_LEN], size, &br);
+
+	for (i = 0; i < br; ++i)
+	{
+		val = Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN];
+		val = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
+		Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN] = val;
+	}
+
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		Tone_write += br;
+	}
+
+	if (br != size)
+	{
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+			Tone_flags &= ~TONE_FLAGS_LOAD;
+		}
+	}
+}
+
 static void Tone_LoadWAV(void)
 {
-	uint8_t  val;
-	UINT     br;
 	uint16_t read;
-	uint16_t size, i;
 
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
@@ -199,54 +226,12 @@ static void Tone_LoadWAV(void)
 	{
 		if (Tone_write / TONE_BUFFER_LEN != (read + TONE_BUFFER_LEN) / TONE_BUFFER_LEN)
 		{
-			size = TONE_BUFFER_LEN - (Tone_write % TONE_BUFFER_LEN);
-			f_read(&Tone_file, &Main_buffer[Tone_write % TONE_BUFFER_LEN], size, &br);
-
-			for (i = 0; i < br; ++i)
-			{
-				val = Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN];
-				val = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
-				Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN] = val;
-			}
-
-			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-			{
-				Tone_write += br;
-			}
-
-			if (br != size)
-			{
-				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-				{
-					Tone_flags &= ~TONE_FLAGS_LOAD;
-				}
-			}
+			Tone_ReadFile(TONE_BUFFER_LEN - (Tone_write % TONE_BUFFER_LEN));
 		}
 
 		if (Tone_flags & TONE_FLAGS_LOAD)
 		{
-			size = read + TONE_BUFFER_LEN - Tone_write;
-			f_read(&Tone_file, &Main_buffer[Tone_write % TONE_BUFFER_LEN], size, &br);
-
-			for (i = 0; i < br; ++i)
-			{
-				val = Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN];
-				val = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
-				Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN] = val;
-			}
-
-			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-			{
-				Tone_write += br;
-			}
-
-			if (br != size)
-			{
-				ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-				{
-					Tone_flags &= ~TONE_FLAGS_LOAD;
-				}
-			}
+			Tone_ReadFile(read + TONE_BUFFER_LEN - Tone_write);
 		}
 	}
 }
