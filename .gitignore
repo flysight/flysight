@@ -1,9 +1,12 @@
 *.o
 *.o.d
+*.d
 *.lst
+*.lss
 *.map
 *.eep
 *.elf
+*.bin
 *.hex
 *.sym
 *.tmp
