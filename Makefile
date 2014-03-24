@@ -21,25 +21,25 @@ F_CPU        = 8000000
 F_USB        = $(F_CPU)
 OPTIMIZATION = s
 TARGET       = flysight
-SRC          = Main.c                                                      \
-	           Config.c                                                    \
-	           Descriptors.c                                               \
-	           Log.c                                                       \
-	           Power.c                                                     \
-	           Signature.c                                                 \
-	           Timer.c                                                     \
-	           Tone.c                                                      \
-	           uart.c                                                      \
-	           UBX.c                                                       \
-	           UsbInterface.c                                              \
-	           FatFS/ff.c                                                  \
-	           FatFS/mmc.c                                                 \
-	           Lib/MMC.c                                                   \
-	           Lib/SCSI.c                                                  \
+SRC          = src/Main.c                                                  \
+	           src/Config.c                                                \
+	           src/Descriptors.c                                           \
+	           src/Log.c                                                   \
+	           src/Power.c                                                 \
+	           src/Signature.c                                             \
+	           src/Timer.c                                                 \
+	           src/Tone.c                                                  \
+	           src/uart.c                                                  \
+	           src/UBX.c                                                   \
+	           src/UsbInterface.c                                          \
+	           src/FatFS/ff.c                                              \
+	           src/FatFS/mmc.c                                             \
+	           src/Lib/MMC.c                                               \
+	           src/Lib/SCSI.c                                              \
 	           $(LUFA_SRC_USB)                                             \
 	           $(LUFA_SRC_USBCLASS) 
-LUFA_PATH    = ../vendor/lufa/LUFA
-CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/ -fdata-sections $(VERSION_OPT)
+LUFA_PATH    = vendor/lufa/LUFA
+CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -Isrc -Isrc/Config/ -fdata-sections $(VERSION_OPT)
 LD_FLAGS     =
 
 # Default target
