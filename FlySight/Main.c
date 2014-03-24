@@ -8,12 +8,13 @@
 #include "Config.h"
 #include "Log.h"
 #include "Main.h"
-#include "MassStorage.h"
 #include "Power.h"
+#include "Signature.h"
 #include "Timer.h"
 #include "Tone.h"
+#include "uart.h"
 #include "UBX.h"
-#include "Signature.h"
+#include "UsbInterface.h"
 
 #define CHARGE_STATUS_DDR  DDRC
 #define CHARGE_STATUS_PORT PORTC
@@ -97,14 +98,16 @@ int main(void)
 		{
 			USB_Disable();
 		}
-	
+		
+		uart_init(12);
+		
 		for (;;)
 		{
 			CHARGE_STATUS_PORT |= CHARGE_STATUS_MASK ;
 			
 			if (Main_mmcInitialized)
 			{
-				MS_Device_USBTask(&Disk_MS_Interface);
+				USBInterfaceTask();
 				USB_USBTask();
 			}
 			

@@ -22,13 +22,13 @@
     <ClCompile Include="Lib\SCSI.c" />
     <ClCompile Include="Log.c" />
     <ClCompile Include="Main.c" />
-    <ClCompile Include="MassStorage.c" />
     <ClCompile Include="Power.c" />
     <ClCompile Include="Signature.c" />
     <ClCompile Include="Timer.c" />
     <ClCompile Include="Tone.c" />
     <ClCompile Include="uart.c" />
     <ClCompile Include="UBX.c" />
+    <ClCompile Include="UsbInterface.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board\LEDs.h" />
@@ -42,13 +42,13 @@
     <ClInclude Include="Lib\SCSI.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="MassStorage.h" />
     <ClInclude Include="Power.h" />
     <ClInclude Include="Signature.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Tone.h" />
     <ClInclude Include="uart.h" />
     <ClInclude Include="UBX.h" />
+    <ClInclude Include="UsbInterface.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F8474AD5-8D62-4374-B6EB-2AF5FFD713F9}</ProjectGuid>
