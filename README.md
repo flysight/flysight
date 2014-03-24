@@ -41,8 +41,9 @@ On Windows, the WinAVR toolchain is recommended:
 ## Contributing
 
 1. [Fork the project](https://help.github.com/articles/fork-a-repo)
-2. Create a feature branch (`git checkout -b shiny_new_feature`)
-3. Develop
-4. Commit your changes (`git commit -a`, being sure to give a useful message)
-5. Push to your branch (`git push origin shiny_new_feature`)
-6. [Create a pull request](https://help.github.com/articles/creating-a-pull-request)
+2. Update submodules (`git submodule init` and `git submodule update`)
+3. Create a feature branch (`git checkout -b shiny_new_feature`)
+4. Develop
+5. Commit your changes (`git commit -a`, being sure to give a useful message)
+6. Push to your branch (`git push origin shiny_new_feature`)
+7. [Create a pull request](https://help.github.com/articles/creating-a-pull-request)
