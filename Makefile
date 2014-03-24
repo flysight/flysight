@@ -32,14 +32,14 @@ SRC          = src/Main.c                                                  \
 	           src/uart.c                                                  \
 	           src/UBX.c                                                   \
 	           src/UsbInterface.c                                          \
-	           src/FatFS/ff.c                                              \
-	           src/FatFS/mmc.c                                             \
 	           src/Lib/MMC.c                                               \
 	           src/Lib/SCSI.c                                              \
+	           vendor/FatFS/ff.c                                           \
+	           vendor/FatFS/mmc.c                                          \
 	           $(LUFA_SRC_USB)                                             \
 	           $(LUFA_SRC_USBCLASS) 
 LUFA_PATH    = vendor/lufa/LUFA
-CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -Isrc -Isrc/Config/ -fdata-sections $(VERSION_OPT)
+CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -Isrc -Isrc/Config/ -Ivendor -fdata-sections $(VERSION_OPT)
 LD_FLAGS     =
 
 # Default target
