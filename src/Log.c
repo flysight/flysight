@@ -122,6 +122,7 @@ void Log_Init(
     year = year % 100;
     Log_ToDate(fname, year, month, day);
 
+	res = f_chdir("\\");
 	res = f_mkdir(fname);
 	res = f_chdir(fname);
 
