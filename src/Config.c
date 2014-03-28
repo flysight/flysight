@@ -211,7 +211,7 @@ void Config_Read(void)
 			if ((t) && !strcmp_P(name, (s))) { (w) = (r); }
 
 		HANDLE_VALUE(Config_Model,     UBX_model,        val, val >= 0 && val <= 8);
-		HANDLE_VALUE(Config_Rate,      UBX_rate,         val, val >= 200);
+		HANDLE_VALUE(Config_Rate,      UBX_rate,         val, val >= 100);
 		HANDLE_VALUE(Config_Mode,      UBX_mode,         val, val >= 0 && val <= 4);
 		HANDLE_VALUE(Config_Min,       UBX_min,          val, TRUE);
 		HANDLE_VALUE(Config_Max,       UBX_max,          val, TRUE);
