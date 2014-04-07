@@ -12,6 +12,8 @@
 
 #define FILE_NUMBER_ADDR 0
 
+uint8_t Log_dir_format = 0;
+
 static uint8_t Log_initialized = 0;
 static DWORD   Log_fattime;
 
@@ -72,6 +74,30 @@ void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter)
     f_puts(Log_WriteInt32ToBuf(buf + sizeof(buf), val, dec, dot, delimiter), &Main_file);
 }
 
+static void Log_ToLongDate(char* name, uint16_t year, uint8_t month, uint8_t day)
+{
+    div_t d;
+
+    // split YYYY into y1 = YY, y2 = YY
+    d = div(year, 100);
+    uint8_t y1 = d.quot, y2 = d.rem;
+    
+    // format aabbccdd
+    d = div(y1, 10);
+    name[0] = '0' + d.quot;
+    name[1] = '0' + d.rem;
+    d = div(y2, 10);
+    name[2] = '0' + d.quot;
+    name[3] = '0' + d.rem;
+    d = div(month, 10);
+    name[4] = '0' + d.quot;
+    name[5] = '0' + d.rem;
+    d = div(day, 10);
+    name[6] = '0' + d.quot;
+    name[7] = '0' + d.rem;
+    name[8] = 0;
+}
+
 static void Log_ToDate(char* name, uint8_t a, uint8_t b, uint8_t c)
 {
     name[0] = '0' + (a / 10); 
@@ -119,8 +145,12 @@ void Log_Init(
 	              ((DWORD) (sec / 2));
 
     // create folder.
-    year = year % 100;
-    Log_ToDate(fname, year, month, day);
+    if (Log_dir_format == 1) {
+        Log_ToLongDate(fname, year, month, day);
+    } else {
+        year = year % 100;
+        Log_ToDate(fname, year, month, day);
+    }
 
 	res = f_chdir("\\");
 	res = f_mkdir(fname);
