@@ -17,6 +17,8 @@
 #define TONE_BUFFER_WRITE (TONE_BUFFER_LEN / 8)  // threshold for writing between read operations
 #define TONE_BUFFER_CHUNK (TONE_BUFFER_LEN / 8)  // maximum bytes read in one operation
 
+#define TONE_SAMPLE_LEN  4  // number of repeated PWM samples
+
 #define TONE_STATE_IDLE  0
 #define TONE_STATE_PLAY  1
 
@@ -87,8 +89,14 @@ static volatile uint8_t  Tone_flags = 0;
 static          uint8_t  Tone_need_flush = 0;
 
 ISR(TIMER1_OVF_vect)
-{	
-	if (Tone_read == Tone_write)
+{
+	static int i = 0;
+
+	if (i++ % TONE_SAMPLE_LEN)
+	{
+		// repeated sample
+	}
+	else if (Tone_read == Tone_write)
 	{
 #ifdef TONE_DEBUG
 		if (Tone_flags & TONE_FLAGS_LOAD)
@@ -390,9 +398,9 @@ void Tone_Beep(
 
 	Tone_Stop();
 	
-	Tone_step  = (int32_t) index * 3242 + 30212096;
+	Tone_step  = ((int32_t) index * 3242 + 30212096) * TONE_SAMPLE_LEN;
 	Tone_chirp = chirp;
-	Tone_len   = len;
+	Tone_len   = len / TONE_SAMPLE_LEN;
 	
 	Tone_Start(TONE_MODE_BEEP);
 
