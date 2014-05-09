@@ -887,7 +887,8 @@ static void UBX_HandleTimeUTC(void)
 				current->nav_timeutc.min,
 				current->nav_timeutc.sec);
 		
-			Tone_FlushWhenReady();
+			Log_Flush();
+			Power_Release();
 
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
@@ -1085,12 +1086,14 @@ void UBX_Task(void)
 				Log_WriteInt32(current->nav_sol.gpsFix,    0, 0, ',');
 				Log_WriteInt32(current->nav_sol.numSV,     0, 0, '\r');
 				Log_WriteChar('\n');
-				UBX_write_state = UBX_WRITE_START;
 				++UBX_read;
 				break;
+			case 7:
+				Log_Flush();
+				Power_Release();
+				UBX_write_state = UBX_WRITE_START;
+				break;
 		}
-
-		Tone_FlushWhenReady();
 
 #ifdef TONE_DEBUG
 		PORTF &= ~(1 << 1);

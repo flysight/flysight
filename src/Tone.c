@@ -86,8 +86,6 @@ static volatile uint16_t Tone_rate = 0;
 
 static volatile uint8_t  Tone_flags = 0;
 
-static          uint8_t  Tone_need_flush = 0;
-
 ISR(TIMER1_OVF_vect)
 {
 	static int i = 0;
@@ -330,13 +328,6 @@ void Tone_Stop(void)
 			f_close(&Tone_file);
 			break;
 		}
-		
-		if (Tone_need_flush)
-		{
-			Log_Flush();
-			Power_Release();
-			Tone_need_flush = 0;
-		}
 
 		Tone_state = TONE_STATE_IDLE;
 	}
@@ -440,18 +431,4 @@ uint8_t Tone_CanWrite(void)
 uint8_t Tone_IsIdle(void)
 {
 	return Tone_state == TONE_STATE_IDLE;
-}
-
-void Tone_FlushWhenReady(void)
-{
-	if (Tone_state == TONE_STATE_IDLE)
-	{
-		Log_Flush();
-		Power_Release();
-		Tone_need_flush = 0;
-	}
-	else
-	{
-		Tone_need_flush = 1;
-	}
 }
