@@ -86,9 +86,11 @@ static volatile uint16_t Tone_rate = 0;
 
 static volatile uint8_t  Tone_flags = 0;
 
+static          uint8_t  Tone_need_flush = 0;
+
 ISR(TIMER1_OVF_vect)
 {
-	static int i = 0;
+	static uint8_t i = 0;
 	static uint16_t s1, s2, step;
 
 	if (i++ % TONE_SAMPLE_LEN)
@@ -100,7 +102,7 @@ ISR(TIMER1_OVF_vect)
 #ifdef TONE_DEBUG
 		if (Tone_flags & TONE_FLAGS_LOAD)
 		{
-			PORTF ^= (1 << 7);
+			PORTF ^= (1 << 5);
 		}
 #endif
 		
@@ -279,10 +281,6 @@ static void Tone_LoadWAV(void)
 
 static void Tone_Load(void)
 {
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 5);
-#endif
-
 	switch (Tone_mode)
 	{
 	case TONE_MODE_BEEP:
@@ -292,10 +290,6 @@ static void Tone_Load(void)
 		Tone_LoadWAV();
 		break;
 	}
-
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 5);
-#endif
 }
 
 static void Tone_Start(
@@ -343,6 +337,13 @@ void Tone_Stop(void)
 			break;
 		}
 
+		if (Tone_need_flush)
+		{
+			Log_Flush();
+			Power_Release();
+			Tone_need_flush = 0;
+		}
+
 		Tone_state = TONE_STATE_IDLE;
 	}
 
@@ -355,10 +356,6 @@ void Tone_Stop(void)
 
 void Tone_Task(void)
 {
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 2);
-#endif
-
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		Tone_flags |= TONE_FLAGS_WRITE;
@@ -386,10 +383,6 @@ void Tone_Task(void)
 	{
 		Tone_Load();
 	}
-
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 2);
-#endif
 }
 
 void Tone_Beep(
@@ -397,10 +390,6 @@ void Tone_Beep(
 	uint32_t chirp,
 	uint16_t len)
 {
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 3);
-#endif
-
 	Tone_Stop();
 	
 	Tone_step  = ((int32_t) index * 3242 + 30212096) * TONE_SAMPLE_LEN;
@@ -408,19 +397,11 @@ void Tone_Beep(
 	Tone_len   = len / TONE_SAMPLE_LEN;
 	
 	Tone_Start(TONE_MODE_BEEP);
-
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 3);
-#endif
 }
 
 void Tone_Play(
 	const char *filename)
 {
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 4);
-#endif
-
 	Tone_Stop();
 
 	f_chdir("\\audio");
@@ -431,10 +412,6 @@ void Tone_Play(
 
 		Tone_Start(TONE_MODE_WAV);
 	}
-
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 4);
-#endif
 }
 
 uint8_t Tone_CanWrite(void)
@@ -445,4 +422,18 @@ uint8_t Tone_CanWrite(void)
 uint8_t Tone_IsIdle(void)
 {
 	return Tone_state == TONE_STATE_IDLE;
+}
+
+void Tone_FlushWhenReady(void)
+{
+	if (Tone_state == TONE_STATE_IDLE)
+	{
+		Log_Flush();
+		Power_Release();
+		Tone_need_flush = 0;
+	}
+	else
+	{
+		Tone_need_flush = 1;
+	}
 }

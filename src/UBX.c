@@ -53,8 +53,6 @@
 #define UBX_NMEA_GPRMC      0x04
 #define UBX_NMEA_GPVTG      0x05
 
-#define UBX_WRITE_START     0
-
 #define UBX_UNITS_KMH       0
 #define UBX_UNITS_MPH       1
 
@@ -268,7 +266,7 @@ static volatile uint8_t UBX_hasFix        = 0;
 static volatile uint8_t UBX_prevFix       = 0;
 static          uint8_t UBX_suppress_tone = 0;
 
-static int8_t   UBX_write_state = UBX_WRITE_START;
+static int8_t   UBX_write_state = 0;
 
 static char UBX_speech_buf[16] = "\0";
 static char *UBX_speech_ptr = UBX_speech_buf;
@@ -887,8 +885,7 @@ static void UBX_HandleTimeUTC(void)
 				current->nav_timeutc.min,
 				current->nav_timeutc.sec);
 		
-			Log_Flush();
-			Power_Release();
+			Tone_FlushWhenReady();
 
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
@@ -904,7 +901,7 @@ static void UBX_HandleMessage(void)
 #ifdef TONE_DEBUG
 	if (UBX_read + UBX_BUFFER_LEN == UBX_write)
 	{
-		PORTF ^= (1 << 6);
+		PORTF ^= (1 << 4);
 	}
 #endif
 	
@@ -1029,10 +1026,6 @@ void UBX_Task(void)
 	uint8_t i;
 	UBX_saved_t *current;
 
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 0);
-#endif
-
 	while ((ch = uart_getc()) != UART_NO_DATA)
 	{
 		if (UBX_HandleByte(ch))
@@ -1043,10 +1036,6 @@ void UBX_Task(void)
 	
 	if (UBX_read != UBX_write && Tone_CanWrite())
 	{
-#ifdef TONE_DEBUG
-		PORTF |= (1 << 1);
-#endif
-
 		current = UBX_saved + (UBX_read % UBX_BUFFER_LEN);
 		
 		Power_Hold();
@@ -1087,17 +1076,11 @@ void UBX_Task(void)
 				Log_WriteInt32(current->nav_sol.numSV,     0, 0, '\r');
 				Log_WriteChar('\n');
 				++UBX_read;
-				break;
-			case 7:
-				Log_Flush();
-				Power_Release();
-				UBX_write_state = UBX_WRITE_START;
+				UBX_write_state = 0;
 				break;
 		}
-
-#ifdef TONE_DEBUG
-		PORTF &= ~(1 << 1);
-#endif
+		
+		Tone_FlushWhenReady();
 	}
 	
 	if (*UBX_speech_ptr && Tone_IsIdle())
@@ -1124,8 +1107,4 @@ void UBX_Task(void)
 		
 		++UBX_speech_ptr;
 	}
-	
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 0);
-#endif
 }

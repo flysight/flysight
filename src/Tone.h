@@ -32,4 +32,6 @@ uint8_t Tone_CanWrite(void);
 uint8_t Tone_CanFlush(void);
 uint8_t Tone_IsIdle(void);
 
+void Tone_FlushWhenReady(void);
+
 #endif
