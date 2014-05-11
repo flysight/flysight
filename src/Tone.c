@@ -89,10 +89,11 @@ static volatile uint8_t  Tone_flags = 0;
 ISR(TIMER1_OVF_vect)
 {
 	static int i = 0;
+	static uint16_t s1, s2, step;
 
 	if (i++ % TONE_SAMPLE_LEN)
 	{
-		// repeated sample
+		s1 += step;
 	}
 	else if (Tone_read == Tone_write)
 	{
@@ -111,9 +112,26 @@ ISR(TIMER1_OVF_vect)
 	}
 	else 
 	{
-		OCR1A = OCR1B = Main_buffer[Tone_read % TONE_BUFFER_LEN];
+		s1 = s2;
+		s2 = (uint16_t) Main_buffer[Tone_read % TONE_BUFFER_LEN] << 8;
+		
+		// The contortions below are necessary to ensure that the division by 
+		// TONE_SAMPLE_LEN uses shift operations instead of calling a signed 
+		// integer division function.
+		
+		if (s1 < s2)
+		{
+			step = (s2 - s1) / TONE_SAMPLE_LEN;
+		}
+		else
+		{
+			step = -((s1 - s2) / TONE_SAMPLE_LEN);
+		}
+		
 		++Tone_read;
 	}
+
+	OCR1A = OCR1B = s1 >> 8;
 }
 
 void Tone_Init(void)
