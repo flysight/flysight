@@ -119,7 +119,7 @@ ISR(TIMER1_OVF_vect)
 		// TONE_SAMPLE_LEN uses shift operations instead of calling a signed 
 		// integer division function.
 		
-		if (s1 < s2)
+		if (s1 <= s2)
 		{
 			step = (s2 - s1) / TONE_SAMPLE_LEN;
 		}
@@ -262,10 +262,6 @@ static void Tone_LoadWAV(void)
 
 	if (Tone_write != read + TONE_BUFFER_LEN)
 	{
-/*
-		size = MAX(TONE_BUFFER_CHUNK, Tone_write - read);
-		size = MIN(size, read + TONE_BUFFER_LEN - Tone_write);
-*/	
 		size = MIN(TONE_BUFFER_CHUNK, read + TONE_BUFFER_LEN - Tone_write);
 
 		if (Tone_write / TONE_BUFFER_LEN != (Tone_write + size) / TONE_BUFFER_LEN)
