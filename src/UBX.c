@@ -56,7 +56,7 @@
 #define UBX_UNITS_KMH       0
 #define UBX_UNITS_MPH       1
 
-#define UBX_BUFFER_LEN      2
+#define UBX_BUFFER_LEN      4
 
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
@@ -259,7 +259,7 @@ typedef struct
 UBX_saved_t ;
 static UBX_saved_t UBX_saved[UBX_BUFFER_LEN];
 
-static uint8_t UBX_read = 0;
+static uint8_t UBX_read  = 0;
 static uint8_t UBX_write = 0;
 
 static volatile uint8_t UBX_hasFix        = 0;
@@ -882,7 +882,8 @@ static void UBX_HandleTimeUTC(void)
 				current->nav_timeutc.min,
 				current->nav_timeutc.sec);
 		
-			Tone_FlushWhenReady();
+			Log_Flush();
+			Power_Release();
 
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
@@ -1019,10 +1020,12 @@ void UBX_Init(void)
 void UBX_Task(void)
 {
 	static char buf[128];
-	char *ptr;
+	static uint8_t need_flush = 0;
 
 	unsigned int ch;
+
 	UBX_saved_t *current;
+	char *ptr;
 
 	while ((ch = uart_getc()) != UART_NO_DATA)
 	{
@@ -1068,12 +1071,18 @@ void UBX_Task(void)
 		++UBX_read;
 
 		f_puts(ptr, &Main_file);
+		need_flush = 1;
 		
-		Tone_FlushWhenReady();
-
 #ifdef TONE_DEBUG
 	PORTF &= ~(1 << 1);
 #endif
+	}
+
+	if (need_flush && Tone_CanWrite())
+	{
+		Log_Flush();
+		Power_Release();
+		need_flush = 0;
 	}
 	
 	if (*UBX_speech_ptr && Tone_IsIdle())
