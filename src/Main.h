@@ -5,7 +5,7 @@
 
 #include "FatFS/ff.h"
 
-#define MAIN_BUFFER_SIZE 512
+#define MAIN_BUFFER_SIZE 1024
 
 extern uint8_t Main_activeLED;
 extern FIL     Main_file;
