@@ -102,7 +102,7 @@ ISR(TIMER1_OVF_vect)
 #ifdef TONE_DEBUG
 		if (Tone_flags & TONE_FLAGS_LOAD)
 		{
-			PORTF ^= (1 << 5);
+			PORTF ^= (1 << 4);
 		}
 #endif
 		
@@ -257,6 +257,10 @@ static void Tone_LoadWAV(void)
 	uint16_t read;
 	uint16_t size;
 
+#ifdef TONE_DEBUG
+	PORTF |= (1 << 2);
+#endif
+	
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		read = Tone_read;
@@ -277,6 +281,10 @@ static void Tone_LoadWAV(void)
 			Tone_ReadFile(size);
 		}
 	}
+
+#ifdef TONE_DEBUG
+	PORTF &= ~(1 << 2);
+#endif
 }
 
 static void Tone_Load(void)

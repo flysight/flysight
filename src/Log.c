@@ -41,7 +41,6 @@ char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char d
 {
     int32_t value = val > 0 ? val : -val;
 
-    *--ptr = 0;
     *--ptr = delimiter;
     while (value > 0 || dec > 0)
     {
@@ -63,13 +62,6 @@ char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char d
     }
 	
 	return ptr;
-}
-
-void Log_WriteInt32(int32_t val, int8_t dec, int8_t dot, char delimiter)
-{
-	char buf[16];
-
-    f_puts(Log_WriteInt32ToBuf(buf + sizeof(buf), val, dec, dot, delimiter), &Main_file);
 }
 
 static void Log_ToDate(char* name, uint8_t a, uint8_t b, uint8_t c)

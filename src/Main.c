@@ -48,6 +48,8 @@ static void delay_ms(
 
 void SetupHardware(void)
 {
+	uint8_t i;
+
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
 
@@ -59,6 +61,13 @@ void SetupHardware(void)
 	MCUCR |= (1 << JTD); 
    
 	DDRF  = 0xff;
+	
+	for (i = 0; i < 8; ++i)
+	{
+		PORTF = (1 << i);
+		delay_ms(1);
+	}
+	
 	PORTF = 0x00;
 #endif
 
