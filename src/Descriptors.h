@@ -43,7 +43,11 @@
 
 		#include "Config/AppConfig.h"
 
+	/* Enable/disable serial interface: */
+		// #define USE_SERIAL_INTERFACE
+		
 	/* Macros: */
+#ifdef USE_SERIAL_INTERFACE
 		/** Endpoint address of the CDC device-to-host notification IN endpoint. */
 		#define CDC_NOTIFICATION_EPADDR        (ENDPOINT_DIR_IN  | 1)
 
@@ -64,6 +68,13 @@
 
 		/** Endpoint address of the Mass Storage host-to-device data OUT endpoint. */
 		#define MASS_STORAGE_OUT_EPADDR        (ENDPOINT_DIR_OUT | 5)
+#else
+		/** Endpoint address of the Mass Storage device-to-host data IN endpoint. */
+		#define MASS_STORAGE_IN_EPADDR         (ENDPOINT_DIR_IN  | 3)
+
+		/** Endpoint address of the Mass Storage host-to-device data OUT endpoint. */
+		#define MASS_STORAGE_OUT_EPADDR        (ENDPOINT_DIR_OUT | 4)
+#endif
 
 		/** Size in bytes of the Mass Storage data endpoints. */
 		#define MASS_STORAGE_IO_EPSIZE         64
@@ -76,6 +87,7 @@
 		{
 			USB_Descriptor_Configuration_Header_t    Config;
 
+#ifdef USE_SERIAL_INTERFACE
 			// CDC Control Interface
 			USB_Descriptor_Interface_Association_t   CDC_IAD;
 			USB_Descriptor_Interface_t               CDC_CCI_Interface;
@@ -88,6 +100,7 @@
 			USB_Descriptor_Interface_t               CDC_DCI_Interface;
 			USB_Descriptor_Endpoint_t                CDC_DataOutEndpoint;
 			USB_Descriptor_Endpoint_t                CDC_DataInEndpoint;
+#endif
 
 			// Mass Storage Interface
 			USB_Descriptor_Interface_t               MS_Interface;
@@ -101,9 +114,13 @@
 	 */
 		enum InterfaceDescriptors_t
 		{
+#ifdef USE_SERIAL_INTERFACE
 			INTERFACE_ID_CDC_CCI     = 0, /**< CDC CCI interface descriptor ID */
 			INTERFACE_ID_CDC_DCI     = 1, /**< CDC DCI interface descriptor ID */
 			INTERFACE_ID_MassStorage = 2, /**< Mass storage interface descriptor ID */
+#else
+			INTERFACE_ID_MassStorage = 0, /**< Mass storage interface descriptor ID */
+#endif
 		};
 
 		/** Enum for the device string descriptor IDs within the device. Each string descriptor should

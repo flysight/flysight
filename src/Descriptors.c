@@ -77,7 +77,11 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 			.Header                 = {.Size = sizeof(USB_Descriptor_Configuration_Header_t), .Type = DTYPE_Configuration},
 
 			.TotalConfigurationSize = sizeof(USB_Descriptor_Configuration_t),
+#ifdef USE_SERIAL_INTERFACE
 			.TotalInterfaces        = 3,
+#else
+			.TotalInterfaces        = 1,
+#endif
 
 			.ConfigurationNumber    = 1,
 			.ConfigurationStrIndex  = NO_DESCRIPTOR,
@@ -87,6 +91,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(250)
 		},
 
+#ifdef USE_SERIAL_INTERFACE
 	.CDC_IAD =
 		{
 			.Header                 = {.Size = sizeof(USB_Descriptor_Interface_Association_t), .Type = DTYPE_InterfaceAssociation},
@@ -187,6 +192,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 			.EndpointSize           = CDC_TXRX_EPSIZE,
 			.PollingIntervalMS      = 0x05
 		},
+#endif		
 
 	.MS_Interface =
 		{
