@@ -23,6 +23,7 @@ USB_ClassInfo_MS_Device_t Disk_MS_Interface =
 	},
 };
 
+#ifdef USE_SERIAL_INTERFACE
 USB_ClassInfo_CDC_Device_t UBX_CDC_Interface =
 {
 	.Config =
@@ -48,6 +49,7 @@ USB_ClassInfo_CDC_Device_t UBX_CDC_Interface =
 				},
 		},
 };
+#endif
 
 
 void EVENT_USB_Device_Connect(void)
@@ -63,13 +65,17 @@ void EVENT_USB_Device_Disconnect(void)
 void EVENT_USB_Device_ConfigurationChanged(void)
 {
 	MS_Device_ConfigureEndpoints(&Disk_MS_Interface) ;
+#ifdef USE_SERIAL_INTERFACE
 	CDC_Device_ConfigureEndpoints(&UBX_CDC_Interface);
+#endif
 }
 
 void EVENT_USB_Device_ControlRequest(void)
 {
 	MS_Device_ProcessControlRequest(&Disk_MS_Interface);
+#ifdef USE_SERIAL_INTERFACE
 	CDC_Device_ProcessControlRequest(&UBX_CDC_Interface);
+#endif
 }
 
 bool CALLBACK_MS_Device_SCSICommandReceived(
@@ -86,6 +92,7 @@ bool CALLBACK_MS_Device_SCSICommandReceived(
 
 void USBInterfaceTask(void)
 {
+#ifdef USE_SERIAL_INTERFACE
 	uint16_t ch;
 	
 	// Pipe UART in -> CDC out
@@ -100,5 +107,6 @@ void USBInterfaceTask(void)
 	
 	// Pump LUFA for both interfaces
 	CDC_Device_USBTask(&UBX_CDC_Interface);
+#endif
 	MS_Device_USBTask(&Disk_MS_Interface);
 }
