@@ -378,7 +378,7 @@ void Tone_Beep(
 	Tone_Stop();
 	
 	Tone_step  = ((int32_t) index * 3242 + 30212096) * TONE_SAMPLE_LEN;
-	Tone_chirp = chirp;
+	Tone_chirp = chirp * TONE_SAMPLE_LEN * TONE_SAMPLE_LEN;
 	Tone_len   = len / TONE_SAMPLE_LEN;
 	
 	Tone_Start(TONE_MODE_BEEP);
