@@ -205,7 +205,7 @@ void Config_Read(void)
 		result = strtok(0, " \t:");
 		if (result == 0) continue ;
 		
-		val = atoi(result);
+		val = atol(result);
 		
 		#define HANDLE_VALUE(s,w,r,t) \
 			if ((t) && !strcmp_P(name, (s))) { (w) = (r); }
