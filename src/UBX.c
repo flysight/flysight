@@ -1118,7 +1118,7 @@ void UBX_Task(void)
 		{
 			Tone_Play("dot.wav");
 		}
-		else if (*UBX_speech_ptr >= '0' && *UBX_speech_ptr <= '9')
+		else
 		{
 			buf[0] = *UBX_speech_ptr;
 			buf[1] = '.';
