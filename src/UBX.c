@@ -733,6 +733,8 @@ static void UBX_SpeakValue(void)
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
 
 	uint16_t speed_mul = 1024;
+	
+	char *end_ptr;
 
 	if (UBX_use_sas)
 	{
@@ -765,8 +767,13 @@ static void UBX_SpeakValue(void)
 		break;
 	}
 
-	UBX_speech_ptr = UBX_speech_buf + sizeof(UBX_speech_buf);
+	// Step 0: Initialize speech pointers, leaving room at the end for one unit character
+	
+	UBX_speech_ptr = UBX_speech_buf + sizeof(UBX_speech_buf) - 1;
+	end_ptr = UBX_speech_ptr;
 
+	// Step 1: Get speech value with 2 decimal places
+	
 	switch (UBX_sp_mode)
 	{
 	case 0: // Horizontal speed
@@ -786,20 +793,36 @@ static void UBX_SpeakValue(void)
 		{
 			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->nav_velned.velD / current->nav_velned.gSpeed, 2, 1, 0);
 		}
+		else
+		{
+			*(--UBX_speech_ptr) = 0;
+		}
 		break;
 	case 4: // Total speed
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->nav_velned.speed * 1024) / speed_mul, 2, 1, 0);
 		break;
 	}
+	
+	// Step 2: Truncate to the desired number of decimal places
 
-	if (UBX_sp_decimals == 0)
+	if (UBX_sp_decimals == 0) end_ptr -= 3;
+	else                      end_ptr -= 2 - UBX_sp_decimals;
+	
+	// Step 3: Add units if needed, e.g., *(++end_ptr) = 'k';
+	
+	switch (UBX_sp_mode)
 	{
-		UBX_speech_buf[sizeof(UBX_speech_buf) - 4] = 0;
+	case 0: // Horizontal speed
+	case 1: // Vertical speed
+	case 2: // Glide ratio
+	case 3: // Inverse glide ratio
+	case 4: // Total speed
+		break;
 	}
-	else
-	{
-		UBX_speech_buf[sizeof(UBX_speech_buf) - 3 + UBX_sp_decimals] = 0;
-	}
+	
+	// Step 4: Terminate with a null
+
+	*(--end_ptr) = 0;
 }
 
 static void UBX_HandleVelocity(void)
