@@ -805,10 +805,10 @@ static void UBX_SpeakValue(void)
 	
 	// Step 2: Truncate to the desired number of decimal places
 
-	if (UBX_sp_decimals == 0) end_ptr -= 3;
-	else                      end_ptr -= 2 - UBX_sp_decimals;
+	if (UBX_sp_decimals == 0) end_ptr -= 4;
+	else                      end_ptr -= 3 - UBX_sp_decimals;
 	
-	// Step 3: Add units if needed, e.g., *(++end_ptr) = 'k';
+	// Step 3: Add units if needed, e.g., *(end_ptr++) = 'k';
 	
 	switch (UBX_sp_mode)
 	{
@@ -822,7 +822,7 @@ static void UBX_SpeakValue(void)
 	
 	// Step 4: Terminate with a null
 
-	*(--end_ptr) = 0;
+	*(end_ptr++) = 0;
 }
 
 static void UBX_HandleVelocity(void)
