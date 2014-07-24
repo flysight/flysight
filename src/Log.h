@@ -3,6 +3,7 @@
 
 extern uint8_t Log_enable_raw;
 extern uint8_t Log_enable_csv;
+extern int16_t Log_tz_offset;
 
 void Log_Flush(void);
 void Log_WriteChar(char ch);
