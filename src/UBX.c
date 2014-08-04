@@ -58,6 +58,12 @@
 
 #define UBX_BUFFER_LEN      4
 
+#define UBX_MSG_POSLLH      0x01
+#define UBX_MSG_SOL         0x02
+#define UBX_MSG_VELNED      0x04
+#define UBX_MSG_TIMEUTC     0x08
+#define UBX_MSG_ALL         (UBX_MSG_POSLLH | UBX_MSG_SOL | UBX_MSG_VELNED | UBX_MSG_TIMEUTC)
+
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
 	1024, 1077, 1135, 1197,
@@ -249,6 +255,9 @@ UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
 uint8_t   UBX_num_alarms   = 0;
 uint32_t  UBX_alarm_window = 0;
 
+static uint32_t UBX_time_of_week = 0;
+static uint8_t  UBX_msg_received = 0;
+
 typedef struct
 {
 	UBX_nav_posllh  nav_pos_llh;
@@ -268,6 +277,10 @@ static          uint8_t UBX_suppress_tone = 0;
 
 static char UBX_speech_buf[16] = "\0";
 static char *UBX_speech_ptr = UBX_speech_buf;
+
+static const char UBX_header[] PROGMEM = 
+	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n"
+	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n";
 
 void UBX_Update(void)
 {
@@ -494,6 +507,51 @@ static void UBX_SendMessage(
 	uart_putc(ck_b);
 }
 
+static void UBX_ReceiveMessage(
+	uint8_t msg_received, 
+	uint32_t time_of_week)
+{
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+
+	if (time_of_week != UBX_time_of_week)
+	{
+		UBX_time_of_week = time_of_week;
+		UBX_msg_received = 0;
+	}
+
+	UBX_msg_received |= msg_received;
+
+	if (UBX_msg_received == UBX_MSG_ALL)
+	{
+		if (current->nav_sol.gpsFix)
+		{
+			if (!Log_IsInitialized())
+			{
+				Power_Hold();
+				
+				Log_Init(
+					current->nav_timeutc.year,
+					current->nav_timeutc.month,
+					current->nav_timeutc.day,
+					current->nav_timeutc.hour,
+					current->nav_timeutc.min,
+					current->nav_timeutc.sec);
+
+				Log_WriteString(UBX_header);
+			
+				Log_Flush();
+				Power_Release();
+
+				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+			}
+			
+			++UBX_write;
+		}
+
+		UBX_msg_received = 0;
+	}
+}
+
 static void UBX_SetTone(
 	int32_t val_1,
 	int32_t min_1,
@@ -582,6 +640,7 @@ static void UBX_HandleNavSol(void)
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
 	
 	current->nav_sol = *((UBX_nav_sol *) UBX_payload);
+	UBX_ReceiveMessage(UBX_MSG_SOL, current->nav_sol.iTOW);
 
 	UBX_prevFix = UBX_hasFix;
 
@@ -606,6 +665,8 @@ static void UBX_HandlePosition(void)
 	uint8_t i, suppress_tone;
 
 	current->nav_pos_llh = *((UBX_nav_posllh *) UBX_payload);
+	UBX_ReceiveMessage(UBX_MSG_POSLLH, current->nav_pos_llh.iTOW);
+
 	hMSL = current->nav_pos_llh.hMSL;
 
 	if (UBX_hasFix && UBX_prevFix)
@@ -812,6 +873,7 @@ static void UBX_HandleVelocity(void)
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
 	
 	current->nav_velned = *((UBX_nav_velned *) UBX_payload);
+	UBX_ReceiveMessage(UBX_MSG_VELNED, current->nav_velned.iTOW);
 
 	if (ABS(current->nav_velned.velD) >= UBX_threshold && 
 	    current->nav_velned.gSpeed >= UBX_hThreshold)
@@ -867,35 +929,11 @@ static void UBX_HandleTimeUTC(void)
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
 	
 	current->nav_timeutc = *((UBX_nav_timeutc *) UBX_payload);
-
-	if (UBX_hasFix)
-	{
-		if (!Log_IsInitialized())
-		{
-			Power_Hold();
-			
-			Log_Init(
-				current->nav_timeutc.year,
-				current->nav_timeutc.month,
-				current->nav_timeutc.day,
-				current->nav_timeutc.hour,
-				current->nav_timeutc.min,
-				current->nav_timeutc.sec);
-		
-			Log_Flush();
-			Power_Release();
-
-			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
-		}
-		
-		++UBX_write;
-	}
+	UBX_ReceiveMessage(UBX_MSG_TIMEUTC, current->nav_timeutc.iTOW);
 }
 
 static void UBX_HandleMessage(void)
 {
-	// NOTE: Messages come in the order below.
-
 #ifdef TONE_DEBUG
 	if (UBX_read + UBX_BUFFER_LEN == UBX_write)
 	{
