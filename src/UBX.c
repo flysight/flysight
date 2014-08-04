@@ -523,7 +523,7 @@ static void UBX_ReceiveMessage(
 
 	if (UBX_msg_received == UBX_MSG_ALL)
 	{
-		if (current->nav_sol.gpsFix)
+		if (current->nav_sol.gpsFix == 3)
 		{
 			if (!Log_IsInitialized())
 			{
