@@ -7,6 +7,7 @@ extern int16_t Log_tz_offset;
 
 void Log_Flush(void);
 void Log_WriteChar(char ch);
+void Log_WriteString(const char *str);
 char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char delimiter);
 
 void Log_Init(uint16_t year, uint8_t month, uint8_t day, 

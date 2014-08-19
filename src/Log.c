@@ -18,10 +18,6 @@ int16_t Log_tz_offset = 0;
 static uint8_t Log_initialized = 0;
 static DWORD   Log_fattime;
 
-static const char Log_header[] PROGMEM = 
-	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n"
-	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n";
-
 DWORD get_fattime(void)
 {
 	return Log_fattime;
@@ -35,12 +31,29 @@ void Log_Flush(void)
 	}
 }
 
-void Log_WriteChar(char ch)
+void Log_WriteChar(
+	char ch)
 {
     f_putc(ch, &Main_file);
 }
 
-char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char delimiter)
+void Log_WriteString(
+	const char *str)
+{
+	char ch;
+
+	while ((ch = pgm_read_byte(str++)))
+	{
+		f_putc(ch, &Main_file);
+	}
+}
+
+char *Log_WriteInt32ToBuf(
+	char    *ptr, 
+	int32_t val, 
+	int8_t  dec, 
+	int8_t  dot, 
+	char    delimiter)
 {
     int32_t value = val > 0 ? val : -val;
 
@@ -67,7 +80,11 @@ char *Log_WriteInt32ToBuf(char *ptr, int32_t val, int8_t dec, int8_t dot, char d
 	return ptr;
 }
 
-static void Log_ToDate(char* name, uint8_t a, uint8_t b, uint8_t c)
+static void Log_ToDate(
+	char    *name, 
+	uint8_t a, 
+	uint8_t b, 
+	uint8_t c)
 {
     name[0] = '0' + (a / 10); 
     name[1] = '0' + (a % 10); 
@@ -78,18 +95,6 @@ static void Log_ToDate(char* name, uint8_t a, uint8_t b, uint8_t c)
     name[6] = '0' + (c / 10); 
     name[7] = '0' + (c % 10);
     name[8] = 0;
-}
-
-static void Log_WriteString_P(
-	const char *str,
-	FIL        *file)
-{
-	char ch;
-
-	while ((ch = pgm_read_byte(str++)))
-	{
-		f_putc(ch, file);
-	}
 }
 
 void Log_Init(
@@ -144,8 +149,6 @@ void Log_Init(
 		return ;
 	}
 
-	Log_WriteString_P(Log_header, &Main_file);
-	
 	Log_initialized = 1;
 }
 
