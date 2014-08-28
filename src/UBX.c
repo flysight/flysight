@@ -279,8 +279,8 @@ static char UBX_speech_buf[16] = "\0";
 static char *UBX_speech_ptr = UBX_speech_buf;
 
 static const char UBX_header[] PROGMEM = 
-	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,gpsFix,numSV\r\n"
-	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),,,\r\n";
+	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,heading,cAcc,gpsFix,numSV\r\n"
+	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),(deg),(deg),,\r\n";
 
 void UBX_Update(void)
 {
@@ -1080,7 +1080,7 @@ void UBX_Init(void)
 
 void UBX_Task(void)
 {
-	static char buf[128];
+	static char buf[150];
 	static uint8_t need_flush = 0;
 
 	unsigned int ch;
@@ -1112,6 +1112,8 @@ void UBX_Task(void)
 		*(--ptr) = '\n';
 		ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.numSV,     0, 0, '\r');
 		ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.gpsFix,    0, 0, ',');
+		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.cAcc,   5, 1, ',');
+		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.heading, 5, 1, ',');
 		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.sAcc,   2, 1, ',');
 		ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.vAcc,  3, 1, ',');
 		ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.hAcc,  3, 1, ',');
