@@ -88,6 +88,7 @@ Sp_Units:  1     ; Speech units\r\n\
 Sp_Rate:   0     ; Speech rate (s)\r\n\
                  ;   0 = No speech\r\n\
 Sp_Dec:    0     ; Decimal places for speech\r\n\
+Sp_Volume: 6     ; 0 (min) to 8 (max)\r\n\
 \r\n\
 ; Thresholds\r\n\
 \r\n\
@@ -147,6 +148,7 @@ static const char Config_Sp_Mode[] PROGMEM    = "Sp_Mode";
 static const char Config_Sp_Units[] PROGMEM   = "Sp_Units";
 static const char Config_Sp_Rate[] PROGMEM    = "Sp_Rate";
 static const char Config_Sp_Dec[] PROGMEM     = "Sp_Dec";
+static const char Config_Sp_Volume[] PROGMEM  = "Sp_Volume";
 static const char Config_V_Thresh[] PROGMEM   = "V_Thresh";
 static const char Config_H_Thresh[] PROGMEM   = "H_Thresh";
 static const char Config_Use_SAS[] PROGMEM    = "Use_SAS";
@@ -236,6 +238,7 @@ void Config_Read(void)
 		HANDLE_VALUE(Config_Sp_Units,  UBX_sp_units,     val, val >= 0 && val <= 1);
 		HANDLE_VALUE(Config_Sp_Rate,   UBX_sp_rate,      val * 1000, val >= 0 && val <= 32);
 		HANDLE_VALUE(Config_Sp_Dec,    UBX_sp_decimals,  val, val >= 0 && val <= 2);
+		HANDLE_VALUE(Config_Sp_Volume, Tone_sp_volume,   8 - val, val >= 0 && val <= 8);
 		HANDLE_VALUE(Config_V_Thresh,  UBX_threshold,    val, TRUE);
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
 		HANDLE_VALUE(Config_Use_SAS,   UBX_use_sas,      val, val == 0 || val == 1);

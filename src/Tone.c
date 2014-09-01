@@ -78,6 +78,7 @@ static          uint8_t  Tone_mode;
 static          FIL      Tone_file;
 
                 uint16_t Tone_volume = 2;
+                uint16_t Tone_sp_volume = 2;
 
 static volatile uint16_t Tone_next_index = 0;
 static volatile uint32_t Tone_next_chirp = 0; 
@@ -226,7 +227,7 @@ static void Tone_ReadFile(
 	for (i = 0; i < br; ++i)
 	{
 		val = Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN];
-		val = 128 - (128 >> Tone_volume) + (val >> Tone_volume);
+		val = 128 - (128 >> Tone_sp_volume) + (val >> Tone_sp_volume);
 		Main_buffer[(Tone_write + i) % TONE_BUFFER_LEN] = val;
 	}
 
