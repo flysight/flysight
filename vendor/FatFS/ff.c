@@ -2232,6 +2232,131 @@ FRESULT f_sync (
 
 
 /*-----------------------------------------------------------------------*/
+/* Synchronize the File Object                                           */
+/*-----------------------------------------------------------------------*/
+
+FRESULT f_sync_1 (
+	FIL *fp		/* Pointer to the file object */
+)
+{
+	FRESULT res;
+	DWORD wsect;
+
+
+	if ((res = validate(fp->fs, fp->id)) != FR_OK)	/* Check validity of the object */
+		LEAVE_FF(fp->fs, res);
+
+	if (!(fp->flag & FA__WRITTEN)) 	/* Has the file been written? */
+		LEAVE_FF(fp->fs, FR_OK);
+
+#if !_FS_TINY	/* Write-back dirty buffer */
+	if (fp->flag & FA__DIRTY) {
+		if (disk_write(fp->fs->drv, fp->buf, fp->dsect, 1) != RES_OK)
+			LEAVE_FF(fp->fs, FR_DISK_ERR);
+		fp->flag &= ~FA__DIRTY;
+	}
+#endif
+
+	/* Start updating the directory entry */
+	wsect = fp->fs->winsect;
+	if (wsect != fp->dir_sect) {	/* Changed current window */
+#if !_FS_READONLY
+		if (fp->fs->wflag) {	/* Write back dirty window if needed */
+			if (disk_write(fp->fs->drv, fp->fs->win, wsect, 1) != RES_OK)
+				LEAVE_FF(fp->fs, FR_DISK_ERR);
+			fp->fs->wflag = 0;
+			if (wsect < (fp->fs->fatbase + fp->fs->fsize)) {	/* In FAT area */
+				BYTE nf;
+				for (nf = fp->fs->n_fats; nf > 1; nf--) {	/* Reflect the change to all FAT copies */
+					wsect += fp->fs->fsize;
+					disk_write(fp->fs->drv, fp->fs->win, wsect, 1);
+				}
+			}
+		}
+#endif
+	}
+
+	LEAVE_FF(fp->fs, FR_OK);
+}
+
+FRESULT f_sync_2 (
+	FIL *fp		/* Pointer to the file object */
+)
+{
+	DWORD tim;
+	BYTE *dir;
+	DWORD wsect;
+
+
+	/* Finish updating the directory entry */
+	wsect = fp->fs->winsect;
+	if (wsect != fp->dir_sect) {	/* Changed current window */
+		if (fp->dir_sect) {
+			if (disk_read(fp->fs->drv, fp->fs->win, fp->dir_sect, 1) != RES_OK)
+				LEAVE_FF(fp->fs, FR_DISK_ERR);
+			fp->fs->winsect = fp->dir_sect;
+		}
+	}
+
+	dir = fp->dir_ptr;
+	dir[DIR_Attr] |= AM_ARC;					/* Set archive bit */
+	ST_DWORD(dir+DIR_FileSize, fp->fsize);		/* Update file size */
+	ST_WORD(dir+DIR_FstClusLO, fp->org_clust);	/* Update start cluster */
+	ST_WORD(dir+DIR_FstClusHI, fp->org_clust >> 16);
+	tim = get_fattime();						/* Update updated time */
+	ST_DWORD(dir+DIR_WrtTime, tim);
+	fp->flag &= ~FA__WRITTEN;
+	fp->fs->wflag = 1;
+
+	wsect = fp->fs->winsect;
+	if (wsect != 0) {	/* Changed current window */
+#if !_FS_READONLY
+		if (fp->fs->wflag) {	/* Write back dirty window if needed */
+			if (disk_write(fp->fs->drv, fp->fs->win, wsect, 1) != RES_OK)
+				LEAVE_FF(fp->fs, FR_DISK_ERR);
+			fp->fs->wflag = 0;
+			if (wsect < (fp->fs->fatbase + fp->fs->fsize)) {	/* In FAT area */
+				BYTE nf;
+				for (nf = fp->fs->n_fats; nf > 1; nf--) {	/* Reflect the change to all FAT copies */
+					wsect += fp->fs->fsize;
+					disk_write(fp->fs->drv, fp->fs->win, wsect, 1);
+				}
+			}
+		}
+#endif
+	}
+
+	/* Update FSInfo sector if needed */
+	if (fp->fs->fs_type == FS_FAT32 && fp->fs->fsi_flag) {
+		fp->fs->winsect = 0;
+		memset(fp->fs->win, 0, 512);
+		ST_WORD(fp->fs->win+BS_55AA, 0xAA55);
+		ST_DWORD(fp->fs->win+FSI_LeadSig, 0x41615252);
+		ST_DWORD(fp->fs->win+FSI_StrucSig, 0x61417272);
+		ST_DWORD(fp->fs->win+FSI_Free_Count, fp->fs->free_clust);
+		ST_DWORD(fp->fs->win+FSI_Nxt_Free, fp->fs->last_clust);
+		disk_write(fp->fs->drv, fp->fs->win, fp->fs->fsi_sector, 1);
+		fp->fs->fsi_flag = 0;
+	}
+
+	LEAVE_FF(fp->fs, FR_OK);
+}
+
+FRESULT f_sync_3 (
+	FIL *fp		/* Pointer to the file object */
+)
+{
+	/* Make sure that no pending write process in the physical drive */
+	if (disk_ioctl(fp->fs->drv, CTRL_SYNC, (void*)0) != RES_OK)
+		LEAVE_FF(fp->fs, FR_DISK_ERR);
+
+	LEAVE_FF(fp->fs, FR_OK);
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
 /* Close File                                                            */
 /*-----------------------------------------------------------------------*/
 

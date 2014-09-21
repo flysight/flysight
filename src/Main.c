@@ -62,7 +62,7 @@ void SetupHardware(void)
    
 	DDRF  = 0xff;
 	
-	for (i = 0; i < 8; ++i)
+	for (i = 0; i < 7; ++i)
 	{
 		PORTF = (1 << i);
 		delay_ms(1);
