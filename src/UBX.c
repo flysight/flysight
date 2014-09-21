@@ -282,6 +282,15 @@ static const char UBX_header[] PROGMEM =
 	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,heading,cAcc,gpsFix,numSV\r\n"
 	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),(deg),(deg),,\r\n";
 
+static enum
+{
+	st_idle,
+	st_flush_1,
+	st_flush_2,
+	st_flush_3
+}
+UBX_state = st_idle;
+
 void UBX_Update(void)
 {
 	static uint16_t counter;
@@ -528,7 +537,7 @@ static void UBX_ReceiveMessage(
 			if (!Log_IsInitialized())
 			{
 				Power_Hold();
-				
+
 				Log_Init(
 					current->nav_timeutc.year,
 					current->nav_timeutc.month,
@@ -538,9 +547,7 @@ static void UBX_ReceiveMessage(
 					current->nav_timeutc.sec);
 
 				Log_WriteString(UBX_header);
-			
-				Log_Flush();
-				Power_Release();
+				UBX_state = st_flush_1;
 
 				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 			}
@@ -957,6 +964,11 @@ static void UBX_HandleTimeUTC(void)
 
 static void UBX_HandleMessage(void)
 {
+	if (UBX_read + UBX_BUFFER_LEN == UBX_write)
+	{
+		++UBX_read;
+	}
+
 	switch (UBX_msg_class)
 	{
 	case UBX_NAV:
@@ -1080,16 +1092,11 @@ void UBX_Task(void)
 	UBX_saved_t *current;
 	char *ptr;
 
-	static enum
-	{
-		st_idle,
-		st_flush_1,
-		st_flush_2,
-		st_flush_3
-	}
-	state = st_idle;
+#ifdef MAIN_DEBUG
+	PORTF |= (1 << 1);
+#endif
 
-	while ((ch = uart_getc()) != UART_NO_DATA)
+	while (!((ch = uart_getc()) & UART_NO_DATA))
 	{
 		if (UBX_HandleByte(ch))
 		{
@@ -1097,7 +1104,7 @@ void UBX_Task(void)
 		}
 	}
 	
-	switch (state)
+	switch (UBX_state)
 	{
 	case st_idle:
 		if (Tone_CanWrite() && disk_is_ready() && UBX_read != UBX_write)
@@ -1134,21 +1141,21 @@ void UBX_Task(void)
 			++UBX_read;
 
 			f_puts(ptr, &Main_file);
-			state = st_flush_1;
+			UBX_state = st_flush_1;
 		}
 		break;
 	case st_flush_1:
 		if (Tone_CanWrite() && disk_is_ready())
 		{
 			f_sync_1(&Main_file);
-			state = st_flush_2;
+			UBX_state = st_flush_2;
 		}
 		break;
 	case st_flush_2:
 		if (Tone_CanWrite() && disk_is_ready())
 		{
 			f_sync_2(&Main_file);
-			state = st_flush_3;
+			UBX_state = st_flush_3;
 		}
 		break;
 	case st_flush_3:
@@ -1156,12 +1163,12 @@ void UBX_Task(void)
 		{
 			f_sync_3(&Main_file);
 			Power_Release();
-			state = st_idle;
+			UBX_state = st_idle;
 		}
 		break;
 	}
-	
-	if (*UBX_speech_ptr && Tone_IsIdle())
+
+	if (Tone_IsIdle() && disk_is_ready() && *UBX_speech_ptr)
 	{
 		if (*UBX_speech_ptr == '-')
 		{
@@ -1185,4 +1192,8 @@ void UBX_Task(void)
 		
 		++UBX_speech_ptr;
 	}
+
+#ifdef MAIN_DEBUG
+	PORTF &= ~(1 << 1);
+#endif
 }

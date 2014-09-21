@@ -56,7 +56,7 @@ void SetupHardware(void)
 	CLKPR = (1 << CLKPCE);
 	CLKPR = 0;
 
-#ifdef TONE_DEBUG
+#ifdef MAIN_DEBUG
 	MCUCR |= (1 << JTD); 
 	MCUCR |= (1 << JTD); 
    

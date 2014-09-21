@@ -269,7 +269,10 @@ static void Tone_Load(void)
 		Tone_LoadTable();
 		break;
 	case TONE_MODE_WAV:
-		Tone_LoadWAV();
+		if (disk_is_ready())
+		{
+			Tone_LoadWAV();
+		}
 		break;
 	}
 }
@@ -331,6 +334,10 @@ void Tone_Stop(void)
 
 void Tone_Task(void)
 {
+#ifdef MAIN_DEBUG
+	PORTF |= (1 << 0);
+#endif
+
 	if (Tone_flags & TONE_FLAGS_BEEP)
 	{
 		if (Tone_state == TONE_STATE_IDLE)
@@ -353,6 +360,10 @@ void Tone_Task(void)
 	{
 		Tone_Load();
 	}
+
+#ifdef MAIN_DEBUG
+	PORTF &= ~(1 << 0);
+#endif
 }
 
 void Tone_Beep(
