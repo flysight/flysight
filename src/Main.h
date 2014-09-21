@@ -5,7 +5,7 @@
 
 #include "FatFS/ff.h"
 
-#define MAIN_DEBUG // uncomment to output timing information to PORTF
+//#define MAIN_DEBUG // uncomment to output timing information to PORTF
 
 #define MAIN_BUFFER_SIZE 1024
 

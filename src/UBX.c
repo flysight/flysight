@@ -1092,10 +1092,6 @@ void UBX_Task(void)
 	UBX_saved_t *current;
 	char *ptr;
 
-#ifdef MAIN_DEBUG
-	PORTF |= (1 << 1);
-#endif
-
 	while (!((ch = uart_getc()) & UART_NO_DATA))
 	{
 		if (UBX_HandleByte(ch))
@@ -1192,8 +1188,4 @@ void UBX_Task(void)
 		
 		++UBX_speech_ptr;
 	}
-
-#ifdef MAIN_DEBUG
-	PORTF &= ~(1 << 1);
-#endif
 }
