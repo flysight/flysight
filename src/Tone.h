@@ -12,6 +12,7 @@
 #define TONE_CHIRP_MAX     (((uint32_t) 3242 << 16) / TONE_LENGTH_125_MS)
 
 extern uint16_t Tone_volume;
+extern uint16_t Tone_sp_volume;
 
 void Tone_Init(void);
 void Tone_Update(void);
