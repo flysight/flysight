@@ -128,6 +128,25 @@ int select (void)	/* 1:Successful, 0:Timeout */
 
 
 /*-----------------------------------------------------------------------*/
+/* Check if card ready                                                   */
+/*-----------------------------------------------------------------------*/
+
+int disk_is_ready (void)	/* 1:Ready, 0:Not ready */
+{
+	int ret;
+
+
+	CS_LOW();
+	rcvr_spi();
+	ret = (rcvr_spi() == 0xFF) ? 1 : 0;
+	deselect();
+
+	return ret;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
 /* Power Control  (Platform dependent)                                   */
 /*-----------------------------------------------------------------------*/
 /* When the target system does not support socket power control, there   */

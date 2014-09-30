@@ -96,13 +96,6 @@ ISR(TIMER1_OVF_vect)
 	}
 	else if (Tone_read == Tone_write)
 	{
-#ifdef TONE_DEBUG
-		if (Tone_flags & TONE_FLAGS_LOAD)
-		{
-			PORTF ^= (1 << 4);
-		}
-#endif
-		
 		TCCR1A = 0;
 		TCCR1B = 0;
 		TIMSK1 = 0;
@@ -276,7 +269,10 @@ static void Tone_Load(void)
 		Tone_LoadTable();
 		break;
 	case TONE_MODE_WAV:
-		Tone_LoadWAV();
+		if (disk_is_ready())
+		{
+			Tone_LoadWAV();
+		}
 		break;
 	}
 }
@@ -338,10 +334,6 @@ void Tone_Stop(void)
 
 void Tone_Task(void)
 {
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 2);
-#endif
-	
 	if (Tone_flags & TONE_FLAGS_BEEP)
 	{
 		if (Tone_state == TONE_STATE_IDLE)
@@ -364,10 +356,6 @@ void Tone_Task(void)
 	{
 		Tone_Load();
 	}
-
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 2);
-#endif
 }
 
 void Tone_Beep(

@@ -282,6 +282,15 @@ static const char UBX_header[] PROGMEM =
 	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,heading,cAcc,gpsFix,numSV\r\n"
 	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),(deg),(deg),,\r\n";
 
+static enum
+{
+	st_idle,
+	st_flush_1,
+	st_flush_2,
+	st_flush_3
+}
+UBX_state = st_idle;
+
 void UBX_Update(void)
 {
 	static uint16_t counter;
@@ -528,7 +537,7 @@ static void UBX_ReceiveMessage(
 			if (!Log_IsInitialized())
 			{
 				Power_Hold();
-				
+
 				Log_Init(
 					current->nav_timeutc.year,
 					current->nav_timeutc.month,
@@ -538,9 +547,7 @@ static void UBX_ReceiveMessage(
 					current->nav_timeutc.sec);
 
 				Log_WriteString(UBX_header);
-			
-				Log_Flush();
-				Power_Release();
+				UBX_state = st_flush_1;
 
 				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 			}
@@ -957,13 +964,11 @@ static void UBX_HandleTimeUTC(void)
 
 static void UBX_HandleMessage(void)
 {
-#ifdef TONE_DEBUG
 	if (UBX_read + UBX_BUFFER_LEN == UBX_write)
 	{
-		PORTF ^= (1 << 3);
+		++UBX_read;
 	}
-#endif
-	
+
 	switch (UBX_msg_class)
 	{
 	case UBX_NAV:
@@ -1081,14 +1086,13 @@ void UBX_Init(void)
 void UBX_Task(void)
 {
 	static char buf[150];
-	static uint8_t need_flush = 0;
 
 	unsigned int ch;
 
 	UBX_saved_t *current;
 	char *ptr;
 
-	while ((ch = uart_getc()) != UART_NO_DATA)
+	while (!((ch = uart_getc()) & UART_NO_DATA))
 	{
 		if (UBX_HandleByte(ch))
 		{
@@ -1096,59 +1100,71 @@ void UBX_Task(void)
 		}
 	}
 	
-	if (UBX_read != UBX_write && Tone_CanWrite())
+	switch (UBX_state)
 	{
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 1);
-#endif
-	
-		current = UBX_saved + (UBX_read % UBX_BUFFER_LEN);
-		
-		Power_Hold();
-		
-		ptr = buf + sizeof(buf);
-		*(--ptr) = 0;
-		
-		*(--ptr) = '\n';
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.numSV,     0, 0, '\r');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.gpsFix,    0, 0, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.cAcc,   5, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.heading, 5, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.sAcc,   2, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.vAcc,  3, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.hAcc,  3, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velD,   2, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velE,   2, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velN,   2, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.hMSL,  3, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.lon,   7, 1, ',');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.lat,   7, 1, ',');
-		*(--ptr) = ',';
-		ptr = Log_WriteInt32ToBuf(ptr, (current->nav_timeutc.nano + 5000000) / 10000000, 2, 0, 'Z');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.sec,   2, 0, '.');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.min,   2, 0, ':');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.hour,  2, 0, ':');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.day,   2, 0, 'T');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.month, 2, 0, '-');
-		ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.year,  4, 0, '-');
-		++UBX_read;
+	case st_idle:
+		if (Tone_CanWrite() && disk_is_ready() && UBX_read != UBX_write)
+		{
+			current = UBX_saved + (UBX_read % UBX_BUFFER_LEN);
 
-		f_puts(ptr, &Main_file);
-		need_flush = 1;
-		
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 1);
-#endif
+			Power_Hold();
+
+			ptr = buf + sizeof(buf);
+			*(--ptr) = 0;
+
+			*(--ptr) = '\n';
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.numSV,     0, 0, '\r');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.gpsFix,    0, 0, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.cAcc,   5, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.heading, 5, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.sAcc,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.vAcc,  3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.hAcc,  3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velD,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velE,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velN,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.hMSL,  3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.lon,   7, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.lat,   7, 1, ',');
+			*(--ptr) = ',';
+			ptr = Log_WriteInt32ToBuf(ptr, (current->nav_timeutc.nano + 5000000) / 10000000, 2, 0, 'Z');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.sec,   2, 0, '.');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.min,   2, 0, ':');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.hour,  2, 0, ':');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.day,   2, 0, 'T');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.month, 2, 0, '-');
+			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.year,  4, 0, '-');
+			++UBX_read;
+
+			f_puts(ptr, &Main_file);
+			UBX_state = st_flush_1;
+		}
+		break;
+	case st_flush_1:
+		if (Tone_CanWrite() && disk_is_ready())
+		{
+			f_sync_1(&Main_file);
+			UBX_state = st_flush_2;
+		}
+		break;
+	case st_flush_2:
+		if (Tone_CanWrite() && disk_is_ready())
+		{
+			f_sync_2(&Main_file);
+			UBX_state = st_flush_3;
+		}
+		break;
+	case st_flush_3:
+		if (Tone_CanWrite() && disk_is_ready())
+		{
+			f_sync_3(&Main_file);
+			Power_Release();
+			UBX_state = st_idle;
+		}
+		break;
 	}
 
-	if (need_flush && Tone_CanWrite())
-	{
-		Log_Flush();
-		Power_Release();
-		need_flush = 0;
-	}
-	
-	if (*UBX_speech_ptr && Tone_IsIdle())
+	if (Tone_IsIdle() && disk_is_ready() && *UBX_speech_ptr)
 	{
 		if (*UBX_speech_ptr == '-')
 		{
