@@ -121,6 +121,7 @@ TZ_Offset: 0     ; Timezone offset of output files in seconds\r\n\
 ;          level.\r\n\
 \r\n\
 Window:        0 ; Alarm window (m)\r\n\
+DZ_Elev:       0 ; Ground elevation (m)\r\n\
 \r\n\
 Alarm_Elev: 1000 ; Alarm elevation (m)\r\n\
 Alarm_Type:    0 ; Alarm type\r\n\
@@ -151,6 +152,7 @@ static const char Config_V_Thresh[] PROGMEM   = "V_Thresh";
 static const char Config_H_Thresh[] PROGMEM   = "H_Thresh";
 static const char Config_Use_SAS[] PROGMEM    = "Use_SAS";
 static const char Config_Window[] PROGMEM     = "Window";
+static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
@@ -175,6 +177,7 @@ void Config_Read(void)
 	char    *result;
 	
 	int32_t val;
+	int32_t dz_elev;
 
 	FRESULT res;
 	
@@ -240,13 +243,14 @@ void Config_Read(void)
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
 		HANDLE_VALUE(Config_Use_SAS,   UBX_use_sas,      val, val == 0 || val == 1);
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
+		HANDLE_VALUE(Config_DZ_Elev,   dz_elev,          val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
 		
 		#undef HANDLE_VALUE
 		
 		if (!strcmp_P(name, Config_Alarm_Elev))
 		{
-			UBX_alarms[UBX_num_alarms].elev = val * 1000;
+			UBX_alarms[UBX_num_alarms].elev = val * 1000 + dz_elev;
 		}
 		if (!strcmp_P(name, Config_Alarm_Type) && val != 0)
 		{
