@@ -757,7 +757,7 @@ static void UBX_SpeakValue(void)
 	*(end_ptr++) = 0;
 }
 
-static void UBX_HandleAlarms(void)
+static void UBX_UpdateAlarms(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
 
@@ -823,7 +823,7 @@ static void UBX_HandleAlarms(void)
 	UBX_suppress_tone = suppress_tone;
 }
 
-static void UBX_HandleTones(void)
+static void UBX_UpdateTones(void)
 {
 	static int32_t x0 = -1, x1, x2;
 	
@@ -903,8 +903,8 @@ static void UBX_ReceiveMessage(
 		{
 			UBX_hasFix = 1;
 
-			UBX_HandleAlarms();
-			UBX_HandleTones();
+			UBX_UpdateAlarms();
+			UBX_UpdateTones();
 
 			if (!Log_IsInitialized())
 			{
