@@ -766,6 +766,27 @@ static void UBX_UpdateAlarms(void)
 
 	uint8_t i, suppress_tone;
 
+	suppress_tone = 0;
+
+	for (i = 0; i < UBX_num_alarms; ++i)
+	{
+		const int32_t diff = UBX_alarms[i].elev - current->nav_pos_llh.hMSL;
+	
+		if (ABS (diff) < UBX_alarm_window)
+		{
+			suppress_tone = 1;
+			break;
+		}
+	}
+	
+	if (suppress_tone && !UBX_suppress_tone)
+	{
+		Tone_SetRate(0);
+		Tone_Stop();
+	}
+	
+	UBX_suppress_tone = suppress_tone;
+
 	if (UBX_prevFix)
 	{
 		int32_t min = MIN(UBX_prevHMSL, current->nav_pos_llh.hMSL);
@@ -797,27 +818,6 @@ static void UBX_UpdateAlarms(void)
 			}
 		}
 	}
-
-	suppress_tone = 0;
-
-	for (i = 0; i < UBX_num_alarms; ++i)
-	{
-		const int32_t diff = UBX_alarms[i].elev - current->nav_pos_llh.hMSL;
-	
-		if (ABS (diff) < UBX_alarm_window)
-		{
-			suppress_tone = 1;
-			break;
-		}
-	}
-	
-	if (suppress_tone && !UBX_suppress_tone)
-	{
-		Tone_SetRate(0);
-		Tone_Stop();
-	}
-	
-	UBX_suppress_tone = suppress_tone;
 }
 
 static void UBX_UpdateTones(void)
