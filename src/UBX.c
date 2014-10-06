@@ -859,8 +859,7 @@ static void UBX_UpdateTones(
 		{
 			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
 				
-			if (UBX_sp_rate != 0 && 
-				UBX_sp_counter >= UBX_sp_rate)
+			if (UBX_sp_rate != 0 && UBX_sp_counter >= UBX_sp_rate)
 			{
 				UBX_SpeakValue(current);
 				UBX_sp_counter = 0;
