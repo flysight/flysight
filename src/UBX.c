@@ -271,9 +271,12 @@ static UBX_saved_t UBX_saved[UBX_BUFFER_LEN];
 static uint8_t UBX_read  = 0;
 static uint8_t UBX_write = 0;
 
-static volatile uint8_t UBX_hasFix        = 0;
-static volatile uint8_t UBX_prevFix       = 0;
-static          uint8_t UBX_suppress_tone = 0;
+static volatile uint8_t UBX_hasFix = 0;
+
+static uint8_t UBX_prevFix = 0;
+static int32_t UBX_prevHMSL;
+
+static uint8_t UBX_suppress_tone = 0;
 
 static char UBX_speech_buf[16] = "\0";
 static char *UBX_speech_ptr = UBX_speech_buf;
@@ -761,19 +764,13 @@ static void UBX_UpdateAlarms(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
 
-	int32_t hMSL = current->nav_pos_llh.hMSL;;
-
 	uint8_t i, suppress_tone;
 
 	if (UBX_prevFix)
 	{
-		const int32_t prev_hMSL = current->nav_pos_llh.hMSL;
-		
-		int32_t min = MIN(prev_hMSL, hMSL);
-		int32_t max = MAX(prev_hMSL, hMSL);
+		int32_t min = MIN(UBX_prevHMSL, current->nav_pos_llh.hMSL);
+		int32_t max = MAX(UBX_prevHMSL, current->nav_pos_llh.hMSL);
 
-		int i;
-	
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
 			const int32_t elev = UBX_alarms[i].elev;
@@ -897,8 +894,6 @@ static void UBX_ReceiveMessage(
 
 	if (UBX_msg_received == UBX_MSG_ALL)
 	{
-		UBX_prevFix = UBX_hasFix;
-
 		if (current->nav_sol.gpsFix == 0x03)
 		{
 			UBX_hasFix = 1;
@@ -923,6 +918,8 @@ static void UBX_ReceiveMessage(
 
 				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 			}
+
+			UBX_prevHMSL = current->nav_pos_llh.hMSL;
 			
 			++UBX_write;
 		}
@@ -932,6 +929,8 @@ static void UBX_ReceiveMessage(
 			Tone_SetRate(0);
 		}
 
+		UBX_prevFix = UBX_hasFix;
+		
 		UBX_msg_received = 0;
 	}
 }
