@@ -833,10 +833,6 @@ static void UBX_UpdateTones(void)
 		UBX_GetValues(UBX_mode,   &val_1, &min_1, &max_1);
 		UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
 	}
-	else
-	{
-		UBX_sp_counter = 0;
-	}
 
 	if (UBX_mode_2 == 8)
 	{
@@ -873,7 +869,10 @@ static void UBX_UpdateTones(void)
 		}
 	}
 
-	UBX_sp_counter += UBX_rate;
+	if (UBX_sp_counter < UBX_sp_rate)
+	{
+		UBX_sp_counter += UBX_rate;
+	}
 }
 
 static void UBX_ReceiveMessage(
