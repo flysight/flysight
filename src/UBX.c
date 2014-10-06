@@ -820,7 +820,7 @@ static void UBX_UpdateAlarms(void)
 
 static void UBX_UpdateTones(void)
 {
-	static int32_t x0 = -1, x1, x2;
+	static int32_t x0 = UBX_INVALID_VALUE, x1, x2;
 	
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
 
