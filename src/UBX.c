@@ -827,12 +827,7 @@ static void UBX_UpdateTones(void)
 	int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
 	int32_t val_2 = UBX_INVALID_VALUE, min_2 = UBX_min_2, max_2 = UBX_max_2;
 
-	if (ABS(current->nav_velned.velD) >= UBX_threshold && 
-		current->nav_velned.gSpeed >= UBX_hThreshold)
-	{
-		UBX_GetValues(UBX_mode,   &val_1, &min_1, &max_1);
-		UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
-	}
+	UBX_GetValues(UBX_mode, &val_1, &min_1, &max_1);
 
 	if (UBX_mode_2 == 8)
 	{
@@ -856,16 +851,28 @@ static void UBX_UpdateTones(void)
 			val_2 = (int32_t) 10000 * ABS(val_2) / ABS(max_1 - min_1);
 		}
 	}
+	else
+	{
+		UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
+	}
 
 	if (!UBX_suppress_tone)
 	{
-		UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
-			
-		if (UBX_sp_rate != 0 && 
-			UBX_sp_counter >= UBX_sp_rate)
+		if (ABS(current->nav_velned.velD) >= UBX_threshold && 
+			current->nav_velned.gSpeed >= UBX_hThreshold)
 		{
-			UBX_SpeakValue();
-			UBX_sp_counter = 0;
+			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
+				
+			if (UBX_sp_rate != 0 && 
+				UBX_sp_counter >= UBX_sp_rate)
+			{
+				UBX_SpeakValue();
+				UBX_sp_counter = 0;
+			}
+		}
+		else
+		{
+			Tone_SetRate(0);
 		}
 	}
 
