@@ -770,9 +770,7 @@ static void UBX_UpdateAlarms(void)
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		const int32_t diff = UBX_alarms[i].elev - current->nav_pos_llh.hMSL;
-	
-		if (ABS (diff) < UBX_alarm_window)
+		if (ABS (UBX_alarms[i].elev - current->nav_pos_llh.hMSL) < UBX_alarm_window)
 		{
 			suppress_tone = 1;
 			break;
@@ -919,8 +917,6 @@ static void UBX_ReceiveMessage(
 				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 			}
 
-			UBX_prevHMSL = current->nav_pos_llh.hMSL;
-			
 			++UBX_write;
 		}
 		else
@@ -930,6 +926,7 @@ static void UBX_ReceiveMessage(
 		}
 
 		UBX_prevFix = UBX_hasFix;
+		UBX_prevHMSL = current->nav_pos_llh.hMSL;
 		
 		UBX_msg_received = 0;
 	}
