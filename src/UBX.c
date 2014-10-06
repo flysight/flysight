@@ -291,6 +291,8 @@ static enum
 }
 UBX_state = st_idle;
 
+extern int disk_is_ready(void);
+
 void UBX_Update(void)
 {
 	static uint16_t counter;

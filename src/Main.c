@@ -48,7 +48,9 @@ static void delay_ms(
 
 void SetupHardware(void)
 {
+#ifdef MAIN_DEBUG
 	uint8_t i;
+#endif
 
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
