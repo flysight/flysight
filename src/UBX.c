@@ -603,13 +603,12 @@ static void UBX_SetTone(
 }
 
 static void UBX_GetValues(
+	UBX_saved_t *current,
 	uint8_t mode, 
 	int32_t *val, 
 	int32_t *min, 
 	int32_t *max)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-
 	uint16_t speed_mul = 1024;
 
 	if (UBX_use_sas)
@@ -663,10 +662,9 @@ static void UBX_GetValues(
 	}
 }
 
-static void UBX_SpeakValue(void)
+static void UBX_SpeakValue(
+	UBX_saved_t *current)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-
 	uint16_t speed_mul = 1024;
 	
 	char *end_ptr;
@@ -760,10 +758,9 @@ static void UBX_SpeakValue(void)
 	*(end_ptr++) = 0;
 }
 
-static void UBX_UpdateAlarms(void)
+static void UBX_UpdateAlarms(
+	UBX_saved_t *current)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-
 	uint8_t i, suppress_tone;
 
 	suppress_tone = 0;
@@ -818,20 +815,19 @@ static void UBX_UpdateAlarms(void)
 	}
 }
 
-static void UBX_UpdateTones(void)
+static void UBX_UpdateTones(
+	UBX_saved_t *current)
 {
 	static int32_t x0 = UBX_INVALID_VALUE, x1, x2;
 	
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-
 	int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
 	int32_t val_2 = UBX_INVALID_VALUE, min_2 = UBX_min_2, max_2 = UBX_max_2;
 
-	UBX_GetValues(UBX_mode, &val_1, &min_1, &max_1);
+	UBX_GetValues(current, UBX_mode, &val_1, &min_1, &max_1);
 
 	if (UBX_mode_2 == 8)
 	{
-		UBX_GetValues(UBX_mode, &val_2, &min_2, &max_2);
+		UBX_GetValues(current, UBX_mode, &val_2, &min_2, &max_2);
 		if (val_2 != UBX_INVALID_VALUE)
 		{
 			val_2 = ABS(val_2);
@@ -853,7 +849,7 @@ static void UBX_UpdateTones(void)
 	}
 	else
 	{
-		UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
+		UBX_GetValues(current, UBX_mode_2, &val_2, &min_2, &max_2);
 	}
 
 	if (!UBX_suppress_tone)
@@ -866,7 +862,7 @@ static void UBX_UpdateTones(void)
 			if (UBX_sp_rate != 0 && 
 				UBX_sp_counter >= UBX_sp_rate)
 			{
-				UBX_SpeakValue();
+				UBX_SpeakValue(current);
 				UBX_sp_counter = 0;
 			}
 		}
@@ -902,8 +898,8 @@ static void UBX_ReceiveMessage(
 		{
 			UBX_hasFix = 1;
 
-			UBX_UpdateAlarms();
-			UBX_UpdateTones();
+			UBX_UpdateAlarms(current);
+			UBX_UpdateTones(current);
 
 			if (!Log_IsInitialized())
 			{
