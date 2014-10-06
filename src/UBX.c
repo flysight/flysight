@@ -516,49 +516,6 @@ static void UBX_SendMessage(
 	uart_putc(ck_b);
 }
 
-static void UBX_ReceiveMessage(
-	uint8_t msg_received, 
-	uint32_t time_of_week)
-{
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-
-	if (time_of_week != UBX_time_of_week)
-	{
-		UBX_time_of_week = time_of_week;
-		UBX_msg_received = 0;
-	}
-
-	UBX_msg_received |= msg_received;
-
-	if (UBX_msg_received == UBX_MSG_ALL)
-	{
-		if (current->nav_sol.gpsFix == 3)
-		{
-			if (!Log_IsInitialized())
-			{
-				Power_Hold();
-
-				Log_Init(
-					current->nav_timeutc.year,
-					current->nav_timeutc.month,
-					current->nav_timeutc.day,
-					current->nav_timeutc.hour,
-					current->nav_timeutc.min,
-					current->nav_timeutc.sec);
-
-				Log_WriteString(UBX_header);
-				UBX_state = st_flush_1;
-
-				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
-			}
-			
-			++UBX_write;
-		}
-
-		UBX_msg_received = 0;
-	}
-}
-
 static void UBX_SetTone(
 	int32_t val_1,
 	int32_t min_1,
@@ -640,99 +597,6 @@ static void UBX_SetTone(
 		
 	#undef OVER
 	#undef UNDER
-}
-
-static void UBX_HandleNavSol(void)
-{
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	
-	current->nav_sol = *((UBX_nav_sol *) UBX_payload);
-	UBX_ReceiveMessage(UBX_MSG_SOL, current->nav_sol.iTOW);
-
-	UBX_prevFix = UBX_hasFix;
-
-	if (current->nav_sol.gpsFix == 0x03)
-	{
-		UBX_hasFix = 1;
-	}
-	else
-	{
-		UBX_SetTone(UBX_INVALID_VALUE, 0, 0, 0, 0, 0);
-		UBX_hasFix = 0;
-	}
-}
-
-static void UBX_HandlePosition(void)
-{
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	
-	const int32_t prev_hMSL = current->nav_pos_llh.hMSL;
-	int32_t hMSL;
-	
-	uint8_t i, suppress_tone;
-
-	current->nav_pos_llh = *((UBX_nav_posllh *) UBX_payload);
-	UBX_ReceiveMessage(UBX_MSG_POSLLH, current->nav_pos_llh.iTOW);
-
-	hMSL = current->nav_pos_llh.hMSL;
-
-	if (UBX_hasFix && UBX_prevFix)
-	{
-		int32_t min = MIN(prev_hMSL, hMSL);
-		int32_t max = MAX(prev_hMSL, hMSL);
-
-		int i;
-	
-		for (i = 0; i < UBX_num_alarms; ++i)
-		{
-			const int32_t elev = UBX_alarms[i].elev;
-		
-			if (elev >= min && elev <  max)
-			{
-				switch (UBX_alarms[i].type)
-				{
-				case 1:	// beep
-					Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
-					break ;
-				case 2:	// chirp up
-					Tone_Beep(0, TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
-					break ;
-				case 3:	// chirp down
-					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
-					break ;
-				case 4:	// warble
-					Tone_Beep(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
-					break ;
-				}
-				
-				break;
-			}
-		}
-	}
-
-	if (UBX_hasFix)
-	{
-		suppress_tone = 0;
-	
-		for (i = 0; i < UBX_num_alarms; ++i)
-		{
-			const int32_t diff = UBX_alarms[i].elev - current->nav_pos_llh.hMSL;
-		
-			if (ABS (diff) < UBX_alarm_window)
-			{
-				suppress_tone = 1;
-				break;
-			}
-		}
-		
-		if (suppress_tone && !UBX_suppress_tone)
-		{
-			Tone_SetRate(0);
-			Tone_Stop();
-		}
-		
-		UBX_suppress_tone = suppress_tone;
-	}
 }
 
 static void UBX_GetValues(
@@ -893,71 +757,211 @@ static void UBX_SpeakValue(void)
 	*(end_ptr++) = 0;
 }
 
-static void UBX_HandleVelocity(void)
+static void UBX_ReceiveMessage(
+	uint8_t msg_received, 
+	uint32_t time_of_week)
 {
-	static int32_t x0 = -1, x1, x2;
-	
-	int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
-	int32_t val_2 = UBX_INVALID_VALUE, min_2 = UBX_min_2, max_2 = UBX_max_2;
-
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	
-	current->nav_velned = *((UBX_nav_velned *) UBX_payload);
-	UBX_ReceiveMessage(UBX_MSG_VELNED, current->nav_velned.iTOW);
 
-	if (ABS(current->nav_velned.velD) >= UBX_threshold && 
-	    current->nav_velned.gSpeed >= UBX_hThreshold)
+	if (time_of_week != UBX_time_of_week)
 	{
-		UBX_GetValues(UBX_mode,   &val_1, &min_1, &max_1);
-		UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
-	}
-	else
-	{
-		UBX_sp_counter = 0;
+		UBX_time_of_week = time_of_week;
+		UBX_msg_received = 0;
 	}
 
-	if (UBX_mode_2 == 8)
+	UBX_msg_received |= msg_received;
+
+	if (UBX_msg_received == UBX_MSG_ALL)
 	{
-		UBX_GetValues(UBX_mode, &val_2, &min_2, &max_2);
-		if (val_2 != UBX_INVALID_VALUE)
+		// From UBX_HandleNavSol
+		
+		UBX_prevFix = UBX_hasFix;
+
+		if (current->nav_sol.gpsFix == 0x03)
 		{
-			val_2 = ABS(val_2);
+			UBX_hasFix = 1;
 		}
-	}
-	else if (UBX_mode_2 == 9)
-	{
-		x2 = x1;
-		x1 = x0;
-		x0 = val_1;
-
-		if (x0 != UBX_INVALID_VALUE && 
-		    x1 != UBX_INVALID_VALUE && 
-			x2 != UBX_INVALID_VALUE)
+		else
 		{
-			val_2 = (int32_t) 1000 * (x2 - x0) / (2 * UBX_rate);
-			val_2 = (int32_t) 10000 * ABS(val_2) / ABS(max_1 - min_1);
+			UBX_SetTone(UBX_INVALID_VALUE, 0, 0, 0, 0, 0);
+			UBX_hasFix = 0;
 		}
-	}
+		
+		// From UBX_HandlePosition
 
-	if (UBX_hasFix && !UBX_suppress_tone)
-	{
-		UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
+		const int32_t prev_hMSL = current->nav_pos_llh.hMSL;
+		int32_t hMSL;
+		
+		uint8_t i, suppress_tone;
+
+		hMSL = current->nav_pos_llh.hMSL;
+
+		if (UBX_hasFix && UBX_prevFix)
+		{
+			int32_t min = MIN(prev_hMSL, hMSL);
+			int32_t max = MAX(prev_hMSL, hMSL);
+
+			int i;
+		
+			for (i = 0; i < UBX_num_alarms; ++i)
+			{
+				const int32_t elev = UBX_alarms[i].elev;
 			
-		if (UBX_sp_rate != 0 && 
-		    UBX_sp_counter >= UBX_sp_rate)
+				if (elev >= min && elev <  max)
+				{
+					switch (UBX_alarms[i].type)
+					{
+					case 1:	// beep
+						Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+						break ;
+					case 2:	// chirp up
+						Tone_Beep(0, TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+						break ;
+					case 3:	// chirp down
+						Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+						break ;
+					case 4:	// warble
+						Tone_Beep(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
+						break ;
+					}
+					
+					break;
+				}
+			}
+		}
+
+		if (UBX_hasFix)
 		{
-			UBX_SpeakValue();
+			suppress_tone = 0;
+		
+			for (i = 0; i < UBX_num_alarms; ++i)
+			{
+				const int32_t diff = UBX_alarms[i].elev - current->nav_pos_llh.hMSL;
+			
+				if (ABS (diff) < UBX_alarm_window)
+				{
+					suppress_tone = 1;
+					break;
+				}
+			}
+			
+			if (suppress_tone && !UBX_suppress_tone)
+			{
+				Tone_SetRate(0);
+				Tone_Stop();
+			}
+			
+			UBX_suppress_tone = suppress_tone;
+		}
+
+		// From UBX_HandleVelocity
+
+		static int32_t x0 = -1, x1, x2;
+		
+		int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
+		int32_t val_2 = UBX_INVALID_VALUE, min_2 = UBX_min_2, max_2 = UBX_max_2;
+
+		if (ABS(current->nav_velned.velD) >= UBX_threshold && 
+			current->nav_velned.gSpeed >= UBX_hThreshold)
+		{
+			UBX_GetValues(UBX_mode,   &val_1, &min_1, &max_1);
+			UBX_GetValues(UBX_mode_2, &val_2, &min_2, &max_2);
+		}
+		else
+		{
 			UBX_sp_counter = 0;
 		}
-	}
 
-	UBX_sp_counter += UBX_rate;
+		if (UBX_mode_2 == 8)
+		{
+			UBX_GetValues(UBX_mode, &val_2, &min_2, &max_2);
+			if (val_2 != UBX_INVALID_VALUE)
+			{
+				val_2 = ABS(val_2);
+			}
+		}
+		else if (UBX_mode_2 == 9)
+		{
+			x2 = x1;
+			x1 = x0;
+			x0 = val_1;
+
+			if (x0 != UBX_INVALID_VALUE && 
+				x1 != UBX_INVALID_VALUE && 
+				x2 != UBX_INVALID_VALUE)
+			{
+				val_2 = (int32_t) 1000 * (x2 - x0) / (2 * UBX_rate);
+				val_2 = (int32_t) 10000 * ABS(val_2) / ABS(max_1 - min_1);
+			}
+		}
+
+		if (UBX_hasFix && !UBX_suppress_tone)
+		{
+			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
+				
+			if (UBX_sp_rate != 0 && 
+				UBX_sp_counter >= UBX_sp_rate)
+			{
+				UBX_SpeakValue();
+				UBX_sp_counter = 0;
+			}
+		}
+
+		UBX_sp_counter += UBX_rate;
+		
+		// From UBX_ReceiveMessage
+		
+		if (current->nav_sol.gpsFix == 3)
+		{
+			if (!Log_IsInitialized())
+			{
+				Power_Hold();
+
+				Log_Init(
+					current->nav_timeutc.year,
+					current->nav_timeutc.month,
+					current->nav_timeutc.day,
+					current->nav_timeutc.hour,
+					current->nav_timeutc.min,
+					current->nav_timeutc.sec);
+
+				Log_WriteString(UBX_header);
+				UBX_state = st_flush_1;
+
+				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+			}
+			
+			++UBX_write;
+		}
+
+		UBX_msg_received = 0;
+	}
+}
+
+static void UBX_HandleNavSol(void)
+{
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	current->nav_sol = *((UBX_nav_sol *) UBX_payload);
+	UBX_ReceiveMessage(UBX_MSG_SOL, current->nav_sol.iTOW);
+}
+
+static void UBX_HandlePosition(void)
+{
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	current->nav_pos_llh = *((UBX_nav_posllh *) UBX_payload);
+	UBX_ReceiveMessage(UBX_MSG_POSLLH, current->nav_pos_llh.iTOW);
+}
+
+static void UBX_HandleVelocity(void)
+{
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	current->nav_velned = *((UBX_nav_velned *) UBX_payload);
+	UBX_ReceiveMessage(UBX_MSG_VELNED, current->nav_velned.iTOW);
 }
 
 static void UBX_HandleTimeUTC(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	
 	current->nav_timeutc = *((UBX_nav_timeutc *) UBX_payload);
 	UBX_ReceiveMessage(UBX_MSG_TIMEUTC, current->nav_timeutc.iTOW);
 }
