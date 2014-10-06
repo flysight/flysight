@@ -322,17 +322,16 @@ void UBX_Update(void)
 	
 	if (state == st_blinking)
 	{
-		if (counter == 100)
+		if (counter == 0)
 		{
 			LEDs_ChangeLEDs(LEDS_ALL_LEDS, 0);
 		}
-		else if (counter == 1000)
+		else if (counter == 900)
 		{
 			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
-			counter = 0;
 		}
 
-		++counter;
+		counter = (counter + 1) % 1000;
 	}
 }
 
