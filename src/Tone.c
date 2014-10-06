@@ -78,7 +78,7 @@ static          uint8_t  Tone_mode;
 static          FIL      Tone_file;
 
                 uint16_t Tone_volume = 2;
-                uint16_t Tone_sp_volume = 2;
+                uint16_t Tone_sp_volume = 0;
 
 static volatile uint16_t Tone_next_index = 0;
 static volatile uint32_t Tone_next_chirp = 0; 
