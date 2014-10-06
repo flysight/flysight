@@ -929,7 +929,7 @@ static void UBX_ReceiveMessage(
 		else
 		{
 			UBX_hasFix = 0;
-			UBX_SetTone(UBX_INVALID_VALUE, 0, 0, 0, 0, 0);
+			Tone_SetRate(0);
 		}
 
 		UBX_msg_received = 0;
