@@ -179,7 +179,7 @@ void Config_Read(void)
 	char    *result;
 	
 	int32_t val;
-	int32_t dz_elev;
+	int32_t dz_elev = 0;
 
 	FRESULT res;
 	
