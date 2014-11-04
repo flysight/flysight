@@ -68,7 +68,7 @@ char *Log_WriteInt32ToBuf(
             *--ptr = '.';
         }
     }
-    if (*ptr == '.' || *ptr == 0)
+    if (*ptr == '.' || *ptr == delimiter)
     {
         *--ptr = '0';
     }
