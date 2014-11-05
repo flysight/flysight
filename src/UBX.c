@@ -964,7 +964,7 @@ static void UBX_HandleTimeUTC(void)
 
 static void UBX_HandleMessage(void)
 {
-	if (UBX_read + UBX_BUFFER_LEN == UBX_write)
+	if ((uint8_t) (UBX_read + UBX_BUFFER_LEN) == UBX_write)
 	{
 		++UBX_read;
 	}
