@@ -85,6 +85,7 @@ static volatile uint32_t Tone_next_chirp = 0;
 static volatile uint16_t Tone_rate = 0;
 
 static volatile uint8_t  Tone_flags = 0;
+static volatile uint8_t  Tone_hold  = 0;
 
 extern int disk_is_ready(void);
 
@@ -138,7 +139,7 @@ void Tone_Update(void)
 {
 	static uint16_t tone_timer = 0;
 
-	if (0 - tone_timer < Tone_rate)
+	if (!Tone_hold && 0 - tone_timer < Tone_rate)
 	{
 		Tone_flags |= TONE_FLAGS_BEEP;
 	}
@@ -405,4 +406,14 @@ uint8_t Tone_CanWrite(void)
 uint8_t Tone_IsIdle(void)
 {
 	return Tone_state == TONE_STATE_IDLE;
+}
+
+void Tone_Hold(void)
+{
+	Tone_hold = 1;
+}
+
+void Tone_Release(void)
+{
+	Tone_hold = 0;
 }

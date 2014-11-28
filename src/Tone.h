@@ -30,4 +30,7 @@ void Tone_Stop(void);
 uint8_t Tone_CanWrite(void);
 uint8_t Tone_IsIdle(void);
 
+void Tone_Hold(void);
+void Tone_Release(void);
+
 #endif

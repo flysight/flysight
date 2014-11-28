@@ -777,6 +777,7 @@ static void UBX_UpdateAlarms(
 	
 	if (suppress_tone && !UBX_suppress_tone)
 	{
+		*UBX_speech_ptr = 0;
 		Tone_SetRate(0);
 		Tone_Stop();
 	}
@@ -1164,28 +1165,37 @@ void UBX_Task(void)
 		break;
 	}
 
-	if (Tone_IsIdle() && disk_is_ready() && *UBX_speech_ptr)
+	if (*UBX_speech_ptr)
 	{
-		if (*UBX_speech_ptr == '-')
+		if (Tone_IsIdle() && disk_is_ready())
 		{
-			Tone_Play("minus.wav");
-		}
-		else if (*UBX_speech_ptr == '.')
-		{
-			Tone_Play("dot.wav");
-		}
-		else
-		{
-			buf[0] = *UBX_speech_ptr;
-			buf[1] = '.';
-			buf[2] = 'w';
-			buf[3] = 'a';
-			buf[4] = 'v';
-			buf[5] = 0;
-			
-			Tone_Play(buf);
-		}
+			Tone_Hold();
 		
-		++UBX_speech_ptr;
+			if (*UBX_speech_ptr == '-')
+			{
+				Tone_Play("minus.wav");
+			}
+			else if (*UBX_speech_ptr == '.')
+			{
+				Tone_Play("dot.wav");
+			}
+			else
+			{
+				buf[0] = *UBX_speech_ptr;
+				buf[1] = '.';
+				buf[2] = 'w';
+				buf[3] = 'a';
+				buf[4] = 'v';
+				buf[5] = 0;
+				
+				Tone_Play(buf);
+			}
+			
+			++UBX_speech_ptr;
+		}
+	}
+	else
+	{
+		Tone_Release();
 	}
 }
