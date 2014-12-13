@@ -30,33 +30,29 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-#include "Time.h"
 
 /** One hour, expressed in seconds */
 #define ONE_HOUR 3600
 
-/** Angular degree, expressed in arc seconds */
-#define ONE_DEGREE 3600
-
 /** One day, expressed in seconds */
 #define ONE_DAY 86400
 
-
+/**
+	Enumerated labels for the months.
+*/
 enum _MONTHS_ {
-    JANUARY,
-    FEBRUARY,
-    MARCH,
-    APRIL,
-    MAY,
-    JUNE,
-    JULY,
-    AUGUST,
-    SEPTEMBER,
-    OCTOBER,
-    NOVEMBER,
-    DECEMBER
+	JANUARY,
+	FEBRUARY,
+	MARCH,
+	APRIL,
+	MAY,
+	JUNE,
+	JULY,
+	AUGUST,
+	SEPTEMBER,
+	OCTOBER,
+	NOVEMBER,
+	DECEMBER
 };
 
 unsigned char
@@ -79,7 +75,6 @@ is_leap_year(int year)
 
     return 0;
 }
-
 
 /*
     'Break down' a y2k time stamp into the elements of struct tm.
@@ -117,14 +112,14 @@ mk_gmtime(uint16_t year, uint8_t mon, uint8_t mday, uint8_t hour, uint8_t min, u
     d = mday - 1;   /* tm_mday is one based */
 
     /* handle Jan/Feb as a special case */
-    if (mon < 2) {
-        if (mon)
+    if (mon - 1 < 2) {
+        if (mon - 1)
             d += 31;
 
     } else {
         n = 59 + is_leap_year(year);
         d += n;
-        n = mon - MARCH;
+        n = mon - 1 - MARCH;
 
         /* account for phase change */
         if (n > (JULY - MARCH))
@@ -246,23 +241,22 @@ gmtime_r(const uint32_t timer, uint16_t *year, uint8_t *mon, uint8_t *mday, uint
             */
         days -= n;
         result = div(days, 153);
-        uint8_t m;
-        m = 2 + result.quot * 5;
+        *mon = 2 + result.quot * 5;
 
         /* map into a 61 day pair of months */
         result = div(result.rem, 61);
-        m += result.quot * 2;
+        *mon += result.quot * 2;
 
         /* map into a month */
         result = div(result.rem, 31);
-        m += result.quot;
+        *mon += result.quot;
         *mday = result.rem;
-        *mon = m;
     }
 
     /*
             Cleanup and return
         */
-    (*mday)++; /* tm_mday is 1 based */
+    (*mon)++; /* mon is 1 based */
+    (*mday)++; /* mday is 1 based */
 
 }
