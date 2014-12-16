@@ -13,7 +13,7 @@
 
 #define FILE_NUMBER_ADDR 0
 
-int16_t Log_tz_offset = 0;
+int32_t Log_tz_offset = 0;
 
 static uint8_t Log_initialized = 0;
 static DWORD   Log_fattime;
