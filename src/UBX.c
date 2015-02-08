@@ -806,9 +806,6 @@ static void UBX_UpdateAlarms(
 				case 3:	// chirp down
 					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
 					break ;
-				case 4:	// warble
-					Tone_Beep(0, 5 * TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
-					break ;
 				}
 				
 				break;

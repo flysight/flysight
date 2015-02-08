@@ -129,8 +129,7 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   0 = No alarm\r\n\
                  ;   1 = Beep\r\n\
                  ;   2 = Chirp up\r\n\
-                 ;   3 = Chirp down\r\n\
-                 ;   4 = Warble\r\n";
+                 ;   3 = Chirp down\r\n";
 
 static const char Config_Model[] PROGMEM      = "Model";
 static const char Config_Rate[] PROGMEM       = "Rate";
