@@ -17,6 +17,9 @@
 static const char Config_default[] PROGMEM = "\
 ; Firmware version " FLYSIGHT_VERSION "\r\n\
 \r\n\
+; For information on configuring FlySight, please go to\r\n\
+;     http://flysight.ca/wiki\r\n\
+\r\n\
 ; GPS settings\r\n\
 \r\n\
 Model:     6     ; Dynamic model\r\n\
@@ -118,13 +121,13 @@ TZ_Offset: 0     ; Timezone offset of output files in seconds\r\n\
 ;          UNDER NO CIRCUMSTANCES SHOULD THESE ALARMS BE\r\n\
 ;          USED TO INDICATE DEPLOYMENT OR BREAKOFF ALTITUDE.\r\n\
 \r\n\
-; NOTE:    Alarm elevations are given in meters above sea\r\n\
-;          level.\r\n\
+; NOTE:    Alarm elevations are given in meters above ground\r\n\
+;          elevation, which is specified in DZ_Elev.\r\n\
 \r\n\
 Window:        0 ; Alarm window (m)\r\n\
 DZ_Elev:       0 ; Ground elevation (m above sea level)\r\n\
 \r\n\
-Alarm_Elev: 1000 ; Alarm elevation (m above ground level)\r\n\
+Alarm_Elev:    0 ; Alarm elevation (m above ground level)\r\n\
 Alarm_Type:    0 ; Alarm type\r\n\
                  ;   0 = No alarm\r\n\
                  ;   1 = Beep\r\n\
