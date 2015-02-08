@@ -245,6 +245,7 @@ uint8_t  UBX_sp_mode       = 2;
 uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
 uint16_t UBX_sp_rate       = 0;
 uint8_t  UBX_sp_decimals   = 0;
+uint8_t  UBX_sp_test       = 0;
 
 static uint16_t UBX_sp_counter = 0;
 
@@ -914,7 +915,27 @@ static void UBX_ReceiveMessage(
 				Log_WriteString(UBX_header);
 				UBX_state = st_flush_1;
 
-				Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+				if (UBX_sp_test)
+				{
+					UBX_speech_buf[0] = '0';
+					UBX_speech_buf[1] = '1';
+					UBX_speech_buf[2] = '2';
+					UBX_speech_buf[3] = '3';
+					UBX_speech_buf[4] = '4';
+					UBX_speech_buf[5] = '5';
+					UBX_speech_buf[6] = '6';
+					UBX_speech_buf[7] = '7';
+					UBX_speech_buf[8] = '8';
+					UBX_speech_buf[9] = '9';
+					UBX_speech_buf[10] = '.';
+					UBX_speech_buf[11] = '-';
+					UBX_speech_buf[12] = 0;
+					UBX_speech_ptr = UBX_speech_buf;
+				}
+				else
+				{
+					Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+				}
 			}
 
 			++UBX_write;

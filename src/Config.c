@@ -109,6 +109,9 @@ TZ_Offset: 0     ; Timezone offset of output files in seconds\r\n\
                  ;   -21600 = UTC-6 (CST, MDT)\r\n\
                  ;   -25200 = UTC-7 (MST, PDT)\r\n\
                  ;   -28800 = UTC-8 (PST)\r\n\
+Sp_Test:   0     ; Run speech test\r\n\
+                 ;   0 = No\r\n\
+                 ;   1 = Yes\r\n\
 \r\n\
 \r\n\
 ; Alarm settings\r\n\
@@ -160,6 +163,7 @@ static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
+static const char Config_Sp_Test[] PROGMEM    = "Sp_Test";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -250,6 +254,7 @@ void Config_Read(void)
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
 		HANDLE_VALUE(Config_DZ_Elev,   dz_elev,          val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
+		HANDLE_VALUE(Config_Sp_Test,   UBX_sp_test,      val, val == 0 || val == 1);
 		
 		#undef HANDLE_VALUE
 		

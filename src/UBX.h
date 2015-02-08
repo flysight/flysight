@@ -38,6 +38,7 @@ extern uint8_t   UBX_sp_mode;
 extern uint8_t   UBX_sp_units;
 extern uint16_t  UBX_sp_rate;
 extern uint8_t   UBX_sp_decimals;
+extern uint8_t   UBX_sp_test;
 
 void UBX_Init(void);
 void UBX_Task(void);
