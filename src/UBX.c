@@ -261,10 +261,31 @@ static uint8_t  UBX_msg_received = 0;
 
 typedef struct
 {
-	UBX_nav_posllh  nav_pos_llh;
-	UBX_nav_sol     nav_sol;
-	UBX_nav_velned  nav_velned;
-	UBX_nav_timeutc nav_timeutc;
+	int32_t  lon;      // Longitude                    (deg)
+	int32_t  lat;      // Latitude                     (deg)
+	int32_t  hMSL;     // Height above mean sea level  (mm)
+	uint32_t hAcc;     // Horizontal accuracy estimate (mm)
+	uint32_t vAcc;     // Vertical accuracy estimate   (mm)
+
+	uint8_t  gpsFix;   // GPS fix type
+	uint8_t  numSV;    // Number of SVs in solution
+
+	int32_t  velN;     // North velocity               (cm/s)
+	int32_t  velE;     // East velocity                (cm/s)
+	int32_t  velD;     // Down velocity                (cm/s)
+	uint32_t speed;    // 3D speed                     (cm/s)
+	uint32_t gSpeed;   // Ground speed                 (cm/s)
+	int32_t  heading;  // 2D heading                   (deg)
+	uint32_t sAcc;     // Speed accuracy estimate      (cm/s)
+	uint32_t cAcc;     // Heading accuracy estimate    (deg)
+
+	int32_t  nano;     // Nanoseconds of second        (ns)
+	uint16_t year;     // Year                         (1999..2099)
+	uint8_t  month;    // Month                        (1..12)
+	uint8_t  day;      // Day of month                 (1..31)
+	uint8_t  hour;     // Hour of day                  (0..23)
+	uint8_t  min;      // Minute of hour               (0..59)
+	uint8_t  sec;      // Second of minute             (0..59)
 }
 UBX_saved_t ;
 static UBX_saved_t UBX_saved[UBX_BUFFER_LEN];
@@ -615,17 +636,17 @@ static void UBX_GetValues(
 
 	if (UBX_use_sas)
 	{
-		if (current->nav_pos_llh.height < 0)
+		if (current->hMSL < 0)
 		{
 			speed_mul = pgm_read_word(&UBX_sas_table[0]);
 		}
-		else if (current->nav_pos_llh.height >= 11534336L)
+		else if (current->hMSL >= 11534336L)
 		{
 			speed_mul = pgm_read_word(&UBX_sas_table[11]);
 		}
 		else
 		{
-			int32_t h = current->nav_pos_llh.height / 1024	;
+			int32_t h = current->hMSL / 1024	;
 			uint16_t i = h / 1024;
 			uint16_t j = h % 1024;
 			uint16_t y1 = pgm_read_word(&UBX_sas_table[i]);
@@ -637,29 +658,29 @@ static void UBX_GetValues(
 	switch (mode)
 	{
 	case 0: // Horizontal speed
-		*val = (current->nav_velned.gSpeed * 1024) / speed_mul;
+		*val = (current->gSpeed * 1024) / speed_mul;
 		break;
 	case 1: // Vertical speed
-		*val = (current->nav_velned.velD * 1024) / speed_mul;
+		*val = (current->velD * 1024) / speed_mul;
 		break;
 	case 2: // Glide ratio
-		if (current->nav_velned.velD != 0)
+		if (current->velD != 0)
 		{
-			*val = 10000 * (int32_t) current->nav_velned.gSpeed / current->nav_velned.velD;
+			*val = 10000 * (int32_t) current->gSpeed / current->velD;
 			*min *= 100;
 			*max *= 100;
 		}
 		break;
 	case 3: // Inverse glide ratio
-		if (current->nav_velned.gSpeed != 0)
+		if (current->gSpeed != 0)
 		{
-			*val = 10000 * current->nav_velned.velD / (int32_t) current->nav_velned.gSpeed;
+			*val = 10000 * current->velD / (int32_t) current->gSpeed;
 			*min *= 100;
 			*max *= 100;
 		}
 		break;
 	case 4: // Total speed
-		*val = (current->nav_velned.speed * 1024) / speed_mul;
+		*val = (current->speed * 1024) / speed_mul;
 		break;
 	}
 }
@@ -673,17 +694,17 @@ static void UBX_SpeakValue(
 
 	if (UBX_use_sas)
 	{
-		if (current->nav_pos_llh.height < 0)
+		if (current->hMSL < 0)
 		{
 			speed_mul = pgm_read_word(&UBX_sas_table[0]);
 		}
-		else if (current->nav_pos_llh.height >= 11534336L)
+		else if (current->hMSL >= 11534336L)
 		{
 			speed_mul = pgm_read_word(&UBX_sas_table[11]);
 		}
 		else
 		{
-			int32_t h = current->nav_pos_llh.height / 1024	;
+			int32_t h = current->hMSL / 1024	;
 			uint16_t i = h / 1024;
 			uint16_t j = h % 1024;
 			uint16_t y1 = pgm_read_word(&UBX_sas_table[i]);
@@ -712,21 +733,21 @@ static void UBX_SpeakValue(
 	switch (UBX_sp_mode)
 	{
 	case 0: // Horizontal speed
-		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->nav_velned.gSpeed * 1024) / speed_mul, 2, 1, 0);
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->gSpeed * 1024) / speed_mul, 2, 1, 0);
 		break;
 	case 1: // Vertical speed
-		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->nav_velned.velD * 1024) / speed_mul, 2, 1, 0);
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->velD * 1024) / speed_mul, 2, 1, 0);
 		break;
 	case 2: // Glide ratio
-		if (current->nav_velned.velD != 0)
+		if (current->velD != 0)
 		{
-			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->nav_velned.gSpeed / current->nav_velned.velD, 2, 1, 0);
+			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->gSpeed / current->velD, 2, 1, 0);
 		}
 		break;
 	case 3: // Inverse glide ratio
-		if (current->nav_velned.gSpeed != 0)
+		if (current->gSpeed != 0)
 		{
-			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->nav_velned.velD / current->nav_velned.gSpeed, 2, 1, 0);
+			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->velD / current->gSpeed, 2, 1, 0);
 		}
 		else
 		{
@@ -734,7 +755,7 @@ static void UBX_SpeakValue(
 		}
 		break;
 	case 4: // Total speed
-		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->nav_velned.speed * 1024) / speed_mul, 2, 1, 0);
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->speed * 1024) / speed_mul, 2, 1, 0);
 		break;
 	}
 	
@@ -769,7 +790,7 @@ static void UBX_UpdateAlarms(
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		if (ABS (UBX_alarms[i].elev - current->nav_pos_llh.hMSL) < UBX_alarm_window)
+		if (ABS (UBX_alarms[i].elev - current->hMSL) < UBX_alarm_window)
 		{
 			suppress_tone = 1;
 			break;
@@ -787,8 +808,8 @@ static void UBX_UpdateAlarms(
 
 	if (UBX_prevFix)
 	{
-		int32_t min = MIN(UBX_prevHMSL, current->nav_pos_llh.hMSL);
-		int32_t max = MAX(UBX_prevHMSL, current->nav_pos_llh.hMSL);
+		int32_t min = MIN(UBX_prevHMSL, current->hMSL);
+		int32_t max = MAX(UBX_prevHMSL, current->hMSL);
 
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
@@ -854,8 +875,8 @@ static void UBX_UpdateTones(
 
 	if (!UBX_suppress_tone)
 	{
-		if (ABS(current->nav_velned.velD) >= UBX_threshold && 
-			current->nav_velned.gSpeed >= UBX_hThreshold)
+		if (ABS(current->velD) >= UBX_threshold && 
+			current->gSpeed >= UBX_hThreshold)
 		{
 			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
 				
@@ -893,7 +914,7 @@ static void UBX_ReceiveMessage(
 
 	if (UBX_msg_received == UBX_MSG_ALL)
 	{
-		if (current->nav_sol.gpsFix == 0x03)
+		if (current->gpsFix == 0x03)
 		{
 			UBX_hasFix = 1;
 
@@ -905,12 +926,12 @@ static void UBX_ReceiveMessage(
 				Power_Hold();
 
 				Log_Init(
-					current->nav_timeutc.year,
-					current->nav_timeutc.month,
-					current->nav_timeutc.day,
-					current->nav_timeutc.hour,
-					current->nav_timeutc.min,
-					current->nav_timeutc.sec);
+					current->year,
+					current->month,
+					current->day,
+					current->hour,
+					current->min,
+					current->sec);
 
 				Log_WriteString(UBX_header);
 				UBX_state = st_flush_1;
@@ -947,7 +968,7 @@ static void UBX_ReceiveMessage(
 		}
 
 		UBX_prevFix = UBX_hasFix;
-		UBX_prevHMSL = current->nav_pos_llh.hMSL;
+		UBX_prevHMSL = current->hMSL;
 		
 		UBX_msg_received = 0;
 	}
@@ -956,29 +977,59 @@ static void UBX_ReceiveMessage(
 static void UBX_HandleNavSol(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	current->nav_sol = *((UBX_nav_sol *) UBX_payload);
-	UBX_ReceiveMessage(UBX_MSG_SOL, current->nav_sol.iTOW);
+	UBX_nav_sol *nav_sol = (UBX_nav_sol *) UBX_payload;
+
+	current->gpsFix = nav_sol->gpsFix;
+	current->numSV  = nav_sol->numSV;
+
+	UBX_ReceiveMessage(UBX_MSG_SOL, nav_sol->iTOW);
 }
 
 static void UBX_HandlePosition(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	current->nav_pos_llh = *((UBX_nav_posllh *) UBX_payload);
-	UBX_ReceiveMessage(UBX_MSG_POSLLH, current->nav_pos_llh.iTOW);
+	UBX_nav_posllh *nav_pos_llh = (UBX_nav_posllh *) UBX_payload;
+
+	current->lon  = nav_pos_llh->lon;
+	current->lat  = nav_pos_llh->lat;
+	current->hMSL = nav_pos_llh->hMSL;
+	current->hAcc = nav_pos_llh->hAcc;
+	current->vAcc = nav_pos_llh->vAcc;
+
+	UBX_ReceiveMessage(UBX_MSG_POSLLH, nav_pos_llh->iTOW);
 }
 
 static void UBX_HandleVelocity(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	current->nav_velned = *((UBX_nav_velned *) UBX_payload);
-	UBX_ReceiveMessage(UBX_MSG_VELNED, current->nav_velned.iTOW);
+	UBX_nav_velned *nav_velned = (UBX_nav_velned *) UBX_payload;
+
+	current->velN    = nav_velned->velN;
+	current->velE    = nav_velned->velE;
+	current->velD    = nav_velned->velD;
+	current->speed   = nav_velned->speed;
+	current->gSpeed  = nav_velned->gSpeed;
+	current->heading = nav_velned->heading;
+	current->sAcc    = nav_velned->sAcc;
+	current->cAcc    = nav_velned->cAcc;
+
+	UBX_ReceiveMessage(UBX_MSG_VELNED, nav_velned->iTOW);
 }
 
 static void UBX_HandleTimeUTC(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
-	current->nav_timeutc = *((UBX_nav_timeutc *) UBX_payload);
-	UBX_ReceiveMessage(UBX_MSG_TIMEUTC, current->nav_timeutc.iTOW);
+	UBX_nav_timeutc *nav_timeutc = (UBX_nav_timeutc *) UBX_payload;
+
+	current->nano  = nav_timeutc->nano;
+	current->year  = nav_timeutc->year;
+	current->month = nav_timeutc->month;
+	current->day   = nav_timeutc->day;
+	current->hour  = nav_timeutc->hour;
+	current->min   = nav_timeutc->min;
+	current->sec   = nav_timeutc->sec;
+
+	UBX_ReceiveMessage(UBX_MSG_TIMEUTC, nav_timeutc->iTOW);
 }
 
 static void UBX_HandleMessage(void)
@@ -1132,27 +1183,27 @@ void UBX_Task(void)
 			*(--ptr) = 0;
 
 			*(--ptr) = '\n';
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.numSV,     0, 0, '\r');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_sol.gpsFix,    0, 0, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.cAcc,   5, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.heading, 5, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.sAcc,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.vAcc,  3, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.hAcc,  3, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velD,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velE,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_velned.velN,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.hMSL,  3, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.lon,   7, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_pos_llh.lat,   7, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->numSV,     0, 0, '\r');
+			ptr = Log_WriteInt32ToBuf(ptr, current->gpsFix,    0, 0, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->cAcc,   5, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->heading, 5, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->sAcc,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->vAcc,  3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->hAcc,  3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->velD,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->velE,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->velN,   2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->hMSL,  3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->lon,   7, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->lat,   7, 1, ',');
 			*(--ptr) = ',';
-			ptr = Log_WriteInt32ToBuf(ptr, (current->nav_timeutc.nano + 5000000) / 10000000, 2, 0, 'Z');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.sec,   2, 0, '.');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.min,   2, 0, ':');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.hour,  2, 0, ':');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.day,   2, 0, 'T');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.month, 2, 0, '-');
-			ptr = Log_WriteInt32ToBuf(ptr, current->nav_timeutc.year,  4, 0, '-');
+			ptr = Log_WriteInt32ToBuf(ptr, (current->nano + 5000000) / 10000000, 2, 0, 'Z');
+			ptr = Log_WriteInt32ToBuf(ptr, current->sec,   2, 0, '.');
+			ptr = Log_WriteInt32ToBuf(ptr, current->min,   2, 0, ':');
+			ptr = Log_WriteInt32ToBuf(ptr, current->hour,  2, 0, ':');
+			ptr = Log_WriteInt32ToBuf(ptr, current->day,   2, 0, 'T');
+			ptr = Log_WriteInt32ToBuf(ptr, current->month, 2, 0, '-');
+			ptr = Log_WriteInt32ToBuf(ptr, current->year,  4, 0, '-');
 			++UBX_read;
 
 			f_puts(ptr, &Main_file);
