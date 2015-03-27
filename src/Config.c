@@ -135,7 +135,9 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   0 = No alarm\r\n\
                  ;   1 = Beep\r\n\
                  ;   2 = Chirp up\r\n\
-                 ;   3 = Chirp down\r\n";
+                 ;   3 = Chirp down\r\n\
+                 ;   4 = Play file\r\n\
+Alarm_File:    0 ; File to be played\r\n";
 
 static const char Config_Model[] PROGMEM      = "Model";
 static const char Config_Rate[] PROGMEM       = "Rate";
@@ -162,6 +164,7 @@ static const char Config_Window[] PROGMEM     = "Window";
 static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
+static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 static const char Config_Sp_Test[] PROGMEM    = "Sp_Test";
 
@@ -260,12 +263,18 @@ void Config_Read(void)
 		
 		if (!strcmp_P(name, Config_Alarm_Elev))
 		{
-			UBX_alarms[UBX_num_alarms].elev = val * 1000 + dz_elev;
+			++UBX_num_alarms;
+			UBX_alarms[UBX_num_alarms - 1].elev = val * 1000 + dz_elev;
+			UBX_alarms[UBX_num_alarms - 1].type = 0;
+			UBX_alarms[UBX_num_alarms - 1].filename[0] = '\0';
 		}
 		if (!strcmp_P(name, Config_Alarm_Type) && val != 0)
 		{
-			UBX_alarms[UBX_num_alarms].type = val;
-			++UBX_num_alarms;
+			UBX_alarms[UBX_num_alarms - 1].type = val;
+		}
+		if (!strcmp_P(name, Config_Alarm_File) && val != 0)
+		{
+			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
 		}
 	}
 	

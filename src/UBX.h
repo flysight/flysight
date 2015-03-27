@@ -9,6 +9,7 @@ typedef struct
 {
 	int32_t elev;
 	uint8_t type;
+	char    filename[9];
 }
 UBX_alarm;
 
