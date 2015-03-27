@@ -274,7 +274,7 @@ void Config_Read(void)
 		}
 		if (!strcmp_P(name, Config_Alarm_File) && val != 0)
 		{
-			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, val);
+			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
 		}
 	}
 	
