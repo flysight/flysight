@@ -259,6 +259,8 @@ uint32_t  UBX_alarm_window = 0;
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
 
+static char UBX_buf[150];
+
 typedef struct
 {
 	int32_t  lon;      // Longitude                    (deg)
@@ -828,6 +830,11 @@ static void UBX_UpdateAlarms(
 				case 3:	// chirp down
 					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
 					break ;
+				case 4:	// play file
+					strcpy(UBX_buf, UBX_alarms[i].filename);
+					strcat(UBX_buf, ".wav");
+					Tone_Play(UBX_buf);
+					break;
 				}
 				
 				break;
@@ -1155,8 +1162,6 @@ void UBX_Init(void)
 
 void UBX_Task(void)
 {
-	static char buf[150];
-
 	unsigned int ch;
 
 	UBX_saved_t *current;
@@ -1179,7 +1184,7 @@ void UBX_Task(void)
 
 			Power_Hold();
 
-			ptr = buf + sizeof(buf);
+			ptr = UBX_buf + sizeof(UBX_buf);
 			*(--ptr) = 0;
 
 			*(--ptr) = '\n';
@@ -1250,14 +1255,14 @@ void UBX_Task(void)
 			}
 			else
 			{
-				buf[0] = *UBX_speech_ptr;
-				buf[1] = '.';
-				buf[2] = 'w';
-				buf[3] = 'a';
-				buf[4] = 'v';
-				buf[5] = 0;
+				UBX_buf[0] = *UBX_speech_ptr;
+				UBX_buf[1] = '.';
+				UBX_buf[2] = 'w';
+				UBX_buf[3] = 'a';
+				UBX_buf[4] = 'v';
+				UBX_buf[5] = 0;
 				
-				Tone_Play(buf);
+				Tone_Play(UBX_buf);
 			}
 			
 			++UBX_speech_ptr;
