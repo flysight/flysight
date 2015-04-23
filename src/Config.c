@@ -109,10 +109,14 @@ TZ_Offset: 0     ; Timezone offset of output files in seconds\r\n\
                  ;   -21600 = UTC-6 (CST, MDT)\r\n\
                  ;   -25200 = UTC-7 (MST, PDT)\r\n\
                  ;   -28800 = UTC-8 (PST)\r\n\
-Sp_Test:   0     ; Run speech test\r\n\
-                 ;   0 = No\r\n\
-                 ;   1 = Yes\r\n\
 \r\n\
+; Initialization\r\n\
+\r\n\
+Init_Mode: 0     ; When the FlySight is powered on\r\n\
+                 ;   0 = Do nothing\r\n\
+                 ;   1 = Test speech mode\r\n\
+                 ;   2 = Play file\r\n\
+Init_File: 0     ; File to be played\r\n\
 \r\n\
 ; Alarm settings\r\n\
 \r\n\
@@ -166,7 +170,8 @@ static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
-static const char Config_Sp_Test[] PROGMEM    = "Sp_Test";
+static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
+static const char Config_Init_File[] PROGMEM  = "Init_File";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -257,9 +262,14 @@ void Config_Read(void)
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
 		HANDLE_VALUE(Config_DZ_Elev,   dz_elev,          val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
-		HANDLE_VALUE(Config_Sp_Test,   UBX_sp_test,      val, val == 0 || val == 1);
+		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
 		
 		#undef HANDLE_VALUE
+		
+		if (!strcmp_P(name, Config_Init_File))
+		{
+			strcpy(UBX_init_filename, result);
+		}
 		
 		if (!strcmp_P(name, Config_Alarm_Elev))
 		{

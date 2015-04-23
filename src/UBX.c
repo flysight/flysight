@@ -245,7 +245,9 @@ uint8_t  UBX_sp_mode       = 2;
 uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
 uint16_t UBX_sp_rate       = 0;
 uint8_t  UBX_sp_decimals   = 0;
-uint8_t  UBX_sp_test       = 0;
+
+uint8_t  UBX_init_mode     = 0;
+char     UBX_init_filename[9];
 
 static uint16_t UBX_sp_counter = 0;
 
@@ -296,6 +298,7 @@ static uint8_t UBX_read  = 0;
 static uint8_t UBX_write = 0;
 
 static volatile uint8_t UBX_hasFix = 0;
+static uint8_t UBX_firstFix = 0;
 
 static uint8_t UBX_prevFix = 0;
 static int32_t UBX_prevHMSL;
@@ -943,27 +946,7 @@ static void UBX_ReceiveMessage(
 				Log_WriteString(UBX_header);
 				UBX_state = st_flush_1;
 
-				if (UBX_sp_test)
-				{
-					UBX_speech_buf[0] = '0';
-					UBX_speech_buf[1] = '1';
-					UBX_speech_buf[2] = '2';
-					UBX_speech_buf[3] = '3';
-					UBX_speech_buf[4] = '4';
-					UBX_speech_buf[5] = '5';
-					UBX_speech_buf[6] = '6';
-					UBX_speech_buf[7] = '7';
-					UBX_speech_buf[8] = '8';
-					UBX_speech_buf[9] = '9';
-					UBX_speech_buf[10] = '.';
-					UBX_speech_buf[11] = '-';
-					UBX_speech_buf[12] = 0;
-					UBX_speech_ptr = UBX_speech_buf;
-				}
-				else
-				{
-					Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
-				}
+				UBX_firstFix = 1;
 			}
 
 			++UBX_write;
@@ -1157,6 +1140,30 @@ void UBX_Init(void)
 		LEDs_ChangeLEDs(LEDS_ALL_LEDS, LEDS_RED);
 		while (1);
 	}
+
+	if (UBX_init_mode == 1)			// Speech test
+	{
+		UBX_speech_buf[0] = '0';
+		UBX_speech_buf[1] = '1';
+		UBX_speech_buf[2] = '2';
+		UBX_speech_buf[3] = '3';
+		UBX_speech_buf[4] = '4';
+		UBX_speech_buf[5] = '5';
+		UBX_speech_buf[6] = '6';
+		UBX_speech_buf[7] = '7';
+		UBX_speech_buf[8] = '8';
+		UBX_speech_buf[9] = '9';
+		UBX_speech_buf[10] = '.';
+		UBX_speech_buf[11] = '-';
+		UBX_speech_buf[12] = 0;
+		UBX_speech_ptr = UBX_speech_buf;
+	}
+	else if (UBX_init_mode == 2)	// Play a file
+	{
+		strcpy(UBX_buf, UBX_init_filename);
+		strcat(UBX_buf, ".wav");
+		Tone_Play(UBX_buf);
+	}
 }
 
 
@@ -1271,5 +1278,11 @@ void UBX_Task(void)
 	else
 	{
 		Tone_Release();
+
+		if (UBX_firstFix && Tone_IsIdle())
+		{
+			UBX_firstFix = 0;
+			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+		}
 	}
 }
