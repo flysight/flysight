@@ -78,13 +78,16 @@ static          uint8_t  Tone_mode;
 static          FIL      Tone_file;
 
                 uint16_t Tone_volume = 2;
-                uint16_t Tone_sp_volume = 2;
+                uint16_t Tone_sp_volume = 0;
 
 static volatile uint16_t Tone_next_index = 0;
 static volatile uint32_t Tone_next_chirp = 0; 
 static volatile uint16_t Tone_rate = 0;
 
 static volatile uint8_t  Tone_flags = 0;
+static volatile uint8_t  Tone_hold  = 0;
+
+extern int disk_is_ready(void);
 
 ISR(TIMER1_OVF_vect)
 {
@@ -97,13 +100,6 @@ ISR(TIMER1_OVF_vect)
 	}
 	else if (Tone_read == Tone_write)
 	{
-#ifdef TONE_DEBUG
-		if (Tone_flags & TONE_FLAGS_LOAD)
-		{
-			PORTF ^= (1 << 4);
-		}
-#endif
-		
 		TCCR1A = 0;
 		TCCR1B = 0;
 		TIMSK1 = 0;
@@ -143,7 +139,7 @@ void Tone_Update(void)
 {
 	static uint16_t tone_timer = 0;
 
-	if (0 - tone_timer < Tone_rate)
+	if (!Tone_hold && 0 - tone_timer < Tone_rate)
 	{
 		Tone_flags |= TONE_FLAGS_BEEP;
 	}
@@ -277,7 +273,10 @@ static void Tone_Load(void)
 		Tone_LoadTable();
 		break;
 	case TONE_MODE_WAV:
-		Tone_LoadWAV();
+		if (disk_is_ready())
+		{
+			Tone_LoadWAV();
+		}
 		break;
 	}
 }
@@ -339,10 +338,6 @@ void Tone_Stop(void)
 
 void Tone_Task(void)
 {
-#ifdef TONE_DEBUG
-	PORTF |= (1 << 2);
-#endif
-	
 	if (Tone_flags & TONE_FLAGS_BEEP)
 	{
 		if (Tone_state == TONE_STATE_IDLE)
@@ -365,10 +360,6 @@ void Tone_Task(void)
 	{
 		Tone_Load();
 	}
-
-#ifdef TONE_DEBUG
-	PORTF &= ~(1 << 2);
-#endif
 }
 
 void Tone_Beep(
@@ -415,4 +406,14 @@ uint8_t Tone_CanWrite(void)
 uint8_t Tone_IsIdle(void)
 {
 	return Tone_state == TONE_STATE_IDLE;
+}
+
+void Tone_Hold(void)
+{
+	Tone_hold = 1;
+}
+
+void Tone_Release(void)
+{
+	Tone_hold = 0;
 }

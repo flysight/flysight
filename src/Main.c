@@ -48,7 +48,9 @@ static void delay_ms(
 
 void SetupHardware(void)
 {
+#ifdef MAIN_DEBUG
 	uint8_t i;
+#endif
 
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
@@ -56,13 +58,13 @@ void SetupHardware(void)
 	CLKPR = (1 << CLKPCE);
 	CLKPR = 0;
 
-#ifdef TONE_DEBUG
+#ifdef MAIN_DEBUG
 	MCUCR |= (1 << JTD); 
 	MCUCR |= (1 << JTD); 
    
 	DDRF  = 0xff;
 	
-	for (i = 0; i < 8; ++i)
+	for (i = 0; i < 7; ++i)
 	{
 		PORTF = (1 << i);
 		delay_ms(1);

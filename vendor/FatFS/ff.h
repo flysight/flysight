@@ -426,6 +426,9 @@ FRESULT f_write (FIL*, const void*, UINT, UINT*);	/* Write data to a file */
 FRESULT f_getfree (const TCHAR*, DWORD*, FATFS**);	/* Get number of free clusters on the drive */
 FRESULT f_truncate (FIL*);							/* Truncate file */
 FRESULT f_sync (FIL*);								/* Flush cached data of a writing file */
+FRESULT f_sync_1 (FIL*);							/* Flush cached data of a writing file in steps */
+FRESULT f_sync_2 (FIL*);
+FRESULT f_sync_3 (FIL*);
 FRESULT f_unlink (const TCHAR*);					/* Delete an existing file or directory */
 FRESULT	f_mkdir (const TCHAR*);						/* Create a new directory */
 FRESULT f_chmod (const TCHAR*, BYTE, BYTE);			/* Change attriburte of the file/dir */

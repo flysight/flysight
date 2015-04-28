@@ -17,6 +17,9 @@
 static const char Config_default[] PROGMEM = "\
 ; Firmware version " FLYSIGHT_VERSION "\r\n\
 \r\n\
+; For information on configuring FlySight, please go to\r\n\
+;     http://flysight.ca/wiki\r\n\
+\r\n\
 ; GPS settings\r\n\
 \r\n\
 Model:     6     ; Dynamic model\r\n\
@@ -88,7 +91,7 @@ Sp_Units:  1     ; Speech units\r\n\
 Sp_Rate:   0     ; Speech rate (s)\r\n\
                  ;   0 = No speech\r\n\
 Sp_Dec:    0     ; Decimal places for speech\r\n\
-Sp_Volume: 6     ; 0 (min) to 8 (max)\r\n\
+Sp_Volume: 8     ; 0 (min) to 8 (max)\r\n\
 \r\n\
 ; Thresholds\r\n\
 \r\n\
@@ -107,6 +110,13 @@ TZ_Offset: 0     ; Timezone offset of output files in seconds\r\n\
                  ;   -25200 = UTC-7 (MST, PDT)\r\n\
                  ;   -28800 = UTC-8 (PST)\r\n\
 \r\n\
+; Initialization\r\n\
+\r\n\
+Init_Mode: 0     ; When the FlySight is powered on\r\n\
+                 ;   0 = Do nothing\r\n\
+                 ;   1 = Test speech mode\r\n\
+                 ;   2 = Play file\r\n\
+Init_File: 0     ; File to be played\r\n\
 \r\n\
 ; Alarm settings\r\n\
 \r\n\
@@ -118,19 +128,20 @@ TZ_Offset: 0     ; Timezone offset of output files in seconds\r\n\
 ;          UNDER NO CIRCUMSTANCES SHOULD THESE ALARMS BE\r\n\
 ;          USED TO INDICATE DEPLOYMENT OR BREAKOFF ALTITUDE.\r\n\
 \r\n\
-; NOTE:    Alarm elevations are given in meters above sea\r\n\
-;          level.\r\n\
+; NOTE:    Alarm elevations are given in meters above ground\r\n\
+;          elevation, which is specified in DZ_Elev.\r\n\
 \r\n\
 Window:        0 ; Alarm window (m)\r\n\
-DZ_Elev:       0 ; Ground elevation (m)\r\n\
+DZ_Elev:       0 ; Ground elevation (m above sea level)\r\n\
 \r\n\
-Alarm_Elev: 1000 ; Alarm elevation (m)\r\n\
+Alarm_Elev:    0 ; Alarm elevation (m above ground level)\r\n\
 Alarm_Type:    0 ; Alarm type\r\n\
                  ;   0 = No alarm\r\n\
                  ;   1 = Beep\r\n\
                  ;   2 = Chirp up\r\n\
                  ;   3 = Chirp down\r\n\
-                 ;   4 = Warble\r\n";
+                 ;   4 = Play file\r\n\
+Alarm_File:    0 ; File to be played\r\n";
 
 static const char Config_Model[] PROGMEM      = "Model";
 static const char Config_Rate[] PROGMEM       = "Rate";
@@ -157,7 +168,10 @@ static const char Config_Window[] PROGMEM     = "Window";
 static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
+static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
+static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
+static const char Config_Init_File[] PROGMEM  = "Init_File";
 
 static void Config_WriteString_P(
 	const char *str,
@@ -179,7 +193,7 @@ void Config_Read(void)
 	char    *result;
 	
 	int32_t val;
-	int32_t dz_elev;
+	int32_t dz_elev = 0;
 
 	FRESULT res;
 	
@@ -248,17 +262,29 @@ void Config_Read(void)
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
 		HANDLE_VALUE(Config_DZ_Elev,   dz_elev,          val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
+		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
 		
 		#undef HANDLE_VALUE
 		
+		if (!strcmp_P(name, Config_Init_File))
+		{
+			strcpy(UBX_init_filename, result);
+		}
+		
 		if (!strcmp_P(name, Config_Alarm_Elev))
 		{
-			UBX_alarms[UBX_num_alarms].elev = val * 1000 + dz_elev;
+			++UBX_num_alarms;
+			UBX_alarms[UBX_num_alarms - 1].elev = val * 1000 + dz_elev;
+			UBX_alarms[UBX_num_alarms - 1].type = 0;
+			UBX_alarms[UBX_num_alarms - 1].filename[0] = '\0';
 		}
 		if (!strcmp_P(name, Config_Alarm_Type) && val != 0)
 		{
-			UBX_alarms[UBX_num_alarms].type = val;
-			++UBX_num_alarms;
+			UBX_alarms[UBX_num_alarms - 1].type = val;
+		}
+		if (!strcmp_P(name, Config_Alarm_File) && val != 0)
+		{
+			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
 		}
 	}
 	
