@@ -48,30 +48,11 @@ static void delay_ms(
 
 void SetupHardware(void)
 {
-#ifdef MAIN_DEBUG
-	uint8_t i;
-#endif
-
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
 
 	CLKPR = (1 << CLKPCE);
 	CLKPR = 0;
-
-#ifdef MAIN_DEBUG
-	MCUCR |= (1 << JTD); 
-	MCUCR |= (1 << JTD); 
-   
-	DDRF  = 0xff;
-	
-	for (i = 0; i < 7; ++i)
-	{
-		PORTF = (1 << i);
-		delay_ms(1);
-	}
-	
-	PORTF = 0x00;
-#endif
 
 	USB_Init();
 	LEDs_Init();
