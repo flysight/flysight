@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <util/delay.h>
 #include <avr/io.h>
