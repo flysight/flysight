@@ -43,6 +43,8 @@ extern uint8_t   UBX_sp_decimals;
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
 
+extern char      UBX_buf[150];
+
 void UBX_Init(void);
 void UBX_Task(void);
 void UBX_Update(void);
