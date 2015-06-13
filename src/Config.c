@@ -1,3 +1,4 @@
+#include <avr/eeprom.h>
 #include <avr/pgmspace.h>
 
 #include <stdlib.h>
@@ -5,6 +6,7 @@
 
 #include "Board/LEDs.h"
 #include "FatFS/ff.h"
+#include "Config.h"
 #include "Log.h"
 #include "Main.h"
 #include "Tone.h"
@@ -171,7 +173,9 @@ static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
-static const char Config_Init_File[] PROGMEM  = "Init_File";
+       const char Config_Init_File[] PROGMEM  = "Init_File";
+
+char Config_buf[80];
 
 static void Config_WriteString_P(
 	const char *str,
@@ -187,7 +191,6 @@ static void Config_WriteString_P(
 
 void Config_Read(void)
 {
-	char    buf[80];
 	size_t  len;
 	char    *name;
 	char    *result;
@@ -196,10 +199,28 @@ void Config_Read(void)
 	int32_t dz_elev = 0;
 
 	FRESULT res;
+
+	eeprom_read_block(UBX_buf, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
+	if (UBX_buf[0] == 0 || UBX_buf[0] == 0xff)
+	{
+		res = f_chdir("\\");
+		res = f_open(&Main_file, "config.txt", FA_READ);
+	}
+	else
+	{
+		res = f_chdir("\\config");
+		res = f_open(&Main_file, UBX_buf, FA_READ);
+
+		if (res != FR_OK)
+		{
+			res = f_chdir("\\");
+			res = f_open(&Main_file, "config.txt", FA_READ);
+		}
+	}
 	
-	res = f_open(&Main_file, "config.txt", FA_READ);
 	if (res != FR_OK)
 	{
+		res = f_chdir("\\");
 		res = f_open(&Main_file, "config.txt", FA_WRITE | FA_CREATE_ALWAYS);
 		if (res != FR_OK) 
 		{
@@ -211,6 +232,7 @@ void Config_Read(void)
 		Config_WriteString_P(Config_default, &Main_file);
 		f_close(&Main_file);
 
+		res = f_chdir("\\config");
 		res = f_open(&Main_file, "config.txt", FA_READ);
 		if (res != FR_OK)
 		{
@@ -222,12 +244,12 @@ void Config_Read(void)
 	
 	while (!f_eof(&Main_file))
 	{
-		f_gets(buf, sizeof(buf), &Main_file);
+		f_gets(Config_buf, sizeof(Config_buf), &Main_file);
 
-		len = strcspn(buf, ";");
-		buf[len] = 0;
+		len = strcspn(Config_buf, ";");
+		Config_buf[len] = 0;
 		
-		name = strtok(buf, " \t:");
+		name = strtok(Config_buf, " \t:");
 		if (name == 0) continue ;
 		
 		result = strtok(0, " \t:");
