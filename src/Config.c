@@ -249,10 +249,10 @@ void Config_Read(void)
 		len = strcspn(Config_buf, ";");
 		Config_buf[len] = 0;
 		
-		name = strtok(Config_buf, " \t:");
+		name = strtok(Config_buf, " \r\n\t:");
 		if (name == 0) continue ;
 		
-		result = strtok(0, " \t:");
+		result = strtok(0, " \r\n\t:");
 		if (result == 0) continue ;
 		
 		val = atol(result);
@@ -300,11 +300,11 @@ void Config_Read(void)
 			UBX_alarms[UBX_num_alarms - 1].type = 0;
 			UBX_alarms[UBX_num_alarms - 1].filename[0] = '\0';
 		}
-		if (!strcmp_P(name, Config_Alarm_Type) && val != 0)
+		if (!strcmp_P(name, Config_Alarm_Type))
 		{
 			UBX_alarms[UBX_num_alarms - 1].type = val;
 		}
-		if (!strcmp_P(name, Config_Alarm_File) && val != 0)
+		if (!strcmp_P(name, Config_Alarm_File))
 		{
 			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
 		}
