@@ -189,7 +189,9 @@ static void Config_WriteString_P(
 	}
 }
 
-void Config_Read(void)
+static FRESULT Config_ReadSingle(
+	const char *dir,
+	const char *filename)
 {
 	size_t  len;
 	char    *name;
@@ -200,48 +202,12 @@ void Config_Read(void)
 
 	FRESULT res;
 
-	eeprom_read_block(UBX_buf, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
-	if (UBX_buf[0] == 0 || UBX_buf[0] == 0xff)
-	{
-		res = f_chdir("\\");
-		res = f_open(&Main_file, "config.txt", FA_READ);
-	}
-	else
-	{
-		res = f_chdir("\\config");
-		res = f_open(&Main_file, UBX_buf, FA_READ);
-
-		if (res != FR_OK)
-		{
-			res = f_chdir("\\");
-			res = f_open(&Main_file, "config.txt", FA_READ);
-		}
-	}
+	res = f_chdir(dir);
+	if (res != FR_OK) return res;
 	
-	if (res != FR_OK)
-	{
-		res = f_chdir("\\");
-		res = f_open(&Main_file, "config.txt", FA_WRITE | FA_CREATE_ALWAYS);
-		if (res != FR_OK) 
-		{
-			Main_activeLED = LEDS_RED;
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
-			return ;
-		}
+	res = f_open(&Main_file, filename, FA_READ);
+	if (res != FR_OK) return res;
 
-		Config_WriteString_P(Config_default, &Main_file);
-		f_close(&Main_file);
-
-		res = f_chdir("\\config");
-		res = f_open(&Main_file, "config.txt", FA_READ);
-		if (res != FR_OK)
-		{
-			Main_activeLED = LEDS_RED;
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
-			return ;
-		}
-	}
-	
 	while (!f_eof(&Main_file))
 	{
 		f_gets(Config_buf, sizeof(Config_buf), &Main_file);
@@ -311,4 +277,44 @@ void Config_Read(void)
 	}
 	
 	f_close(&Main_file);
+	
+	return FR_OK;
+}
+
+void Config_Read(void)
+{
+	FRESULT res;
+
+	eeprom_read_block(UBX_buf, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
+
+	res = Config_ReadSingle("\\", "config.txt");
+
+	if (UBX_buf[0] != 0 && UBX_buf[0] != 0xff)
+	{
+		res = Config_ReadSingle("\\config", UBX_buf);
+	}
+	
+	if (res != FR_OK)
+	{
+		res = f_chdir("\\");
+		res = f_open(&Main_file, "config.txt", FA_WRITE | FA_CREATE_ALWAYS);
+		if (res != FR_OK) 
+		{
+			Main_activeLED = LEDS_RED;
+			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+			return ;
+		}
+
+		Config_WriteString_P(Config_default, &Main_file);
+		f_close(&Main_file);
+
+		res = f_chdir("\\config");
+		res = f_open(&Main_file, "config.txt", FA_READ);
+		if (res != FR_OK)
+		{
+			Main_activeLED = LEDS_RED;
+			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
+			return ;
+		}
+	}
 }
