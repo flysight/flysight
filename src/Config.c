@@ -307,14 +307,5 @@ void Config_Read(void)
 
 		Config_WriteString_P(Config_default, &Main_file);
 		f_close(&Main_file);
-
-		res = f_chdir("\\config");
-		res = f_open(&Main_file, "config.txt", FA_READ);
-		if (res != FR_OK)
-		{
-			Main_activeLED = LEDS_RED;
-			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
-			return ;
-		}
 	}
 }
