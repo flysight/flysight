@@ -98,6 +98,7 @@ static void ReadSingleConfigName(
 			strcat(UBX_buf, ".wav");
 
 			Power_Hold();
+			Tone_Hold();
 			
 			Tone_Play(UBX_buf);
 			while (!Tone_IsIdle())
@@ -105,6 +106,7 @@ static void ReadSingleConfigName(
 				Tone_Task();
 			}
 			
+			Tone_Release();
 			Power_Release();
 			
 			delay_ms(500);
