@@ -143,7 +143,17 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   2 = Chirp up\r\n\
                  ;   3 = Chirp down\r\n\
                  ;   4 = Play file\r\n\
-Alarm_File:    0 ; File to be played\r\n";
+Alarm_File:    0 ; File to be played\r\n\
+\r\n\
+; Alarm windows\r\n\
+\r\n\
+; NOTE:    Alarm windows are given in meters above ground\r\n\
+;          elevation, which is specified in DZ_Elev. Tones\r\n\
+;          will be silenced during these windows and only\r\n\
+;          alarms will be audible.\r\n\
+\r\n\
+Win_Top:       0 ; Alarm window top (m)\r\n\
+Win_Bottom:    0 ; Alarm window bottom (m)\r\n";
 
 static const char Config_Model[] PROGMEM      = "Model";
 static const char Config_Rate[] PROGMEM       = "Rate";
@@ -174,6 +184,8 @@ static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
        const char Config_Init_File[] PROGMEM  = "Init_File";
+static const char Config_Win_Top[] PROGMEM    = "Win_Top";
+static const char Config_Win_Bottom[] PROGMEM = "Win_Bottom";
 
 char Config_buf[80];
 
@@ -307,6 +319,16 @@ void Config_Read(void)
 		if (!strcmp_P(name, Config_Alarm_File))
 		{
 			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
+		}
+		
+		if (!strcmp_P(name, Config_Win_Top))
+		{
+			++UBX_num_windows;
+			UBX_windows[UBX_num_windows - 1].top = val * 1000 + dz_elev;
+		}
+		if (!strcmp_P(name, Config_Win_Bottom))
+		{
+			UBX_windows[UBX_num_windows - 1].bottom = val * 1000 + dz_elev;
 		}
 	}
 	
