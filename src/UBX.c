@@ -264,6 +264,9 @@ static uint8_t  UBX_msg_received = 0;
 
 char UBX_buf[150];
 
+UBX_window UBX_windows[UBX_MAX_WINDOWS];
+uint8_t    UBX_num_windows = 0;
+
 typedef struct
 {
 	int32_t  lon;      // Longitude                    (deg)
@@ -796,7 +799,16 @@ static void UBX_UpdateAlarms(
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		if (ABS (UBX_alarms[i].elev - current->hMSL) < UBX_alarm_window)
+		if (ABS (UBX_alarms[i].elev - current->hMSL) <= UBX_alarm_window)
+		{
+			suppress_tone = 1;
+			break;
+		}
+	}
+	
+	for (i = 0; i < UBX_num_windows; ++i)
+	{
+		if ((UBX_windows[i].bottom <= current->hMSL) && (UBX_windows[i].top >= current->hMSL))
 		{
 			suppress_tone = 1;
 			break;
