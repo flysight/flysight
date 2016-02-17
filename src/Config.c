@@ -305,14 +305,7 @@ void Config_Read(void)
 {
 	FRESULT res;
 
-	eeprom_read_block(UBX_buf, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
-
 	res = Config_ReadSingle("\\", "config.txt");
-
-	if (UBX_buf[0] != 0 && UBX_buf[0] != 0xff)
-	{
-		res = Config_ReadSingle("\\config", UBX_buf);
-	}
 	
 	if (res != FR_OK)
 	{
@@ -327,5 +320,12 @@ void Config_Read(void)
 
 		Config_WriteString_P(Config_default, &Main_file);
 		f_close(&Main_file);
+	}
+
+	eeprom_read_block(UBX_buf, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
+
+	if (UBX_buf[0] != 0 && UBX_buf[0] != 0xff)
+	{
+		res = Config_ReadSingle("\\config", UBX_buf);
 	}
 }
