@@ -208,9 +208,7 @@ static FRESULT Config_ReadSingle(
 	size_t  len;
 	char    *name;
 	char    *result;
-	
 	int32_t val;
-	int32_t dz_elev = 0;
 
 	FRESULT res;
 
@@ -260,7 +258,7 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
 		HANDLE_VALUE(Config_Use_SAS,   UBX_use_sas,      val, val == 0 || val == 1);
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
-		HANDLE_VALUE(Config_DZ_Elev,   dz_elev,          val * 1000, TRUE);
+		HANDLE_VALUE(Config_DZ_Elev,   UBX_dz_elev,      val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
 		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
 		
@@ -274,7 +272,7 @@ static FRESULT Config_ReadSingle(
 		if (!strcmp_P(name, Config_Alarm_Elev))
 		{
 			++UBX_num_alarms;
-			UBX_alarms[UBX_num_alarms - 1].elev = val * 1000 + dz_elev;
+			UBX_alarms[UBX_num_alarms - 1].elev = val * 1000 + UBX_dz_elev;
 			UBX_alarms[UBX_num_alarms - 1].type = 0;
 			UBX_alarms[UBX_num_alarms - 1].filename[0] = '\0';
 		}
@@ -290,11 +288,11 @@ static FRESULT Config_ReadSingle(
 		if (!strcmp_P(name, Config_Win_Top))
 		{
 			++UBX_num_windows;
-			UBX_windows[UBX_num_windows - 1].top = val * 1000 + dz_elev;
+			UBX_windows[UBX_num_windows - 1].top = val * 1000 + UBX_dz_elev;
 		}
 		if (!strcmp_P(name, Config_Win_Bottom))
 		{
-			UBX_windows[UBX_num_windows - 1].bottom = val * 1000 + dz_elev;
+			UBX_windows[UBX_num_windows - 1].bottom = val * 1000 + UBX_dz_elev;
 		}
 	}
 	

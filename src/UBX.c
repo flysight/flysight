@@ -267,6 +267,8 @@ char UBX_buf[150];
 UBX_window UBX_windows[UBX_MAX_WINDOWS];
 uint8_t    UBX_num_windows = 0;
 
+int32_t UBX_dz_elev = 0;
+
 typedef struct
 {
 	int32_t  lon;      // Longitude                    (deg)

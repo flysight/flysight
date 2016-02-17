@@ -56,6 +56,8 @@ extern char      UBX_buf[150];
 extern UBX_window UBX_windows[UBX_MAX_WINDOWS];
 extern uint8_t    UBX_num_windows;
 
+extern int32_t    UBX_dz_elev;
+
 void UBX_Init(void);
 void UBX_Task(void);
 void UBX_Update(void);
