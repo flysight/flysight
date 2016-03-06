@@ -23,11 +23,12 @@ OPTIMIZATION = s
 TARGET       = flysight
 SRC          = src/Main.c                                                  \
 	           src/Config.c                                                \
+	           src/Debug.c                                                 \
 	           src/Descriptors.c                                           \
 	           src/Log.c                                                   \
 	           src/Power.c                                                 \
 	           src/Signature.c                                             \
-	           src/Time.c                                                 \
+	           src/Time.c                                                  \
 	           src/Timer.c                                                 \
 	           src/Tone.c                                                  \
 	           src/uart.c                                                  \
