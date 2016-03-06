@@ -1,7 +1,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-void Debug_WriteChar(char ch)
+static void Debug_WriteChar(char ch)
 {
 	uint8_t i;
 
@@ -38,4 +38,14 @@ void Debug_WriteString(const char *str)
 	{
 		Debug_WriteChar(ch);
 	}
+}
+
+void Debug_Init(void)
+{
+	// Initialize debugging pins
+	MCUCR |= (1 << JTD);
+	MCUCR |= (1 << JTD);
+	
+	DDRF  |= 0x7f;
+	PORTF |= 0x7f;
 }
