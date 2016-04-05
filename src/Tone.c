@@ -391,6 +391,14 @@ void Tone_Play(
 	}
 }
 
+void Tone_Wait(void)
+{
+	while (Tone_state != TONE_STATE_IDLE)
+	{
+		Tone_Task();
+	}
+}
+
 uint8_t Tone_CanWrite(void)
 {
 	uint16_t c;
