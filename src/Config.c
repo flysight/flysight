@@ -278,11 +278,11 @@ static FRESULT Config_ReadSingle(
 			UBX_alarms[UBX_num_alarms - 1].type = 0;
 			UBX_alarms[UBX_num_alarms - 1].filename[0] = '\0';
 		}
-		if (!strcmp_P(name, Config_Alarm_Type) && UBX_num_alarms < UBX_MAX_ALARMS)
+		if (!strcmp_P(name, Config_Alarm_Type) && UBX_num_alarms <= UBX_MAX_ALARMS)
 		{
 			UBX_alarms[UBX_num_alarms - 1].type = val;
 		}
-		if (!strcmp_P(name, Config_Alarm_File) && UBX_num_alarms < UBX_MAX_ALARMS)
+		if (!strcmp_P(name, Config_Alarm_File) && UBX_num_alarms <= UBX_MAX_ALARMS)
 		{
 			result[8] = '\0';
 			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
@@ -293,7 +293,7 @@ static FRESULT Config_ReadSingle(
 			++UBX_num_windows;
 			UBX_windows[UBX_num_windows - 1].top = val * 1000 + UBX_dz_elev;
 		}
-		if (!strcmp_P(name, Config_Win_Bottom) && UBX_num_windows < UBX_MAX_WINDOWS)
+		if (!strcmp_P(name, Config_Win_Bottom) && UBX_num_windows <= UBX_MAX_WINDOWS)
 		{
 			UBX_windows[UBX_num_windows - 1].bottom = val * 1000 + UBX_dz_elev;
 		}
