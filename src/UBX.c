@@ -1155,32 +1155,7 @@ void UBX_Init(void)
 		LEDs_ChangeLEDs(LEDS_ALL_LEDS, LEDS_RED);
 		while (1);
 	}
-
-	if (UBX_init_mode == 1)			// Speech test
-	{
-		UBX_speech_buf[0] = '0';
-		UBX_speech_buf[1] = '1';
-		UBX_speech_buf[2] = '2';
-		UBX_speech_buf[3] = '3';
-		UBX_speech_buf[4] = '4';
-		UBX_speech_buf[5] = '5';
-		UBX_speech_buf[6] = '6';
-		UBX_speech_buf[7] = '7';
-		UBX_speech_buf[8] = '8';
-		UBX_speech_buf[9] = '9';
-		UBX_speech_buf[10] = '.';
-		UBX_speech_buf[11] = '-';
-		UBX_speech_buf[12] = 0;
-		UBX_speech_ptr = UBX_speech_buf;
-	}
-	else if (UBX_init_mode == 2)	// Play a file
-	{
-		strcpy(UBX_buf, UBX_init_filename);
-		strcat(UBX_buf, ".wav");
-		Tone_Play(UBX_buf);
-	}
 }
-
 
 void UBX_Task(void)
 {

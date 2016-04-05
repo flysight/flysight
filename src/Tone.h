@@ -25,6 +25,7 @@ void Tone_Task(void);
 
 void Tone_Beep(uint16_t index, uint32_t chirp, uint16_t len);
 void Tone_Play(const char *filename);
+void Tone_Wait(void);
 void Tone_Stop(void);
 
 uint8_t Tone_CanWrite(void);
