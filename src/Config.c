@@ -54,6 +54,7 @@ Limits:    1     ; Behaviour when outside bounds\r\n\
                  ;   0 = No tone\r\n\
                  ;   1 = Min/max tone\r\n\
                  ;   2 = Chirp up/down\r\n\
+                 ;   3 = Chirp down/up\r\n\
 Volume:    6     ; 0 (min) to 8 (max)\r\n\
 \r\n\
 ; Rate settings\r\n\

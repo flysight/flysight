@@ -599,10 +599,15 @@ static void UBX_SetTone(
 				Tone_SetPitch(0);
 				Tone_SetChirp(0);
 			}
-			else
+			else if (UBX_limits == 2)
 			{
 				Tone_SetPitch(0);
 				Tone_SetChirp(TONE_CHIRP_MAX);
+			}
+			else
+			{
+				Tone_SetPitch(TONE_MAX_PITCH - 1);
+				Tone_SetChirp(-TONE_CHIRP_MAX);
 			}
 		}
 		else if (OVER(val_1, min_1, max_1))
@@ -616,10 +621,15 @@ static void UBX_SetTone(
 				Tone_SetPitch(TONE_MAX_PITCH - 1);
 				Tone_SetChirp(0);
 			}
-			else
+			else if (UBX_limits == 2)
 			{
 				Tone_SetPitch(TONE_MAX_PITCH - 1);
 				Tone_SetChirp(-TONE_CHIRP_MAX);
+			}
+			else
+			{
+				Tone_SetPitch(0);
+				Tone_SetChirp(TONE_CHIRP_MAX);
 			}
 		}
 		else
