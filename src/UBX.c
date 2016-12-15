@@ -257,7 +257,8 @@ uint32_t UBX_hThreshold    = 0;
 
 UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
 uint8_t   UBX_num_alarms   = 0;
-uint32_t  UBX_alarm_window = 0;
+uint32_t  UBX_alarm_window_above = 0;
+uint32_t  UBX_alarm_window_below = 0;
 
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
@@ -801,7 +802,8 @@ static void UBX_UpdateAlarms(
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		if (ABS (UBX_alarms[i].elev - current->hMSL) <= UBX_alarm_window)
+		if (current->hMSL - UBX_alarms[i].elev <= UBX_alarm_window_above &&
+		    UBX_alarms[i].elev - current->hMSL <= UBX_alarm_window_below)
 		{
 			suppress_tone = 1;
 			break;

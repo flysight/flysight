@@ -41,7 +41,8 @@ extern uint32_t  UBX_hThreshold;
 
 extern UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
 extern uint8_t   UBX_num_alarms;
-extern uint32_t  UBX_alarm_window;
+extern uint32_t  UBX_alarm_window_above;
+extern uint32_t  UBX_alarm_window_below;
 
 extern uint8_t   UBX_sp_mode;
 extern uint8_t   UBX_sp_units;
