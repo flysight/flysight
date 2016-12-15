@@ -100,11 +100,21 @@ ISR(TIMER1_OVF_vect)
 	}
 	else if (Tone_read == Tone_write)
 	{
-		TCCR1A = 0;
-		TCCR1B = 0;
-		TIMSK1 = 0;
+		if (Tone_flags & TONE_FLAGS_LOAD)
+		{
+			// Buffer underflow
+			s1 = s2;
+			step = 0;
+		}
+		else
+		{
+			// We are done playing
+			TCCR1A = 0;
+			TCCR1B = 0;
+			TIMSK1 = 0;
 
-		Tone_flags |= TONE_FLAGS_STOP;
+			Tone_flags |= TONE_FLAGS_STOP;
+		}
 	}
 	else 
 	{
