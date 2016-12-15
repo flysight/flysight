@@ -196,6 +196,9 @@ int main(void)
 	delay_ms(500);
 	eeprom_write_byte(BOOTLOADER_COUNT_ADDR, 0);
 
+	// Turn LED red during initialization
+	LEDs_ChangeLEDs(LEDS_ALL_LEDS, LEDS_RED);
+
 	if (USB_VBUS_GetStatus())
 	{
 		if (!Main_mmcInitialized)
@@ -231,16 +234,6 @@ int main(void)
 	{
 		USB_Disable();
 
-		if (Main_mmcInitialized)
-		{
-			Main_activeLED = LEDS_GREEN;
-		}
-		else
-		{
-			Main_activeLED = LEDS_RED;
-		}
-		LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
-
 		if (count == 1)
 		{
 			ReadConfigNames();
@@ -255,6 +248,16 @@ int main(void)
 		
 		Timer_Init();
 		UBX_Init();
+
+		if (Main_mmcInitialized)
+		{
+			Main_activeLED = LEDS_GREEN;
+		}
+		else
+		{
+			Main_activeLED = LEDS_RED;
+		}
+		LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
 
 		for (;;)
 		{
