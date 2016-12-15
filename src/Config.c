@@ -134,7 +134,8 @@ Init_File: 0     ; File to be played\r\n\
 ; NOTE:    Alarm elevations are given in meters above ground\r\n\
 ;          elevation, which is specified in DZ_Elev.\r\n\
 \r\n\
-Window:        0 ; Alarm window (m)\r\n\
+Win_Above:     0 ; Window above each alarm (m)\r\n\
+Win_Below:     0 ; Window below each alarm (m)\r\n\
 DZ_Elev:       0 ; Ground elevation (m above sea level)\r\n\
 \r\n\
 Alarm_Elev:    0 ; Alarm elevation (m above ground level)\r\n\
@@ -178,6 +179,8 @@ static const char Config_V_Thresh[] PROGMEM   = "V_Thresh";
 static const char Config_H_Thresh[] PROGMEM   = "H_Thresh";
 static const char Config_Use_SAS[] PROGMEM    = "Use_SAS";
 static const char Config_Window[] PROGMEM     = "Window";
+static const char Config_Window_Above[] PROGMEM = "Win_Above";
+static const char Config_Window_Below[] PROGMEM = "Win_Below";
 static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
@@ -258,7 +261,10 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_V_Thresh,  UBX_threshold,    val, TRUE);
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
 		HANDLE_VALUE(Config_Use_SAS,   UBX_use_sas,      val, val == 0 || val == 1);
-		HANDLE_VALUE(Config_Window,    UBX_alarm_window, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Window,    UBX_alarm_window_above, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Window,    UBX_alarm_window_below, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Window_Above, UBX_alarm_window_above, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Window_Below, UBX_alarm_window_below, val * 1000, TRUE);
 		HANDLE_VALUE(Config_DZ_Elev,   UBX_dz_elev,      val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
 		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
