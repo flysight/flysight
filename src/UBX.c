@@ -1129,27 +1129,29 @@ void UBX_Init(void)
 		.reserved5    = 0       // Reserved, set to 0
 	};
 
-	uint8_t success = 1;
-	
-	uart_init(51); // 9600 baud
-	
-	UBX_SendMessage(UBX_CFG, UBX_CFG_PRT, sizeof(cfg_prt), &cfg_prt);
+	do
+	{
+		uart_init(51); // 9600 baud
 
-	// NOTE: We don't wait for ACK here since some FlySights will already be
-	//       set to 38400 baud.
-	
-	while (!uart_tx_empty());
+		UBX_SendMessage(UBX_CFG, UBX_CFG_PRT, sizeof(cfg_prt), &cfg_prt);
 
-	uart_init(12); // 38400 baud
+		// NOTE: We don't wait for ACK here since some FlySights will already be
+		//       set to 38400 baud.
 
-	_delay_ms(10); // wait for GPS UART to reset
-	
-	UBX_SendMessage(UBX_CFG, UBX_CFG_PRT, sizeof(cfg_prt), &cfg_prt);
-	if (!UBX_WaitForAck(UBX_CFG, UBX_CFG_PRT, UBX_TIMEOUT)) success = 0;
+		while (!uart_tx_empty());
 
-	#define SEND_MESSAGE(c,m,d) { \
-		UBX_SendMessage(c,m,sizeof(d),&d); \
-		if (!UBX_WaitForAck(c,m,UBX_TIMEOUT)) success = 0; }
+		uart_init(12); // 38400 baud
+
+		_delay_ms(10); // wait for GPS UART to reset
+
+		UBX_SendMessage(UBX_CFG, UBX_CFG_PRT, sizeof(cfg_prt), &cfg_prt);
+	}
+	while (!UBX_WaitForAck(UBX_CFG, UBX_CFG_PRT, UBX_TIMEOUT));
+
+	#define SEND_MESSAGE(c,m,d) \
+		do { \
+			UBX_SendMessage(c,m,sizeof(d),&d); \
+		} while (!UBX_WaitForAck(c,m,UBX_TIMEOUT));
 
 	for (i = 0; i < n; ++i)
 	{
@@ -1161,12 +1163,6 @@ void UBX_Init(void)
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_RST,  cfg_rst);
 	
 	#undef SEND_MESSAGE
-
-	if (!success)
-	{
-		LEDs_ChangeLEDs(LEDS_ALL_LEDS, LEDS_RED);
-		while (1);
-	}
 }
 
 void UBX_Task(void)
