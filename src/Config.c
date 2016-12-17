@@ -148,15 +148,15 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   4 = Play file\r\n\
 Alarm_File:    0 ; File to be played\r\n\
 \r\n\
-; Alarm windows\r\n\
+; SIlence windows\r\n\
 \r\n\
-; NOTE:    Alarm windows are given in meters above ground\r\n\
+; NOTE:    Silence windows are given in meters above ground\r\n\
 ;          elevation, which is specified in DZ_Elev. Tones\r\n\
 ;          will be silenced during these windows and only\r\n\
 ;          alarms will be audible.\r\n\
 \r\n\
-Win_Top:       0 ; Alarm window top (m)\r\n\
-Win_Bottom:    0 ; Alarm window bottom (m)\r\n";
+Win_Top:       0 ; Silence window top (m)\r\n\
+Win_Bottom:    0 ; Silence window bottom (m)\r\n";
 
 static const char Config_Model[] PROGMEM      = "Model";
 static const char Config_Rate[] PROGMEM       = "Rate";
