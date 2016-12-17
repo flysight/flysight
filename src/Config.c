@@ -148,7 +148,7 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   4 = Play file\r\n\
 Alarm_File:    0 ; File to be played\r\n\
 \r\n\
-; SIlence windows\r\n\
+; Silence windows\r\n\
 \r\n\
 ; NOTE:    Silence windows are given in meters above ground\r\n\
 ;          elevation, which is specified in DZ_Elev. Tones\r\n\
