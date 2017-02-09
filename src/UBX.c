@@ -1160,9 +1160,10 @@ void UBX_Init(void)
 	
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_RATE, cfg_rate);
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_NAV5, cfg_nav5);
-	SEND_MESSAGE(UBX_CFG, UBX_CFG_RST,  cfg_rst);
 	
 	#undef SEND_MESSAGE
+
+	UBX_SendMessage(UBX_CFG, UBX_CFG_RST, sizeof(cfg_rst), &cfg_rst);
 }
 
 void UBX_Task(void)
