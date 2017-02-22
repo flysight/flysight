@@ -227,7 +227,7 @@ typedef struct
 }
 UBX_ack_nak;
 
-uint8_t  UBX_model         = 6;
+uint8_t  UBX_model         = 7;
 uint16_t UBX_rate          = 200;
 uint8_t  UBX_mode          = 2;
 int32_t  UBX_min           = 0;

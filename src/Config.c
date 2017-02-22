@@ -25,7 +25,7 @@ static const char Config_default[] PROGMEM = "\
 \r\n\
 ; GPS settings\r\n\
 \r\n\
-Model:     6     ; Dynamic model\r\n\
+Model:     7     ; Dynamic model\r\n\
                  ;   0 = Portable\r\n\
                  ;   2 = Stationary\r\n\
                  ;   3 = Pedestrian\r\n\
