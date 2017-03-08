@@ -812,8 +812,8 @@ static void UBX_UpdateAlarms(
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		if (current->hMSL - UBX_alarms[i].elev <= UBX_alarm_window_above &&
-		    UBX_alarms[i].elev - current->hMSL <= UBX_alarm_window_below)
+		if ((current->hMSL <= UBX_alarms[i].elev + UBX_alarm_window_above) &&
+		    (current->hMSL >= UBX_alarms[i].elev - UBX_alarm_window_below))
 		{
 			suppress_tone = 1;
 			break;
