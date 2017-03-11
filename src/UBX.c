@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -703,6 +704,9 @@ static void UBX_GetValues(
 		break;
 	case 4: // Total speed
 		*val = (current->speed * 1024) / speed_mul;
+		break;
+	case 10: // Dive angle
+		*val = atan2(current->velD, current->gSpeed) / M_PI * 180;
 		break;
 	}
 }
