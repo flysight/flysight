@@ -165,6 +165,13 @@ Alarm_File:    0 ; File to be played\r\n\
 Win_Top:       0 ; Silence window top (m)\r\n\
 Win_Bottom:    0 ; Silence window bottom (m)\r\n\
 \r\n\
+; NOTE:   XRW Mode lets you play a wav file a given number\r\n\
+;         of seconds after exit, and then a second file a\r\n\
+;         given period after that, allowing you to know\r\n\
+;         when you've cleared the build and score windows.\r\n\
+;\r\n\
+;         Leave these values at 0 to disable.\r\n\
+\r\n\
 Xrw_Build:     0 ; Time to build for XRW(s)\r\n\
 Xrw_Score:     0 ; Time to score for XRW(s)\r\n";
 
