@@ -922,7 +922,7 @@ static void UBX_UpdateXrwWindow(
             Tone_SetRate(0);
             Tone_Stop();
             // Are we unsafely reusing this buffer?
-            strcpy(UBX_buf, "km.wav");
+            strcpy(UBX_buf, "build.wav");
             Tone_Play(UBX_buf);
         } else if (timestamp == armed + UBX_xrw_build + UBX_xrw_score && !scoringWindow) {
             scoringWindow = 1;
@@ -931,7 +931,7 @@ static void UBX_UpdateXrwWindow(
             Tone_SetRate(0);
             Tone_Stop();
             // Are we unsafely reusing this buffer?
-            strcpy(UBX_buf, "miles.wav");
+            strcpy(UBX_buf, "score.wav");
             Tone_Play(UBX_buf);
         }
     }
