@@ -59,6 +59,9 @@ extern uint8_t    UBX_num_windows;
 
 extern int32_t    UBX_dz_elev;
 
+extern int32_t    UBX_xrw_build;
+extern int32_t    UBX_xrw_score;
+
 void UBX_Init(void);
 void UBX_Task(void);
 void UBX_Update(void);

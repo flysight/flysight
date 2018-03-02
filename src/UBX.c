@@ -12,6 +12,7 @@
 #include "Log.h"
 #include "Main.h"
 #include "Power.h"
+#include "Time.h"
 #include "Timer.h"
 #include "Tone.h"
 #include "uart.h"
@@ -270,6 +271,9 @@ UBX_window UBX_windows[UBX_MAX_WINDOWS];
 uint8_t    UBX_num_windows = 0;
 
 int32_t UBX_dz_elev = 0;
+
+int32_t UBX_xrw_build = 0;
+int32_t UBX_xrw_score = 0;
 
 typedef struct
 {
@@ -883,15 +887,16 @@ static void UBX_UpdateAlarms(
 #define THIRTEEN_K_FEET 3962400
 #define TWELVE_K_FEET 3657600
 #define THIRTY_MPH 1341
-
-#define BUILD_WINDOW 45
-#define SCORING_WINDOW 60
 static void UBX_UpdateXrwWindow(
 	UBX_saved_t *current)
 {
     static uint32_t xrw_max_alt = 0;
     static uint32_t armed = 0;
     static uint8_t buildWindow, scoringWindow;
+
+    if (UBX_xrw_build == 0 && UBX_xrw_score == 0) {
+        return;
+    }
 
     // There seriously must be a better way
     uint32_t timestamp = mk_gmtime(current->year,
@@ -910,7 +915,7 @@ static void UBX_UpdateXrwWindow(
             armed = timestamp;
         }
     } else {
-        if (timestamp == armed + BUILD_WINDOW && !buildWindow) {
+        if (timestamp == armed + UBX_xrw_build && !buildWindow) {
             buildWindow = 1;
             UBX_suppress_tone = 1;
             *UBX_speech_ptr = 0;
@@ -919,7 +924,7 @@ static void UBX_UpdateXrwWindow(
             // Are we unsafely reusing this buffer?
             strcpy(UBX_buf, "km.wav");
             Tone_Play(UBX_buf);
-        } else if (timestamp == armed + BUILD_WINDOW + SCORING_WINDOW && !scoringWindow) {
+        } else if (timestamp == armed + UBX_xrw_build + UBX_xrw_score && !scoringWindow) {
             scoringWindow = 1;
             UBX_suppress_tone = 1;
             *UBX_speech_ptr = 0;

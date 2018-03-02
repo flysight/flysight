@@ -163,7 +163,10 @@ Alarm_File:    0 ; File to be played\r\n\
 ;          alarms will be audible.\r\n\
 \r\n\
 Win_Top:       0 ; Silence window top (m)\r\n\
-Win_Bottom:    0 ; Silence window bottom (m)\r\n";
+Win_Bottom:    0 ; Silence window bottom (m)\r\n\
+\r\n\
+Xrw_Build:     0 ; Time to build for XRW(s)\r\n\
+Xrw_Score:     0 ; Time to score for XRW(s)\r\n";
 
 static const char Config_Model[] PROGMEM      = "Model";
 static const char Config_Rate[] PROGMEM       = "Rate";
@@ -198,6 +201,8 @@ static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
        const char Config_Init_File[] PROGMEM  = "Init_File";
 static const char Config_Win_Top[] PROGMEM    = "Win_Top";
 static const char Config_Win_Bottom[] PROGMEM = "Win_Bottom";
+static const char Config_Xrw_Build[] PROGMEM  = "Xrw_Build";
+static const char Config_Xrw_Score[] PROGMEM  = "Xrw_Score";
 
 char Config_buf[80];
 
@@ -226,7 +231,7 @@ static FRESULT Config_ReadSingle(
 
 	res = f_chdir(dir);
 	if (res != FR_OK) return res;
-	
+
 	res = f_open(&Main_file, filename, FA_READ);
 	if (res != FR_OK) return res;
 
@@ -236,15 +241,15 @@ static FRESULT Config_ReadSingle(
 
 		len = strcspn(Config_buf, ";");
 		Config_buf[len] = 0;
-		
+
 		name = strtok(Config_buf, " \r\n\t:");
 		if (name == 0) continue ;
-		
+
 		result = strtok(0, " \r\n\t:");
 		if (result == 0) continue ;
-		
+
 		val = atol(result);
-		
+
 		#define HANDLE_VALUE(s,w,r,t) \
 			if ((t) && !strcmp_P(name, (s))) { (w) = (r); }
 
@@ -276,15 +281,17 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_DZ_Elev,   UBX_dz_elev,      val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
 		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
-		
+		HANDLE_VALUE(Config_Xrw_Build, UBX_xrw_build,    val, TRUE);
+		HANDLE_VALUE(Config_Xrw_Score, UBX_xrw_score,    val, TRUE);
+
 		#undef HANDLE_VALUE
-		
+
 		if (!strcmp_P(name, Config_Init_File))
 		{
 			result[8] = '\0';
 			strcpy(UBX_init_filename, result);
 		}
-		
+
 		if (!strcmp_P(name, Config_Alarm_Elev) && UBX_num_alarms < UBX_MAX_ALARMS)
 		{
 			++UBX_num_alarms;
@@ -301,7 +308,7 @@ static FRESULT Config_ReadSingle(
 			result[8] = '\0';
 			strcpy(UBX_alarms[UBX_num_alarms - 1].filename, result);
 		}
-		
+
 		if (!strcmp_P(name, Config_Win_Top) && UBX_num_windows < UBX_MAX_WINDOWS)
 		{
 			++UBX_num_windows;
@@ -312,9 +319,9 @@ static FRESULT Config_ReadSingle(
 			UBX_windows[UBX_num_windows - 1].bottom = val * 1000 + UBX_dz_elev;
 		}
 	}
-	
+
 	f_close(&Main_file);
-	
+
 	return FR_OK;
 }
 
@@ -323,12 +330,12 @@ void Config_Read(void)
 	FRESULT res;
 
 	res = Config_ReadSingle("\\", "config.txt");
-	
+
 	if (res != FR_OK)
 	{
 		res = f_chdir("\\");
 		res = f_open(&Main_file, "config.txt", FA_WRITE | FA_CREATE_ALWAYS);
-		if (res != FR_OK) 
+		if (res != FR_OK)
 		{
 			Main_activeLED = LEDS_RED;
 			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
