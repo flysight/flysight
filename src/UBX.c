@@ -880,6 +880,58 @@ static void UBX_UpdateAlarms(
 	}
 }
 
+#define THIRTEEN_K_FEET 3962400
+#define TWELVE_K_FEET 3657600
+#define THIRTY_MPH 1341
+
+#define BUILD_WINDOW 45
+#define SCORING_WINDOW 60
+static void UBX_UpdateXrwWindow(
+	UBX_saved_t *current)
+{
+    static uint32_t xrw_max_alt = 0;
+    static uint32_t armed = 0;
+    static uint8_t buildWindow, scoringWindow;
+
+    // There seriously must be a better way
+    uint32_t timestamp = mk_gmtime(current->year,
+                                   current->month,
+                                   current->day,
+                                   current->hour,
+                                   current->min,
+                                   current->sec);
+
+    if (!armed) {
+        if (current->hMSL > xrw_max_alt) {
+            // We're climbing
+            xrw_max_alt = current->hMSL;
+        } else if (current->velD > THIRTY_MPH) {
+            // Are we falling fast enough? 30mph ought to be fine.
+            armed = timestamp;
+        }
+    } else {
+        if (timestamp == armed + BUILD_WINDOW && !buildWindow) {
+            buildWindow = 1;
+            UBX_suppress_tone = 1;
+            *UBX_speech_ptr = 0;
+            Tone_SetRate(0);
+            Tone_Stop();
+            // Are we unsafely reusing this buffer?
+            strcpy(UBX_buf, "km.wav");
+            Tone_Play(UBX_buf);
+        } else if (timestamp == armed + BUILD_WINDOW + SCORING_WINDOW && !scoringWindow) {
+            scoringWindow = 1;
+            UBX_suppress_tone = 1;
+            *UBX_speech_ptr = 0;
+            Tone_SetRate(0);
+            Tone_Stop();
+            // Are we unsafely reusing this buffer?
+            strcpy(UBX_buf, "miles.wav");
+            Tone_Play(UBX_buf);
+        }
+    }
+}
+
 static void UBX_UpdateTones(
 	UBX_saved_t *current)
 {
@@ -963,6 +1015,7 @@ static void UBX_ReceiveMessage(
 			UBX_hasFix = 1;
 
 			UBX_UpdateAlarms(current);
+			UBX_UpdateXrwWindow(current);
 			UBX_UpdateTones(current);
 
 			if (!Log_IsInitialized())
