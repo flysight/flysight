@@ -272,8 +272,10 @@ uint8_t    UBX_num_windows = 0;
 
 int32_t UBX_dz_elev = 0;
 
-int32_t UBX_xrw_build = 0;
-int32_t UBX_xrw_score = 0;
+int32_t   UBX_xrw_build_time = 0;
+int32_t   UBX_xrw_score_time = 0;
+char      UBX_xrw_build_file[9] = "build";
+char      UBX_xrw_score_file[9] = "score";
 
 typedef struct
 {
@@ -894,7 +896,7 @@ static void UBX_UpdateXrwWindow(
     static uint32_t armed = 0;
     static uint8_t buildWindow, scoringWindow;
 
-    if (UBX_xrw_build == 0 && UBX_xrw_score == 0) {
+    if (UBX_xrw_build_time == 0 && UBX_xrw_score_time == 0) {
         return;
     }
 
@@ -915,23 +917,23 @@ static void UBX_UpdateXrwWindow(
             armed = timestamp;
         }
     } else {
-        if (timestamp == armed + UBX_xrw_build && !buildWindow) {
+        if (timestamp == armed + UBX_xrw_build_time && !buildWindow) {
             buildWindow = 1;
             UBX_suppress_tone = 1;
             *UBX_speech_ptr = 0;
             Tone_SetRate(0);
             Tone_Stop();
-            // Are we unsafely reusing this buffer?
-            strcpy(UBX_buf, "build.wav");
+            strcpy(UBX_buf, UBX_xrw_build_file);
+            strcat(UBX_buf, ".wav");
             Tone_Play(UBX_buf);
-        } else if (timestamp == armed + UBX_xrw_build + UBX_xrw_score && !scoringWindow) {
+        } else if (timestamp == armed + UBX_xrw_build_time + UBX_xrw_score_time && !scoringWindow) {
             scoringWindow = 1;
             UBX_suppress_tone = 1;
             *UBX_speech_ptr = 0;
             Tone_SetRate(0);
             Tone_Stop();
-            // Are we unsafely reusing this buffer?
-            strcpy(UBX_buf, "score.wav");
+            strcpy(UBX_buf, UBX_xrw_score_file);
+            strcat(UBX_buf, ".wav");
             Tone_Play(UBX_buf);
         }
     }
