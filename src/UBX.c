@@ -886,9 +886,9 @@ static void UBX_UpdateAlarms(
 	}
 }
 
-#define THIRTEEN_K_FEET 3962400
-#define TWELVE_K_FEET 3657600
+// TODO: This should probably be configurable as well
 #define THIRTY_MPH 1341
+
 static void UBX_UpdateXrwWindow(
 	UBX_saved_t *current)
 {
