@@ -2,6 +2,7 @@
 # **                                                                        **
 # **  FlySight firmware                                                     **
 # **  Copyright 2018 Michael Cooper, Tom van Dijck, Will Glynn              **
+# **  Original makefile copyright 2013 Dean Camera                          **
 # **                                                                        **
 # **  This program is free software: you can redistribute it and/or modify  **
 # **  it under the terms of the GNU General Public License as published by  **
