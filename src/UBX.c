@@ -35,6 +35,7 @@
 #include "Log.h"
 #include "Main.h"
 #include "Power.h"
+#include "Time.h"
 #include "Timer.h"
 #include "Tone.h"
 #include "uart.h"
@@ -126,7 +127,7 @@ UBX_cfg_prt;
 typedef struct
 {
 	uint16_t measRate; // Measurement rate             (ms)
-	uint16_t navRate;  // Nagivation rate, in number 
+	uint16_t navRate;  // Nagivation rate, in number
 	                   //   of measurement cycles
 	uint16_t timeRef;  // Alignment to reference time:
 	                   //   0 = UTC time; 1 = GPS time
@@ -294,6 +295,11 @@ uint8_t    UBX_num_windows = 0;
 
 int32_t UBX_dz_elev = 0;
 
+int32_t   UBX_xrw_build_time = 0;
+int32_t   UBX_xrw_score_time = 0;
+char      UBX_xrw_build_file[9] = "build";
+char      UBX_xrw_score_file[9] = "score";
+
 typedef struct
 {
 	int32_t  lon;      // Longitude                    (deg)
@@ -339,7 +345,7 @@ static uint8_t UBX_suppress_tone = 0;
 static char UBX_speech_buf[16] = "\0";
 static char *UBX_speech_ptr = UBX_speech_buf;
 
-static const char UBX_header[] PROGMEM = 
+static const char UBX_header[] PROGMEM =
 	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,heading,cAcc,gpsFix,numSV\r\n"
 	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),(deg),(deg),,\r\n";
 
@@ -382,7 +388,7 @@ void UBX_Update(void)
 		}
 		break;
 	}
-	
+
 	if (state == st_blinking)
 	{
 		if (counter == 0)
@@ -405,9 +411,9 @@ static uint8_t UBX_HandleByte(
 
 	static enum
 	{
-		st_sync_1, 
-		st_sync_2, 
-		st_class, 
+		st_sync_1,
+		st_sync_2,
+		st_class,
 		st_id,
 		st_length_1,
 		st_length_2,
@@ -416,10 +422,10 @@ static uint8_t UBX_HandleByte(
 		st_ck_b
 	}
 	state = st_sync_1;
-	
+
 	static uint8_t ck_a, ck_b;
 	static uint16_t index;
-	
+
 	switch (state)
 	{
 	case st_sync_1:
@@ -512,7 +518,7 @@ static uint8_t UBX_WaitForAck(
 	unsigned int ch;
 
 	Timer_Set(timeout);
-	
+
 	while (Timer_Get() != 0)
 	{
 		if ((ch = uart_getc()) != UART_NO_DATA)
@@ -573,7 +579,7 @@ static void UBX_SendMessage(
 	}
 
 	#undef SEND_BYTE
-	
+
 	uart_putc(ck_a);
 	uart_putc(ck_b);
 }
@@ -666,16 +672,16 @@ static void UBX_SetTone(
 	{
 		Tone_SetRate(0);
 	}
-		
+
 	#undef OVER
 	#undef UNDER
 }
 
 static void UBX_GetValues(
 	UBX_saved_t *current,
-	uint8_t mode, 
-	int32_t *val, 
-	int32_t *min, 
+	uint8_t mode,
+	int32_t *val,
+	int32_t *min,
 	int32_t *max)
 {
 	uint16_t speed_mul = 1024;
@@ -738,7 +744,7 @@ static void UBX_SpeakValue(
 	UBX_saved_t *current)
 {
 	uint16_t speed_mul = 1024;
-	
+
 	char *end_ptr;
 
 	if (UBX_use_sas)
@@ -773,12 +779,12 @@ static void UBX_SpeakValue(
 	}
 
 	// Step 0: Initialize speech pointers, leaving room at the end for one unit character
-	
+
 	UBX_speech_ptr = UBX_speech_buf + sizeof(UBX_speech_buf) - 1;
 	end_ptr = UBX_speech_ptr;
 
 	// Step 1: Get speech value with 2 decimal places
-	
+
 	switch (UBX_sp_mode)
 	{
 	case 0: // Horizontal speed
@@ -810,14 +816,14 @@ static void UBX_SpeakValue(
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, current->gSpeed) / M_PI * 180, 2, 1, 0);
 		break;
 	}
-	
+
 	// Step 2: Truncate to the desired number of decimal places
 
 	if (UBX_sp_decimals == 0) end_ptr -= 4;
 	else                      end_ptr -= 3 - UBX_sp_decimals;
-	
+
 	// Step 3: Add units if needed, e.g., *(end_ptr++) = 'k';
-	
+
 	switch (UBX_sp_mode)
 	{
 	case 0: // Horizontal speed
@@ -827,7 +833,7 @@ static void UBX_SpeakValue(
 	case 4: // Total speed
 		break;
 	}
-	
+
 	// Step 4: Terminate with a null
 
 	*(end_ptr++) = 0;
@@ -849,7 +855,7 @@ static void UBX_UpdateAlarms(
 			break;
 		}
 	}
-	
+
 	for (i = 0; i < UBX_num_windows; ++i)
 	{
 		if ((UBX_windows[i].bottom <= current->hMSL) && (UBX_windows[i].top >= current->hMSL))
@@ -858,14 +864,14 @@ static void UBX_UpdateAlarms(
 			break;
 		}
 	}
-	
+
 	if (suppress_tone && !UBX_suppress_tone)
 	{
 		*UBX_speech_ptr = 0;
 		Tone_SetRate(0);
 		Tone_Stop();
 	}
-	
+
 	UBX_suppress_tone = suppress_tone;
 
 	if (UBX_prevFix)
@@ -876,7 +882,7 @@ static void UBX_UpdateAlarms(
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
 			const int32_t elev = UBX_alarms[i].elev;
-		
+
 			if (elev >= min && elev <  max)
 			{
 				switch (UBX_alarms[i].type)
@@ -896,18 +902,71 @@ static void UBX_UpdateAlarms(
 					Tone_Play(UBX_buf);
 					break;
 				}
-				
+
 				break;
 			}
 		}
 	}
 }
 
+// TODO: This should probably be configurable as well
+#define THIRTY_MPH 1341
+
+static void UBX_UpdateXrwWindow(
+	UBX_saved_t *current)
+{
+    static uint32_t xrw_max_alt = 0;
+    static uint32_t armed = 0;
+    static uint8_t buildWindow, scoringWindow;
+
+    if (UBX_xrw_build_time == 0 && UBX_xrw_score_time == 0) {
+        return;
+    }
+
+    // There seriously must be a better way
+    uint32_t timestamp = mk_gmtime(current->year,
+                                   current->month,
+                                   current->day,
+                                   current->hour,
+                                   current->min,
+                                   current->sec);
+
+    if (!armed) {
+        if (current->hMSL > xrw_max_alt) {
+            // We're climbing
+            xrw_max_alt = current->hMSL;
+        } else if (current->velD > THIRTY_MPH) {
+            // Are we falling fast enough? 30mph ought to be fine.
+            armed = timestamp;
+        }
+    } else {
+        if (timestamp == armed + UBX_xrw_build_time && !buildWindow) {
+            buildWindow = 1;
+            UBX_suppress_tone = 1;
+            *UBX_speech_ptr = 0;
+            Tone_SetRate(0);
+            Tone_Stop();
+            strcpy(UBX_buf, UBX_xrw_build_file);
+            strcat(UBX_buf, ".wav");
+            Tone_Play(UBX_buf);
+        } else if (timestamp == armed + UBX_xrw_build_time + UBX_xrw_score_time && !scoringWindow) {
+            scoringWindow = 1;
+            UBX_suppress_tone = 1;
+            *UBX_speech_ptr = 0;
+            Tone_SetRate(0);
+            Tone_Stop();
+            strcpy(UBX_buf, UBX_xrw_score_file);
+            strcat(UBX_buf, ".wav");
+            Tone_Play(UBX_buf);
+        }
+    }
+}
+
 static void UBX_UpdateTones(
 	UBX_saved_t *current)
 {
 	static int32_t x0 = UBX_INVALID_VALUE, x1, x2;
-	
+
 	int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
 	int32_t val_2 = UBX_INVALID_VALUE, min_2 = UBX_min_2, max_2 = UBX_max_2;
 
@@ -927,8 +986,8 @@ static void UBX_UpdateTones(
 		x1 = x0;
 		x0 = val_1;
 
-		if (x0 != UBX_INVALID_VALUE && 
-			x1 != UBX_INVALID_VALUE && 
+		if (x0 != UBX_INVALID_VALUE &&
+			x1 != UBX_INVALID_VALUE &&
 			x2 != UBX_INVALID_VALUE)
 		{
 			val_2 = (int32_t) 1000 * (x2 - x0) / (2 * UBX_rate);
@@ -942,11 +1001,11 @@ static void UBX_UpdateTones(
 
 	if (!UBX_suppress_tone)
 	{
-		if (ABS(current->velD) >= UBX_threshold && 
+		if (ABS(current->velD) >= UBX_threshold &&
 			current->gSpeed >= UBX_hThreshold)
 		{
 			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
-				
+
 			if (UBX_sp_rate != 0 && UBX_sp_counter >= UBX_sp_rate)
 			{
 				UBX_SpeakValue(current);
@@ -966,7 +1025,7 @@ static void UBX_UpdateTones(
 }
 
 static void UBX_ReceiveMessage(
-	uint8_t msg_received, 
+	uint8_t msg_received,
 	uint32_t time_of_week)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
@@ -986,6 +1045,7 @@ static void UBX_ReceiveMessage(
 			UBX_hasFix = 1;
 
 			UBX_UpdateAlarms(current);
+			UBX_UpdateXrwWindow(current);
 			UBX_UpdateTones(current);
 
 			if (!Log_IsInitialized())
@@ -1016,7 +1076,7 @@ static void UBX_ReceiveMessage(
 
 		UBX_prevFix = UBX_hasFix;
 		UBX_prevHMSL = current->hMSL;
-		
+
 		UBX_msg_received = 0;
 	}
 }
@@ -1139,13 +1199,13 @@ void UBX_Init(void)
 		.navBbrMask = 0x0000,   // Hot start
 		.resetMode  = 0x09      // Controlled GPS start
 	};
-	
+
 	UBX_cfg_nav5 cfg_nav5 =
 	{
 		.mask       = 0x0001,   // Apply dynamic model settings
 		.dynModel   = UBX_model // Airborne with < 1 g acceleration
 	};
-	
+
 	UBX_cfg_prt cfg_prt =
 	{
 		.portID       = 1,      // UART 1
@@ -1187,10 +1247,10 @@ void UBX_Init(void)
 	{
 		SEND_MESSAGE(UBX_CFG, UBX_CFG_MSG, cfg_msg[i]);
 	}
-	
+
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_RATE, cfg_rate);
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_NAV5, cfg_nav5);
-	
+
 	#undef SEND_MESSAGE
 
 	UBX_SendMessage(UBX_CFG, UBX_CFG_RST, sizeof(cfg_rst), &cfg_rst);
@@ -1210,7 +1270,7 @@ void UBX_Task(void)
 			UBX_HandleMessage();
 		}
 	}
-	
+
 	switch (UBX_state)
 	{
 	case st_idle:
@@ -1280,7 +1340,7 @@ void UBX_Task(void)
 		if (Tone_IsIdle() && disk_is_ready())
 		{
 			Tone_Hold();
-		
+
 			if (*UBX_speech_ptr == '-')
 			{
 				Tone_Play("minus.wav");
@@ -1297,10 +1357,10 @@ void UBX_Task(void)
 				UBX_buf[3] = 'a';
 				UBX_buf[4] = 'v';
 				UBX_buf[5] = 0;
-				
+
 				Tone_Play(UBX_buf);
 			}
-			
+
 			++UBX_speech_ptr;
 		}
 	}
