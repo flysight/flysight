@@ -1217,14 +1217,14 @@ static char *UBX_NumberToSpeech(
     if ((number / 1000) > 0)
     {
         ptr = UBX_NumberToSpeech(number / 1000, ptr);
-		*(ptr++) = 'm';
+		*(ptr++) = 'k';
         number %= 1000;
     }
 
     if ((number / 100) > 0)
     {
         ptr = UBX_NumberToSpeech(number / 100, ptr);
-		*(ptr++) = 'c';
+		*(ptr++) = 'h';
         number %= 100;
     }
 
@@ -1345,13 +1345,21 @@ void UBX_Task(void)
 			{
 				Tone_Play("dot.wav");
 			}
-			else if (*UBX_speech_ptr == 'c')
+			else if (*UBX_speech_ptr == 'h')
 			{
 				Tone_Play("00.wav");
 			}
-			else if (*UBX_speech_ptr == 'm')
+			else if (*UBX_speech_ptr == 'k')
 			{
 				Tone_Play("000.wav");
+			}
+			else if (*UBX_speech_ptr == 'm')
+			{
+				Tone_Play("meters.wav");
+			}
+			else if (*UBX_speech_ptr == 'f')
+			{
+				Tone_Play("feet.wav");
 			}
 			else if (*UBX_speech_ptr == 't')
 			{
@@ -1400,7 +1408,10 @@ void UBX_Task(void)
 
 		if (UBX_firstFix && Tone_IsIdle())
 		{
-			*UBX_NumberToSpeech(321012, UBX_speech_buf) = 0;
+			UBX_speech_ptr = UBX_speech_buf;
+			UBX_speech_ptr = UBX_NumberToSpeech(UBX_prevHMSL / 1000 - UBX_dz_elev, UBX_speech_ptr);
+			*(UBX_speech_ptr++) = 'm';
+			*(UBX_speech_ptr++) = 0;
 			UBX_speech_ptr = UBX_speech_buf;
 			
 			UBX_firstFix = 0;
