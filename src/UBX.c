@@ -1196,6 +1196,62 @@ void UBX_Init(void)
 	UBX_SendMessage(UBX_CFG, UBX_CFG_RST, sizeof(cfg_rst), &cfg_rst);
 }
 
+static char *UBX_NumberToSpeech(
+	uint32_t number,
+	char *ptr)
+{
+	// Adapted from https://stackoverflow.com/questions/2729752/converting-numbers-in-to-words-c-sharp
+
+    if (number == 0)
+	{
+		*(ptr++) = '0';
+		return ptr;
+	}
+
+    if (number < 0)
+	{
+		*(ptr++) = '-';
+        return UBX_NumberToSpeech(-number, ptr);
+	}
+
+    if ((number / 1000) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 1000, ptr);
+		*(ptr++) = 'm';
+        number %= 1000;
+    }
+
+    if ((number / 100) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 100, ptr);
+		*(ptr++) = 'c';
+        number %= 100;
+    }
+
+    if (number > 0)
+    {
+		if (number < 10)
+		{
+			*(ptr++) = '0' + number;
+		}
+		else if (number < 20)
+		{
+			*(ptr++) = 't';
+			*(ptr++) = '0' + (number - 10);
+		}
+        else
+        {
+			*(ptr++) = 'x';
+			*(ptr++) = '0' + (number / 10);
+
+            if ((number % 10) > 0)
+				*(ptr++) = '0' + (number % 10);
+        }
+    }
+
+    return ptr;
+}
+
 void UBX_Task(void)
 {
 	unsigned int ch;
@@ -1289,6 +1345,40 @@ void UBX_Task(void)
 			{
 				Tone_Play("dot.wav");
 			}
+			else if (*UBX_speech_ptr == 'c')
+			{
+				Tone_Play("00.wav");
+			}
+			else if (*UBX_speech_ptr == 'm')
+			{
+				Tone_Play("000.wav");
+			}
+			else if (*UBX_speech_ptr == 't')
+			{
+				++UBX_speech_ptr;
+				UBX_buf[0] = '1';
+				UBX_buf[1] = *UBX_speech_ptr;
+				UBX_buf[2] = '.';
+				UBX_buf[3] = 'w';
+				UBX_buf[4] = 'a';
+				UBX_buf[5] = 'v';
+				UBX_buf[6] = 0;
+
+				Tone_Play(UBX_buf);
+			}
+			else if (*UBX_speech_ptr == 'x')
+			{
+				++UBX_speech_ptr;
+				UBX_buf[0] = *UBX_speech_ptr;
+				UBX_buf[1] = '0';
+				UBX_buf[2] = '.';
+				UBX_buf[3] = 'w';
+				UBX_buf[4] = 'a';
+				UBX_buf[5] = 'v';
+				UBX_buf[6] = 0;
+
+				Tone_Play(UBX_buf);
+			}
 			else
 			{
 				UBX_buf[0] = *UBX_speech_ptr;
@@ -1310,6 +1400,9 @@ void UBX_Task(void)
 
 		if (UBX_firstFix && Tone_IsIdle())
 		{
+			*UBX_NumberToSpeech(321012, UBX_speech_buf) = 0;
+			UBX_speech_ptr = UBX_speech_buf;
+			
 			UBX_firstFix = 0;
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
