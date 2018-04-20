@@ -94,6 +94,11 @@
 
 #define UBX_ALT_MIN         1500 // Minimum announced altitude (m)
 
+#define UBX_HAS_FIX         0x01
+#define UBX_FIRST_FIX       0x02
+#define UBX_SAY_ALTITUDE    0x04
+#define UBX_VERTICAL_ACC    0x08
+
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
 	1024, 1077, 1135, 1197,
@@ -336,10 +341,9 @@ static UBX_saved_t UBX_saved[UBX_BUFFER_LEN];
 static uint8_t UBX_read  = 0;
 static uint8_t UBX_write = 0;
 
-static volatile uint8_t UBX_hasFix = 0;
-static uint8_t UBX_firstFix = 0;
+static uint8_t UBX_flags = 0;
+static uint8_t UBX_prev_flags = 0;
 
-static uint8_t UBX_prevFix = 0;
 static int32_t UBX_prevHMSL;
 
 static uint8_t UBX_suppress_tone = 0;
@@ -376,14 +380,14 @@ void UBX_Update(void)
 	switch (state)
 	{
 	case st_solid:
-		if (UBX_hasFix)
+		if (UBX_flags & UBX_HAS_FIX)
 		{
 			counter = 0;
 			state = st_blinking;
 		}
 		break;
 	case st_blinking:
-		if (!UBX_hasFix)
+		if (!(UBX_flags & UBX_HAS_FIX))
 		{
 			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
 			state = st_solid;
@@ -953,7 +957,7 @@ static void UBX_UpdateAlarms(
 	
 	UBX_suppress_tone = suppress_tone;
 
-	if (UBX_prevFix)
+	if (UBX_prev_flags & UBX_HAS_FIX)
 	{
 		int32_t min = MIN(UBX_prevHMSL, current->hMSL);
 		int32_t max = MAX(UBX_prevHMSL, current->hMSL);
@@ -1091,7 +1095,7 @@ static void UBX_ReceiveMessage(
 	{
 		if (current->gpsFix == 0x03)
 		{
-			UBX_hasFix = 1;
+			UBX_flags |= UBX_HAS_FIX;
 
 			UBX_UpdateAlarms(current);
 			UBX_UpdateTones(current);
@@ -1111,20 +1115,30 @@ static void UBX_ReceiveMessage(
 				Log_WriteString(UBX_header);
 				UBX_state = st_flush_1;
 
-				UBX_firstFix = 1;
+				UBX_flags |= UBX_FIRST_FIX;
+				UBX_flags |= UBX_SAY_ALTITUDE;
 			}
 
 			++UBX_write;
 		}
 		else
 		{
-			UBX_hasFix = 0;
+			UBX_flags &= ~UBX_HAS_FIX;
 			Tone_SetRate(0);
 		}
 
-		UBX_prevFix = UBX_hasFix;
+		if (current->vAcc < 10000)
+		{
+			UBX_flags |= UBX_VERTICAL_ACC;
+		}
+		else
+		{
+			UBX_flags &= ~UBX_VERTICAL_ACC;
+		}
+
+		UBX_prev_flags = UBX_flags;
 		UBX_prevHMSL = current->hMSL;
-		
+
 		UBX_msg_received = 0;
 	}
 }
@@ -1458,16 +1472,20 @@ void UBX_Task(void)
 	{
 		Tone_Release();
 
-		if (UBX_firstFix && Tone_IsIdle())
+		if ((UBX_flags & UBX_FIRST_FIX) && Tone_IsIdle())
 		{
+			UBX_flags &= ~UBX_FIRST_FIX;
+			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+		}
+
+		if ((UBX_flags & UBX_SAY_ALTITUDE) && (UBX_flags & UBX_VERTICAL_ACC) && Tone_IsIdle())
+		{
+			UBX_flags &= ~UBX_SAY_ALTITUDE;
 			UBX_speech_ptr = UBX_speech_buf;
 			UBX_speech_ptr = UBX_NumberToSpeech((UBX_prevHMSL - UBX_dz_elev) / 1000, UBX_speech_ptr);
 			*(UBX_speech_ptr++) = 'm';
 			*(UBX_speech_ptr++) = 0;
 			UBX_speech_ptr = UBX_speech_buf;
-			
-			UBX_firstFix = 0;
-			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
 	}
 }
