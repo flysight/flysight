@@ -178,6 +178,26 @@ Alarm_Type:    0 ; Alarm type\r\n\
                  ;   4 = Play file\r\n\
 Alarm_File:    0 ; File to be played\r\n\
 \r\n\
+; Altitude mode settings\r\n\
+\r\n\
+; WARNING: GPS measurements depend on very weak signals\r\n\
+;          received from orbiting satellites. As such, they\r\n\
+;          are prone to interference, and should NEVER be\r\n\
+;          relied upon for life saving purposes.\r\n\
+\r\n\
+;          UNDER NO CIRCUMSTANCES SHOULD ALTITUDE MODE BE\r\n\
+;          USED TO INDICATE DEPLOYMENT OR BREAKOFF ALTITUDE.\r\n\
+\r\n\
+; NOTE:    Altitude is given relative to ground elevation,\r\n\
+;          which is specified in DZ_Elev. Altitude mode will\r\n\
+;          not function below 1500 m above ground.\r\n\
+\r\n\
+Alt_Units:     1 ; Altitude units\r\n\
+                 ;   0 = m\r\n\
+                 ;   1 = ft\r\n\
+Alt_Step:      0 ; Altitude between announcements\r\n\
+                 ;   0 = No altitude\r\n\
+\r\n\
 ; Silence windows\r\n\
 \r\n\
 ; NOTE:    Silence windows are given in meters above ground\r\n\
@@ -221,6 +241,8 @@ static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
        const char Config_Init_File[] PROGMEM  = "Init_File";
 static const char Config_Win_Top[] PROGMEM    = "Win_Top";
 static const char Config_Win_Bottom[] PROGMEM = "Win_Bottom";
+static const char Config_Alt_Units[] PROGMEM  = "Alt_Units";
+static const char Config_Alt_Step[] PROGMEM   = "Alt_Step";
 
 char Config_buf[80];
 
@@ -299,6 +321,8 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_DZ_Elev,   UBX_dz_elev,      val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
 		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);
+		HANDLE_VALUE(Config_Alt_Units, UBX_alt_units,    val, val >= 0 && val <= 1);
+		HANDLE_VALUE(Config_Alt_Step,  UBX_alt_step,     val, val >= 0);
 		
 		#undef HANDLE_VALUE
 		

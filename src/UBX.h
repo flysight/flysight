@@ -72,6 +72,9 @@ extern uint8_t   UBX_sp_units;
 extern uint16_t  UBX_sp_rate;
 extern uint8_t   UBX_sp_decimals;
 
+extern uint8_t   UBX_alt_units;
+extern uint16_t  UBX_alt_step;
+
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
 

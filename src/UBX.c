@@ -81,6 +81,9 @@
 #define UBX_UNITS_KMH       0
 #define UBX_UNITS_MPH       1
 
+#define UBX_UNITS_METERS    0
+#define UBX_UNITS_FEET      1
+
 #define UBX_BUFFER_LEN      4
 
 #define UBX_MSG_POSLLH      0x01
@@ -88,6 +91,8 @@
 #define UBX_MSG_VELNED      0x04
 #define UBX_MSG_TIMEUTC     0x08
 #define UBX_MSG_ALL         (UBX_MSG_POSLLH | UBX_MSG_SOL | UBX_MSG_VELNED | UBX_MSG_TIMEUTC)
+
+#define UBX_ALT_MIN         1500 // Minimum announced altitude (m)
 
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
@@ -270,6 +275,9 @@ uint8_t  UBX_sp_mode       = 2;
 uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
 uint16_t UBX_sp_rate       = 0;
 uint8_t  UBX_sp_decimals   = 0;
+
+uint8_t  UBX_alt_units     = UBX_UNITS_FEET;
+uint16_t UBX_alt_step      = 0;
 
 uint8_t  UBX_init_mode     = 0;
 char     UBX_init_filename[9];
@@ -833,10 +841,67 @@ static void UBX_SpeakValue(
 	*(end_ptr++) = 0;
 }
 
+static char *UBX_NumberToSpeech(
+	uint32_t number,
+	char *ptr)
+{
+	// Adapted from https://stackoverflow.com/questions/2729752/converting-numbers-in-to-words-c-sharp
+
+    if (number == 0)
+	{
+		*(ptr++) = '0';
+		return ptr;
+	}
+
+    if (number < 0)
+	{
+		*(ptr++) = '-';
+        return UBX_NumberToSpeech(-number, ptr);
+	}
+
+    if ((number / 1000) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 1000, ptr);
+		*(ptr++) = 'k';
+        number %= 1000;
+    }
+
+    if ((number / 100) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 100, ptr);
+		*(ptr++) = 'h';
+        number %= 100;
+    }
+
+    if (number > 0)
+    {
+		if (number < 10)
+		{
+			*(ptr++) = '0' + number;
+		}
+		else if (number < 20)
+		{
+			*(ptr++) = 't';
+			*(ptr++) = '0' + (number - 10);
+		}
+        else
+        {
+			*(ptr++) = 'x';
+			*(ptr++) = '0' + (number / 10);
+
+            if ((number % 10) > 0)
+				*(ptr++) = '0' + (number % 10);
+        }
+    }
+
+    return ptr;
+}
+
 static void UBX_UpdateAlarms(
 	UBX_saved_t *current)
 {
 	uint8_t i, suppress_tone;
+	int32_t step, elev;
 
 	suppress_tone = 0;
 
@@ -859,6 +924,26 @@ static void UBX_UpdateAlarms(
 		}
 	}
 	
+	if ((UBX_alt_step > 0) && (current->hMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
+	{
+		if (UBX_alt_units == UBX_UNITS_METERS)
+		{
+			step = (current->hMSL + 500 * UBX_alt_step) / (1000 * UBX_alt_step);
+			elev = step * 1000 * UBX_alt_step + UBX_dz_elev;
+		}
+		else
+		{
+			step = (current->hMSL * 10 + 1524 * UBX_alt_step) / (3048 * UBX_alt_step);
+			elev = step * 3048 * UBX_alt_step / 10 + UBX_dz_elev;
+		}
+
+		if ((current->hMSL <= elev + UBX_alarm_window_above) &&
+		    (current->hMSL >= elev - UBX_alarm_window_below))
+		{
+			suppress_tone = 1;
+		}
+	}
+	
 	if (suppress_tone && !UBX_suppress_tone)
 	{
 		*UBX_speech_ptr = 0;
@@ -872,12 +957,12 @@ static void UBX_UpdateAlarms(
 	{
 		int32_t min = MIN(UBX_prevHMSL, current->hMSL);
 		int32_t max = MAX(UBX_prevHMSL, current->hMSL);
-
+		
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
-			const int32_t elev = UBX_alarms[i].elev;
+			elev = UBX_alarms[i].elev;
 		
-			if (elev >= min && elev <  max)
+			if (elev >= min && elev < max)
 			{
 				switch (UBX_alarms[i].type)
 				{
@@ -898,6 +983,29 @@ static void UBX_UpdateAlarms(
 				}
 				
 				break;
+			}
+		}
+
+		if ((UBX_alt_step > 0) &&
+		    (i == UBX_num_alarms) &&
+			(UBX_prevHMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
+		{
+			if (UBX_alt_units == UBX_UNITS_METERS)
+			{
+				elev = step * 1000 * UBX_alt_step + UBX_dz_elev;
+			}
+			else
+			{
+				elev = step * 3048 * UBX_alt_step / 10 + UBX_dz_elev;
+			}
+
+			if (elev >= current->hMSL && elev < UBX_prevHMSL)
+			{
+				UBX_speech_ptr = UBX_speech_buf;
+				UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_alt_step, UBX_speech_ptr);
+				*(UBX_speech_ptr++) = (UBX_alt_units == UBX_UNITS_METERS) ? 'm' : 'f';
+				*(UBX_speech_ptr++) = 0;
+				UBX_speech_ptr = UBX_speech_buf;
 			}
 		}
 	}
@@ -1196,62 +1304,6 @@ void UBX_Init(void)
 	UBX_SendMessage(UBX_CFG, UBX_CFG_RST, sizeof(cfg_rst), &cfg_rst);
 }
 
-static char *UBX_NumberToSpeech(
-	uint32_t number,
-	char *ptr)
-{
-	// Adapted from https://stackoverflow.com/questions/2729752/converting-numbers-in-to-words-c-sharp
-
-    if (number == 0)
-	{
-		*(ptr++) = '0';
-		return ptr;
-	}
-
-    if (number < 0)
-	{
-		*(ptr++) = '-';
-        return UBX_NumberToSpeech(-number, ptr);
-	}
-
-    if ((number / 1000) > 0)
-    {
-        ptr = UBX_NumberToSpeech(number / 1000, ptr);
-		*(ptr++) = 'k';
-        number %= 1000;
-    }
-
-    if ((number / 100) > 0)
-    {
-        ptr = UBX_NumberToSpeech(number / 100, ptr);
-		*(ptr++) = 'h';
-        number %= 100;
-    }
-
-    if (number > 0)
-    {
-		if (number < 10)
-		{
-			*(ptr++) = '0' + number;
-		}
-		else if (number < 20)
-		{
-			*(ptr++) = 't';
-			*(ptr++) = '0' + (number - 10);
-		}
-        else
-        {
-			*(ptr++) = 'x';
-			*(ptr++) = '0' + (number / 10);
-
-            if ((number % 10) > 0)
-				*(ptr++) = '0' + (number % 10);
-        }
-    }
-
-    return ptr;
-}
-
 void UBX_Task(void)
 {
 	unsigned int ch;
@@ -1409,7 +1461,7 @@ void UBX_Task(void)
 		if (UBX_firstFix && Tone_IsIdle())
 		{
 			UBX_speech_ptr = UBX_speech_buf;
-			UBX_speech_ptr = UBX_NumberToSpeech(UBX_prevHMSL / 1000 - UBX_dz_elev, UBX_speech_ptr);
+			UBX_speech_ptr = UBX_NumberToSpeech((UBX_prevHMSL - UBX_dz_elev) / 1000, UBX_speech_ptr);
 			*(UBX_speech_ptr++) = 'm';
 			*(UBX_speech_ptr++) = 0;
 			UBX_speech_ptr = UBX_speech_buf;
