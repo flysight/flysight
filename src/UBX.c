@@ -92,7 +92,7 @@
 #define UBX_MSG_TIMEUTC     0x08
 #define UBX_MSG_ALL         (UBX_MSG_POSLLH | UBX_MSG_SOL | UBX_MSG_VELNED | UBX_MSG_TIMEUTC)
 
-#define UBX_ALT_MIN         1500 // Minimum announced altitude (m)
+#define UBX_ALT_MIN         1500UL // Minimum announced altitude (m)
 
 #define UBX_HAS_FIX         0x01
 #define UBX_FIRST_FIX       0x02
@@ -282,7 +282,7 @@ uint16_t UBX_sp_rate       = 0;
 uint8_t  UBX_sp_decimals   = 0;
 
 uint8_t  UBX_alt_units     = UBX_UNITS_FEET;
-uint16_t UBX_alt_step      = 0;
+uint32_t UBX_alt_step      = 0;
 
 uint8_t  UBX_init_mode     = 0;
 char     UBX_init_filename[9];
@@ -905,7 +905,7 @@ static void UBX_UpdateAlarms(
 	UBX_saved_t *current)
 {
 	uint8_t i, suppress_tone;
-	int32_t step, elev;
+	int32_t step_size, step, step_elev;
 
 	suppress_tone = 0;
 
@@ -928,21 +928,23 @@ static void UBX_UpdateAlarms(
 		}
 	}
 	
-	if ((UBX_alt_step > 0) && (current->hMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
+	if (UBX_alt_step > 0)
 	{
 		if (UBX_alt_units == UBX_UNITS_METERS)
 		{
-			step = (current->hMSL + 500 * UBX_alt_step) / (1000 * UBX_alt_step);
-			elev = step * 1000 * UBX_alt_step + UBX_dz_elev;
+			step_size = 10000 * UBX_alt_step;
 		}
 		else
 		{
-			step = (current->hMSL * 10 + 1524 * UBX_alt_step) / (3048 * UBX_alt_step);
-			elev = step * 3048 * UBX_alt_step / 10 + UBX_dz_elev;
+			step_size = 3048 * UBX_alt_step;
 		}
 
-		if ((current->hMSL <= elev + UBX_alarm_window_above) &&
-		    (current->hMSL >= elev - UBX_alarm_window_below))
+		step = ((current->hMSL - UBX_dz_elev) * 10 + step_size / 2) / step_size;
+		step_elev = step * step_size / 10 + UBX_dz_elev;
+
+		if ((current->hMSL <= step_elev + UBX_alarm_window_above) &&
+		    (current->hMSL >= step_elev - UBX_alarm_window_below) &&
+		    (current->hMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
 		{
 			suppress_tone = 1;
 		}
@@ -964,9 +966,9 @@ static void UBX_UpdateAlarms(
 		
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
-			elev = UBX_alarms[i].elev;
-		
-			if (elev >= min && elev < max)
+			const int32_t alarm_elev = UBX_alarms[i].elev;
+
+			if (alarm_elev >= min && alarm_elev < max)
 			{
 				switch (UBX_alarms[i].type)
 				{
@@ -992,18 +994,11 @@ static void UBX_UpdateAlarms(
 
 		if ((UBX_alt_step > 0) &&
 		    (i == UBX_num_alarms) &&
-			(UBX_prevHMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
+		    (UBX_prevHMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000) &&
+		    (*UBX_speech_ptr == 0) &&
+		    !(UBX_flags & UBX_SAY_ALTITUDE))
 		{
-			if (UBX_alt_units == UBX_UNITS_METERS)
-			{
-				elev = step * 1000 * UBX_alt_step + UBX_dz_elev;
-			}
-			else
-			{
-				elev = step * 3048 * UBX_alt_step / 10 + UBX_dz_elev;
-			}
-
-			if (elev >= current->hMSL && elev < UBX_prevHMSL)
+			if (step_elev >= current->hMSL && step_elev < UBX_prevHMSL)
 			{
 				UBX_speech_ptr = UBX_speech_buf;
 				UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_alt_step, UBX_speech_ptr);
@@ -1485,8 +1480,18 @@ void UBX_Task(void)
 		{
 			UBX_flags &= ~UBX_SAY_ALTITUDE;
 			UBX_speech_ptr = UBX_speech_buf;
-			UBX_speech_ptr = UBX_NumberToSpeech((UBX_prevHMSL - UBX_dz_elev) / 1000, UBX_speech_ptr);
-			*(UBX_speech_ptr++) = 'm';
+
+			if (UBX_alt_units == UBX_UNITS_METERS)
+			{
+				UBX_speech_ptr = UBX_NumberToSpeech((UBX_prevHMSL - UBX_dz_elev) / 1000, UBX_speech_ptr);
+				*(UBX_speech_ptr++) = 'm';
+			}
+			else
+			{
+				UBX_speech_ptr = UBX_NumberToSpeech((UBX_prevHMSL - UBX_dz_elev) * 10 / 3048, UBX_speech_ptr);
+				*(UBX_speech_ptr++) = 'f';
+			}
+
 			*(UBX_speech_ptr++) = 0;
 			UBX_speech_ptr = UBX_speech_buf;
 		}
