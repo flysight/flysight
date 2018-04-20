@@ -1478,7 +1478,10 @@ void UBX_Task(void)
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
 
-		if ((UBX_flags & UBX_SAY_ALTITUDE) && (UBX_flags & UBX_VERTICAL_ACC) && Tone_IsIdle())
+		if ((UBX_alt_step > 0) && 
+		    (UBX_flags & UBX_SAY_ALTITUDE) && 
+		    (UBX_flags & UBX_VERTICAL_ACC) && 
+			Tone_IsIdle())
 		{
 			UBX_flags &= ~UBX_SAY_ALTITUDE;
 			UBX_speech_ptr = UBX_speech_buf;
