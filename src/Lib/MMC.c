@@ -26,8 +26,8 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#include "../FatFS/diskio.h"
-#include "../FatFS/ff.h"
+#include "../../vendor/FatFS/diskio.h"
+#include "../../vendor/FatFS/ff.h"
 #include "Main.h"
 #include "MMC.h"
 

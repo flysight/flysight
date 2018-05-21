@@ -81,6 +81,9 @@
 #define UBX_UNITS_KMH       0
 #define UBX_UNITS_MPH       1
 
+#define UBX_UNITS_METERS    0
+#define UBX_UNITS_FEET      1
+
 #define UBX_BUFFER_LEN      4
 
 #define UBX_MSG_POSLLH      0x01
@@ -88,6 +91,13 @@
 #define UBX_MSG_VELNED      0x04
 #define UBX_MSG_TIMEUTC     0x08
 #define UBX_MSG_ALL         (UBX_MSG_POSLLH | UBX_MSG_SOL | UBX_MSG_VELNED | UBX_MSG_TIMEUTC)
+
+#define UBX_ALT_MIN         1500UL // Minimum announced altitude (m)
+
+#define UBX_HAS_FIX         0x01
+#define UBX_FIRST_FIX       0x02
+#define UBX_SAY_ALTITUDE    0x04
+#define UBX_VERTICAL_ACC    0x08
 
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
@@ -271,6 +281,9 @@ uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
 uint16_t UBX_sp_rate       = 0;
 uint8_t  UBX_sp_decimals   = 0;
 
+uint8_t  UBX_alt_units     = UBX_UNITS_FEET;
+uint32_t UBX_alt_step      = 0;
+
 uint8_t  UBX_init_mode     = 0;
 char     UBX_init_filename[9];
 
@@ -328,10 +341,9 @@ static UBX_saved_t UBX_saved[UBX_BUFFER_LEN];
 static uint8_t UBX_read  = 0;
 static uint8_t UBX_write = 0;
 
-static volatile uint8_t UBX_hasFix = 0;
-static uint8_t UBX_firstFix = 0;
+static uint8_t UBX_flags = 0;
+static uint8_t UBX_prev_flags = 0;
 
-static uint8_t UBX_prevFix = 0;
 static int32_t UBX_prevHMSL;
 
 static uint8_t UBX_suppress_tone = 0;
@@ -368,14 +380,14 @@ void UBX_Update(void)
 	switch (state)
 	{
 	case st_solid:
-		if (UBX_hasFix)
+		if (UBX_flags & UBX_HAS_FIX)
 		{
 			counter = 0;
 			state = st_blinking;
 		}
 		break;
 	case st_blinking:
-		if (!UBX_hasFix)
+		if (!(UBX_flags & UBX_HAS_FIX))
 		{
 			LEDs_ChangeLEDs(LEDS_ALL_LEDS, Main_activeLED);
 			state = st_solid;
@@ -833,10 +845,67 @@ static void UBX_SpeakValue(
 	*(end_ptr++) = 0;
 }
 
+static char *UBX_NumberToSpeech(
+	uint32_t number,
+	char *ptr)
+{
+	// Adapted from https://stackoverflow.com/questions/2729752/converting-numbers-in-to-words-c-sharp
+
+    if (number == 0)
+	{
+		*(ptr++) = '0';
+		return ptr;
+	}
+
+    if (number < 0)
+	{
+		*(ptr++) = '-';
+        return UBX_NumberToSpeech(-number, ptr);
+	}
+
+    if ((number / 1000) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 1000, ptr);
+		*(ptr++) = 'k';
+        number %= 1000;
+    }
+
+    if ((number / 100) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 100, ptr);
+		*(ptr++) = 'h';
+        number %= 100;
+    }
+
+    if (number > 0)
+    {
+		if (number < 10)
+		{
+			*(ptr++) = '0' + number;
+		}
+		else if (number < 20)
+		{
+			*(ptr++) = 't';
+			*(ptr++) = '0' + (number - 10);
+		}
+        else
+        {
+			*(ptr++) = 'x';
+			*(ptr++) = '0' + (number / 10);
+
+            if ((number % 10) > 0)
+				*(ptr++) = '0' + (number % 10);
+        }
+    }
+
+    return ptr;
+}
+
 static void UBX_UpdateAlarms(
 	UBX_saved_t *current)
 {
 	uint8_t i, suppress_tone;
+	int32_t step_size, step, step_elev;
 
 	suppress_tone = 0;
 
@@ -859,6 +928,28 @@ static void UBX_UpdateAlarms(
 		}
 	}
 	
+	if (UBX_alt_step > 0)
+	{
+		if (UBX_alt_units == UBX_UNITS_METERS)
+		{
+			step_size = 10000 * UBX_alt_step;
+		}
+		else
+		{
+			step_size = 3048 * UBX_alt_step;
+		}
+
+		step = ((current->hMSL - UBX_dz_elev) * 10 + step_size / 2) / step_size;
+		step_elev = step * step_size / 10 + UBX_dz_elev;
+
+		if ((current->hMSL <= step_elev + UBX_alarm_window_above) &&
+		    (current->hMSL >= step_elev - UBX_alarm_window_below) &&
+		    (current->hMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
+		{
+			suppress_tone = 1;
+		}
+	}
+	
 	if (suppress_tone && !UBX_suppress_tone)
 	{
 		*UBX_speech_ptr = 0;
@@ -868,16 +959,16 @@ static void UBX_UpdateAlarms(
 	
 	UBX_suppress_tone = suppress_tone;
 
-	if (UBX_prevFix)
+	if (UBX_prev_flags & UBX_HAS_FIX)
 	{
 		int32_t min = MIN(UBX_prevHMSL, current->hMSL);
 		int32_t max = MAX(UBX_prevHMSL, current->hMSL);
-
+		
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
-			const int32_t elev = UBX_alarms[i].elev;
-		
-			if (elev >= min && elev <  max)
+			const int32_t alarm_elev = UBX_alarms[i].elev;
+
+			if (alarm_elev >= min && alarm_elev < max)
 			{
 				switch (UBX_alarms[i].type)
 				{
@@ -898,6 +989,22 @@ static void UBX_UpdateAlarms(
 				}
 				
 				break;
+			}
+		}
+
+		if ((UBX_alt_step > 0) &&
+		    (i == UBX_num_alarms) &&
+		    (UBX_prevHMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000) &&
+		    (*UBX_speech_ptr == 0) &&
+		    !(UBX_flags & UBX_SAY_ALTITUDE))
+		{
+			if (step_elev >= current->hMSL && step_elev < UBX_prevHMSL)
+			{
+				UBX_speech_ptr = UBX_speech_buf;
+				UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_alt_step, UBX_speech_ptr);
+				*(UBX_speech_ptr++) = (UBX_alt_units == UBX_UNITS_METERS) ? 'm' : 'f';
+				*(UBX_speech_ptr++) = 0;
+				UBX_speech_ptr = UBX_speech_buf;
 			}
 		}
 	}
@@ -983,7 +1090,7 @@ static void UBX_ReceiveMessage(
 	{
 		if (current->gpsFix == 0x03)
 		{
-			UBX_hasFix = 1;
+			UBX_flags |= UBX_HAS_FIX;
 
 			UBX_UpdateAlarms(current);
 			UBX_UpdateTones(current);
@@ -1003,20 +1110,30 @@ static void UBX_ReceiveMessage(
 				Log_WriteString(UBX_header);
 				UBX_state = st_flush_1;
 
-				UBX_firstFix = 1;
+				UBX_flags |= UBX_FIRST_FIX;
+				UBX_flags |= UBX_SAY_ALTITUDE;
 			}
 
 			++UBX_write;
 		}
 		else
 		{
-			UBX_hasFix = 0;
+			UBX_flags &= ~UBX_HAS_FIX;
 			Tone_SetRate(0);
 		}
 
-		UBX_prevFix = UBX_hasFix;
+		if (current->vAcc < 10000)
+		{
+			UBX_flags |= UBX_VERTICAL_ACC;
+		}
+		else
+		{
+			UBX_flags &= ~UBX_VERTICAL_ACC;
+		}
+
+		UBX_prev_flags = UBX_flags;
 		UBX_prevHMSL = current->hMSL;
-		
+
 		UBX_msg_received = 0;
 	}
 }
@@ -1289,6 +1406,48 @@ void UBX_Task(void)
 			{
 				Tone_Play("dot.wav");
 			}
+			else if (*UBX_speech_ptr == 'h')
+			{
+				Tone_Play("00.wav");
+			}
+			else if (*UBX_speech_ptr == 'k')
+			{
+				Tone_Play("000.wav");
+			}
+			else if (*UBX_speech_ptr == 'm')
+			{
+				Tone_Play("meters.wav");
+			}
+			else if (*UBX_speech_ptr == 'f')
+			{
+				Tone_Play("feet.wav");
+			}
+			else if (*UBX_speech_ptr == 't')
+			{
+				++UBX_speech_ptr;
+				UBX_buf[0] = '1';
+				UBX_buf[1] = *UBX_speech_ptr;
+				UBX_buf[2] = '.';
+				UBX_buf[3] = 'w';
+				UBX_buf[4] = 'a';
+				UBX_buf[5] = 'v';
+				UBX_buf[6] = 0;
+
+				Tone_Play(UBX_buf);
+			}
+			else if (*UBX_speech_ptr == 'x')
+			{
+				++UBX_speech_ptr;
+				UBX_buf[0] = *UBX_speech_ptr;
+				UBX_buf[1] = '0';
+				UBX_buf[2] = '.';
+				UBX_buf[3] = 'w';
+				UBX_buf[4] = 'a';
+				UBX_buf[5] = 'v';
+				UBX_buf[6] = 0;
+
+				Tone_Play(UBX_buf);
+			}
 			else
 			{
 				UBX_buf[0] = *UBX_speech_ptr;
@@ -1308,10 +1467,33 @@ void UBX_Task(void)
 	{
 		Tone_Release();
 
-		if (UBX_firstFix && Tone_IsIdle())
+		if ((UBX_flags & UBX_FIRST_FIX) && Tone_IsIdle())
 		{
-			UBX_firstFix = 0;
+			UBX_flags &= ~UBX_FIRST_FIX;
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
+		}
+
+		if ((UBX_alt_step > 0) && 
+		    (UBX_flags & UBX_SAY_ALTITUDE) && 
+		    (UBX_flags & UBX_VERTICAL_ACC) && 
+			Tone_IsIdle())
+		{
+			UBX_flags &= ~UBX_SAY_ALTITUDE;
+			UBX_speech_ptr = UBX_speech_buf;
+
+			if (UBX_alt_units == UBX_UNITS_METERS)
+			{
+				UBX_speech_ptr = UBX_NumberToSpeech((UBX_prevHMSL - UBX_dz_elev) / 1000, UBX_speech_ptr);
+				*(UBX_speech_ptr++) = 'm';
+			}
+			else
+			{
+				UBX_speech_ptr = UBX_NumberToSpeech((UBX_prevHMSL - UBX_dz_elev) * 10 / 3048, UBX_speech_ptr);
+				*(UBX_speech_ptr++) = 'f';
+			}
+
+			*(UBX_speech_ptr++) = 0;
+			UBX_speech_ptr = UBX_speech_buf;
 		}
 	}
 }
