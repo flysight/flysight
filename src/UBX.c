@@ -904,10 +904,11 @@ static char *UBX_NumberToSpeech(
 static void UBX_UpdateAlarms(
 	UBX_saved_t *current)
 {
-	uint8_t i, suppress_tone;
+	uint8_t i, suppress_tone, suppress_alt;
 	int32_t step_size, step, step_elev;
 
 	suppress_tone = 0;
+	suppress_alt = 0;
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
@@ -924,6 +925,7 @@ static void UBX_UpdateAlarms(
 		if ((UBX_windows[i].bottom <= current->hMSL) && (UBX_windows[i].top >= current->hMSL))
 		{
 			suppress_tone = 1;
+			suppress_alt = 1;
 			break;
 		}
 	}
@@ -996,11 +998,12 @@ static void UBX_UpdateAlarms(
 		    (i == UBX_num_alarms) &&
 		    (UBX_prevHMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000) &&
 		    (*UBX_speech_ptr == 0) &&
-		    !(UBX_flags & UBX_SAY_ALTITUDE))
+		    !(UBX_flags & UBX_SAY_ALTITUDE) &&
+		    !suppress_alt)
 		{
 			if ((step_elev >= min && step_elev < max) &&
-				ABS(current->velD) >= UBX_threshold &&
-				current->gSpeed >= UBX_hThreshold)
+			    ABS(current->velD) >= UBX_threshold &&
+			    current->gSpeed >= UBX_hThreshold)
 			{
 				UBX_speech_ptr = UBX_speech_buf;
 				UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_alt_step, UBX_speech_ptr);
