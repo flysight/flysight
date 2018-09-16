@@ -998,7 +998,9 @@ static void UBX_UpdateAlarms(
 		    (*UBX_speech_ptr == 0) &&
 		    !(UBX_flags & UBX_SAY_ALTITUDE))
 		{
-			if (step_elev >= current->hMSL && step_elev < UBX_prevHMSL)
+			if ((step_elev >= min && step_elev < max) &&
+				ABS(current->velD) >= UBX_threshold &&
+				current->gSpeed >= UBX_hThreshold)
 			{
 				UBX_speech_ptr = UBX_speech_buf;
 				UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_alt_step, UBX_speech_ptr);
