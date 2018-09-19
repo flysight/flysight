@@ -912,8 +912,10 @@ static void UBX_UpdateAlarms(
 
 	for (i = 0; i < UBX_num_alarms; ++i)
 	{
-		if ((current->hMSL <= UBX_alarms[i].elev + UBX_alarm_window_above) &&
-		    (current->hMSL >= UBX_alarms[i].elev - UBX_alarm_window_below))
+		const int32_t alarm_elev = UBX_alarms[i].elev + UBX_dz_elev;
+
+		if ((current->hMSL <= alarm_elev + UBX_alarm_window_above) &&
+		    (current->hMSL >= alarm_elev - UBX_alarm_window_below))
 		{
 			suppress_tone = 1;
 			break;
@@ -922,7 +924,8 @@ static void UBX_UpdateAlarms(
 	
 	for (i = 0; i < UBX_num_windows; ++i)
 	{
-		if ((UBX_windows[i].bottom <= current->hMSL) && (UBX_windows[i].top >= current->hMSL))
+		if ((UBX_windows[i].bottom + UBX_dz_elev <= current->hMSL) &&
+		    (UBX_windows[i].top + UBX_dz_elev >= current->hMSL))
 		{
 			suppress_tone = 1;
 			suppress_alt = 1;
@@ -968,7 +971,7 @@ static void UBX_UpdateAlarms(
 		
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
-			const int32_t alarm_elev = UBX_alarms[i].elev;
+			const int32_t alarm_elev = UBX_alarms[i].elev + UBX_dz_elev;
 
 			if (alarm_elev >= min && alarm_elev < max)
 			{
