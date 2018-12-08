@@ -1,7 +1,7 @@
 /***************************************************************************
 **                                                                        **
 **  FlySight firmware                                                     **
-**  Copyright 2018 Michael Cooper, Tom van Dijck                          **
+**  Copyright 2018 Michael Cooper, Tom van Dijck, Luke Hederman           **
 **                                                                        **
 **  This program is free software: you can redistribute it and/or modify  **
 **  it under the terms of the GNU General Public License as published by  **
@@ -34,6 +34,7 @@
 #include "Board/LEDs.h"
 #include "Log.h"
 #include "Main.h"
+#include "Nav.h"
 #include "Power.h"
 #include "Timer.h"
 #include "Tone.h"
@@ -80,6 +81,41 @@
 
 #define UBX_UNITS_KMH       0
 #define UBX_UNITS_MPH       1
+#define UBX_UNITS_KN        2
+
+#define MODE_Horizontal_speed           0
+#define MODE_Vertical_speed             1
+#define MODE_Glide_ratio                2
+#define MODE_Inverse_glide_ratio        3
+#define MODE_Total_speed                4
+#define MODE_Direction_to_destination   5
+#define MODE_Distance_to_destination    6
+#define MODE_Direction_to_bearing       7
+#define MODE_Magnitude_of_Value_1       8
+#define MODE_Change_in_Value_1          9
+#define MODE_LeftRight                 10
+#define MODE_Dive_angle                11
+
+#define SP_MODE_Horizontal_speed           0
+#define SP_MODE_Vertical_speed             1
+#define SP_MODE_Glide_ratio                2
+#define SP_MODE_Inverse_glide_ratio        3
+#define SP_MODE_Total_speed                4
+#define SP_MODE_Direction_to_destination   5
+#define SP_MODE_Distance_to_destination    6
+#define SP_MODE_Direction_to_bearing       7
+#define SP_MODE_Altitude                   8
+#define SP_MODE_Compass                    9
+#define SP_MODE_Dive_angle                11
+
+#define MODEL_Portable                  0
+#define MODEL_Stationary                2
+#define MODEL_Pedestrian                3
+#define MODEL_Automotive                4
+#define MODEL_Sea                       5
+#define MODEL_Airborne1G                6
+#define MODEL_Airborne2G                7
+#define MODEL_Airborne4G                8
 
 #define UBX_UNITS_METERS    0
 #define UBX_UNITS_FEET      1
@@ -261,13 +297,13 @@ typedef struct
 }
 UBX_ack_nak;
 
-uint8_t  UBX_model         = 7;
+uint8_t  UBX_model         = MODEL_Airborne2G;
 uint16_t UBX_rate          = 200;
-uint8_t  UBX_mode          = 2;
+uint8_t  UBX_mode          = MODE_Glide_ratio;
 int32_t  UBX_min           = 0;
 int32_t  UBX_max           = 300;
 
-uint8_t  UBX_mode_2        = 9;
+uint8_t  UBX_mode_2        = MODE_Change_in_Value_1;
 int32_t  UBX_min_2         = 300;
 int32_t  UBX_max_2         = 1500;
 int32_t  UBX_min_rate      = 100;
@@ -276,7 +312,7 @@ uint8_t  UBX_flatline      = 0;
 uint8_t  UBX_limits        = 1;
 uint8_t  UBX_use_sas       = 1;
 
-uint8_t  UBX_sp_mode       = 2;
+uint8_t  UBX_sp_mode       = MODE_Glide_ratio;
 uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
 uint16_t UBX_sp_rate       = 0;
 uint8_t  UBX_sp_decimals   = 0;
@@ -296,6 +332,13 @@ UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
 uint8_t   UBX_num_alarms   = 0;
 uint32_t  UBX_alarm_window_above = 0;
 uint32_t  UBX_alarm_window_below = 0;
+
+int32_t  UBX_dLat          = 0;
+int32_t  UBX_dLon          = 0;
+int16_t  UBX_bearing       = 0;
+uint16_t UBX_end_nav       = 0;
+uint16_t UBX_max_dist      = 10000;
+uint16_t UBX_min_angle     = 5;
 
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
@@ -713,15 +756,16 @@ static void UBX_GetValues(
 		}
 	}
 
+	int32_t tVal;
 	switch (mode)
 	{
-	case 0: // Horizontal speed
+	case MODE_Horizontal_speed:
 		*val = (current->gSpeed * 1024) / speed_mul;
 		break;
-	case 1: // Vertical speed
+	case MODE_Vertical_speed:
 		*val = (current->velD * 1024) / speed_mul;
 		break;
-	case 2: // Glide ratio
+	case MODE_Glide_ratio:
 		if (current->velD != 0)
 		{
 			*val = 10000 * (int32_t) current->gSpeed / current->velD;
@@ -729,7 +773,7 @@ static void UBX_GetValues(
 			*max *= 100;
 		}
 		break;
-	case 3: // Inverse glide ratio
+	case MODE_Inverse_glide_ratio:
 		if (current->gSpeed != 0)
 		{
 			*val = 10000 * current->velD / (int32_t) current->gSpeed;
@@ -737,10 +781,106 @@ static void UBX_GetValues(
 			*max *= 100;
 		}
 		break;
-	case 4: // Total speed
+	case MODE_Total_speed:
 		*val = (current->speed * 1024) / speed_mul;
 		break;
-	case 11: // Dive angle
+	case MODE_Direction_to_destination:
+		//check if too far from destination for Nav, would indicate user error with Lat & Lon
+		if ((calcDistance(current->lat,current->lon,UBX_dLat,UBX_dLon) < UBX_max_dist) || (UBX_max_dist == 0))
+		{
+			//check if above height tone should be silenced
+			if ((current->hMSL > (UBX_end_nav+UBX_dz_elev)) || (UBX_end_nav == 0))
+			{
+				tVal=calcDirection(current->lat,current->lon,current->heading);
+				//check if heading not within UBX_min_angle deg of bearing or tones needed for other measurement
+				if ((ABS(tVal) > UBX_min_angle) || (UBX_mode_2 != MODE_Direction_to_destination) || (UBX_min_angle==0))
+				{
+					*min = -180;
+					*max = 180;
+					//manipulate tone so biggest change is at desired heading
+					if(tVal < 0)
+					{
+						*val = -180-tVal;
+					}
+					else
+					{
+						*val = 180-tVal;
+					}
+				}
+			}
+		}
+		break;
+	case MODE_Distance_to_destination:
+		*min = 0;
+		if(UBX_max_dist != 0 )
+		{
+			*max = UBX_max_dist;
+		}
+		else
+		{
+			*max = 10000; //set a default maximum value
+		}
+		*val = calcDistance(current->lat,current->lon,UBX_dLat,UBX_dLon);
+		if(*val < *max)
+		{
+			*val = *max-*val;  //make inverse so higher pitch indicates shorter distance
+		}
+		else
+		{
+			*val = 0;  //set to lowest pitch/Hz
+		}
+		break;
+	case MODE_Direction_to_bearing:
+		//check if above height tone should be silenced
+		if ((current->hMSL > (UBX_end_nav+UBX_dz_elev)) || (UBX_end_nav == 0))
+		{
+			tVal=calcRelBearing(UBX_bearing,current->heading);
+			//check if heading not within UBX_min_angle deg of bearing or tones needed for other measurement
+			if ((ABS(tVal) > UBX_min_angle) || (UBX_mode_2 != MODE_Direction_to_bearing) || (UBX_min_angle==0))
+			{
+				*min = -180;
+				*max = 180;
+				//manipulate tone so biggest change is at desired heading
+				if(tVal < 0)
+				{
+					*val = -180-tVal;
+				}
+				else
+				{
+					*val = 180-tVal;
+				}
+			}
+		}
+		break;
+	case MODE_LeftRight:
+		//check if too far from destination for Nav, would indicate user error with Lat & Lon
+		if ((calcDistance(current->lat,current->lon,UBX_dLat,UBX_dLon) < UBX_max_dist) || (UBX_max_dist == 0))
+		{
+			//check if above height tone should be silenced
+			if ((current->hMSL > (UBX_end_nav+UBX_dz_elev)) || (UBX_end_nav == 0))
+			{
+				tVal=calcDirection(current->lat,current->lon,current->heading);
+				*min = 0;
+				*max = 10;
+				if(ABS(tVal) > UBX_min_angle)
+				{
+					if(tVal < 0)   //left turn required  - low pitch tone
+					{
+						*val = *min;
+					}
+					else           //right turn required - high pitch tone
+					{
+						*val = *max;
+					}
+				}
+				else              //mid tone
+				{
+					*val = (*max-*min)/2;
+				}
+			}
+		}
+		break;
+	case MODE_Dive_angle:
 		*val = atan2(current->velD, current->gSpeed) / M_PI * 180;
 		break;
 	}
@@ -782,30 +922,38 @@ static void UBX_SpeakValue(
 	case UBX_UNITS_MPH:
 		speed_mul = (uint16_t) (((uint32_t) speed_mul * 29297) / 65536);
 		break;
+	case UBX_UNITS_KN:
+		speed_mul = (uint16_t) (((uint32_t) speed_mul * 33713) / 65536);
+		break;
 	}
 
 	// Step 0: Initialize speech pointers, leaving room at the end for one unit character
-	
+
 	UBX_speech_ptr = UBX_speech_buf + sizeof(UBX_speech_buf) - 1;
 	end_ptr = UBX_speech_ptr;
 
 	// Step 1: Get speech value with 2 decimal places
-	
+
+	int32_t tVal;
 	switch (UBX_sp_mode)
 	{
-	case 0: // Horizontal speed
+	case SP_MODE_Horizontal_speed:
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->gSpeed * 1024) / speed_mul, 2, 1, 0);
 		break;
-	case 1: // Vertical speed
+	case SP_MODE_Vertical_speed:
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->velD * 1024) / speed_mul, 2, 1, 0);
 		break;
-	case 2: // Glide ratio
+	case SP_MODE_Glide_ratio:
 		if (current->velD != 0)
 		{
 			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->gSpeed / current->velD, 2, 1, 0);
 		}
+		else
+		{
+			*(--UBX_speech_ptr) = 0;
+		}
 		break;
-	case 3: // Inverse glide ratio
+	case SP_MODE_Inverse_glide_ratio:
 		if (current->gSpeed != 0)
 		{
 			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->velD / current->gSpeed, 2, 1, 0);
@@ -815,10 +963,58 @@ static void UBX_SpeakValue(
 			*(--UBX_speech_ptr) = 0;
 		}
 		break;
-	case 4: // Total speed
+	case SP_MODE_Total_speed:
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->speed * 1024) / speed_mul, 2, 1, 0);
 		break;
-	case 11: // Dive angle
+	case SP_MODE_Direction_to_destination:
+		//check if too far from destination for Nav, would indicate user error with Lat & Lon
+		if ((calcDistance(current->lat,current->lon,UBX_dLat,UBX_dLon) < UBX_max_dist) || (UBX_max_dist == 0))
+		{
+			//check if above height tone should be silenced
+			if ((current->hMSL > (UBX_end_nav+UBX_dz_elev)) || (UBX_end_nav == 0))
+			{
+				UBX_sp_decimals = 0;
+				tVal = calcDirection(current->lat,current->lon,current->heading);
+				UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, ABS(tVal)*100, 2, 1, 0);
+			}
+		}
+		break;
+	case SP_MODE_Distance_to_destination:
+		UBX_sp_decimals = 1;
+		tVal = calcDistance(current->lat,current->lon,UBX_dLat,UBX_dLon);  // returns metres
+		switch (UBX_sp_units)
+		{
+		case UBX_UNITS_KMH:
+			tVal = tVal / 10;
+			break;
+		case UBX_UNITS_MPH:
+			tVal = (tVal * 100) / 1609;
+			break;
+		case UBX_UNITS_KN:
+			tVal = (tVal * 100) / 1852;
+			break;
+		}
+		tVal = tVal + 5; //for correct rounding when reducing to one decimal place
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, tVal, 2, 1, 0);
+		break;
+	case SP_MODE_Direction_to_bearing:
+		//check if above height tone should be silenced
+		if ((current->hMSL > (UBX_end_nav+UBX_dz_elev)) || (UBX_end_nav == 0))
+		{
+			UBX_sp_decimals = 0;
+			tVal = calcRelBearing(UBX_bearing,current->heading);
+			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, ABS(tVal)*100, 2, 1, 0);
+		}
+		break;
+	case SP_MODE_Altitude:
+		UBX_sp_decimals = 0;
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, ((current->hMSL)-(UBX_dz_elev)), 2, 1, 0);
+		break;
+	case SP_MODE_Compass:
+		UBX_sp_decimals = 0;
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->heading/1000), 2, 1, 0);
+		break;
+	case SP_MODE_Dive_angle:
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, current->gSpeed) / M_PI * 180, 2, 1, 0);
 		break;
 	}
@@ -828,18 +1024,34 @@ static void UBX_SpeakValue(
 	if (UBX_sp_decimals == 0) end_ptr -= 4;
 	else                      end_ptr -= 3 - UBX_sp_decimals;
 	
-	// Step 3: Add units if needed, e.g., *(end_ptr++) = 'k';
-	
+	// Step 3: Add units if needed, e.g., *(end_ptr++) = 'K';
+
 	switch (UBX_sp_mode)
-	{
-	case 0: // Horizontal speed
-	case 1: // Vertical speed
-	case 2: // Glide ratio
-	case 3: // Inverse glide ratio
-	case 4: // Total speed
+ 	{
+	case SP_MODE_Direction_to_destination:
+	case SP_MODE_Direction_to_bearing:
+		if(tVal < 0)			*(end_ptr++) = 'l';
+		else if (tVal > 0)		*(end_ptr++) = 'r';
 		break;
-	}
-	
+	case SP_MODE_Distance_to_destination:
+		switch (UBX_sp_units)
+		{
+		case UBX_UNITS_MPH:
+			*(end_ptr++) = 'i';
+			break;
+		case UBX_UNITS_KMH:
+			*(end_ptr++) = 'K';
+			break;
+		case UBX_UNITS_KN:
+			*(end_ptr++) = 'n';
+			break;
+		}
+		break;
+	case SP_MODE_Altitude:
+		*(end_ptr++) = 'm';
+		break;
+ 	}
+
 	// Step 4: Terminate with a null
 
 	*(end_ptr++) = 0;
@@ -954,7 +1166,7 @@ static void UBX_UpdateAlarms(
 			suppress_tone = 1;
 		}
 	}
-	
+
 	if (suppress_tone && !UBX_suppress_tone)
 	{
 		*UBX_speech_ptr = 0;
@@ -968,7 +1180,7 @@ static void UBX_UpdateAlarms(
 	{
 		int32_t min = MIN(UBX_prevHMSL, current->hMSL);
 		int32_t max = MAX(UBX_prevHMSL, current->hMSL);
-		
+
 		for (i = 0; i < UBX_num_alarms; ++i)
 		{
 			const int32_t alarm_elev = UBX_alarms[i].elev + UBX_dz_elev;
@@ -1028,16 +1240,43 @@ static void UBX_UpdateTones(
 
 	UBX_GetValues(current, UBX_mode, &val_1, &min_1, &max_1);
 
-	if (UBX_mode_2 == 8)
+	switch (UBX_mode_2)
 	{
+	case MODE_Direction_to_destination:
+		if (UBX_mode == MODE_Direction_to_destination)  //no need to re-calculate direction
+		{
+			val_2 = ABS(val_1);
+		}
+		else
+		{
+			val_2 = ABS(calcDirection(current->lat,current->lon,current->heading));
+			val_2 = 180-val_2;  //make inverse so faster rate indicates closer to bearing
+		}
+		val_2 = pow(val_2, 3);
+		min_2 = 0;
+		max_2 = pow(180, 3);
+		break;
+	case MODE_Direction_to_bearing:
+		if (UBX_mode == MODE_Direction_to_bearing)  //no need to re-calculate direction
+		{
+			val_2 = ABS(val_1);
+		}
+		else
+		{
+			val_2 = ABS(calcRelBearing(UBX_bearing,current->heading));
+			val_2 = 180-val_2;  //make inverse so faster rate indicates closer to bearing
+		}
+		min_2 = 0;
+		max_2 = 180;
+		break;
+	case MODE_Magnitude_of_Value_1:
 		UBX_GetValues(current, UBX_mode, &val_2, &min_2, &max_2);
 		if (val_2 != UBX_INVALID_VALUE)
 		{
 			val_2 = ABS(val_2);
 		}
-	}
-	else if (UBX_mode_2 == 9)
-	{
+		break;
+	case MODE_Change_in_Value_1:
 		x2 = x1;
 		x1 = x0;
 		x0 = val_1;
@@ -1049,9 +1288,8 @@ static void UBX_UpdateTones(
 			val_2 = (int32_t) 1000 * (x2 - x0) / (2 * UBX_rate);
 			val_2 = (int32_t) 10000 * ABS(val_2) / ABS(max_1 - min_1);
 		}
-	}
-	else
-	{
+		break;
+	default:
 		UBX_GetValues(current, UBX_mode_2, &val_2, &min_2, &max_2);
 	}
 
@@ -1414,6 +1652,50 @@ void UBX_Task(void)
 			{
 				Tone_Play("dot.wav");
 			}
+			else if (*UBX_speech_ptr == 'l')
+			{
+				Tone_Play("left.wav");
+			}
+			else if (*UBX_speech_ptr == 'r')
+			{
+				Tone_Play("right.wav");
+			}
+			else if (*UBX_speech_ptr == 'i')
+			{
+				Tone_Play("miles.wav");
+			}
+			else if (*UBX_speech_ptr == 'K')
+			{
+				Tone_Play("km.wav");
+			}
+			else if (*UBX_speech_ptr == 'm')
+			{
+				Tone_Play("meters.wav");
+			}
+			else if (*UBX_speech_ptr == 'n')
+			{
+				Tone_Play("knots.wav");
+			}
+			else if (*UBX_speech_ptr == 'f')
+			{
+				Tone_Play("feet.wav");
+			}
+			else if (*UBX_speech_ptr == 'o')
+			{
+				Tone_Play("oclock.wav");
+			}
+			else if (*UBX_speech_ptr == 'a')
+			{
+				Tone_Play("10.wav");
+			}
+			else if (*UBX_speech_ptr == 'b')
+			{
+				Tone_Play("11.wav");
+			}
+			else if (*UBX_speech_ptr == 'c')
+			{
+				Tone_Play("12.wav");
+			}
 			else if (*UBX_speech_ptr == 'h')
 			{
 				Tone_Play("00.wav");
@@ -1421,14 +1703,6 @@ void UBX_Task(void)
 			else if (*UBX_speech_ptr == 'k')
 			{
 				Tone_Play("000.wav");
-			}
-			else if (*UBX_speech_ptr == 'm')
-			{
-				Tone_Play("meters.wav");
-			}
-			else if (*UBX_speech_ptr == 'f')
-			{
-				Tone_Play("feet.wav");
 			}
 			else if (*UBX_speech_ptr == 't')
 			{
@@ -1481,9 +1755,9 @@ void UBX_Task(void)
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
 
-		if ((UBX_alt_step > 0) && 
-		    (UBX_flags & UBX_SAY_ALTITUDE) && 
-		    (UBX_flags & UBX_VERTICAL_ACC) && 
+		if ((UBX_alt_step > 0) &&
+		    (UBX_flags & UBX_SAY_ALTITUDE) &&
+		    (UBX_flags & UBX_VERTICAL_ACC) &&
 			Tone_IsIdle())
 		{
 			UBX_flags &= ~UBX_SAY_ALTITUDE;

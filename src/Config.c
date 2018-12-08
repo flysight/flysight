@@ -1,7 +1,7 @@
 /***************************************************************************
 **                                                                        **
 **  FlySight firmware                                                     **
-**  Copyright 2018 Michael Cooper, Will Glynn                             **
+**  Copyright 2018 Michael Cooper, Will Glynn, Luke Hederman              **
 **                                                                        **
 **  This program is free software: you can redistribute it and/or modify  **
 **  it under the terms of the GNU General Public License as published by  **
@@ -67,6 +67,9 @@ Mode:      2     ; Measurement mode\r\n\
                  ;   2 = Glide ratio\r\n\
                  ;   3 = Inverse glide ratio\r\n\
                  ;   4 = Total speed\r\n\
+                 ;   5 = Direction to destination\r\n\
+                 ;   6 = Distance to destination\r\n\
+                 ;   7 = Direction to bearing\r\n\
                  ;   11 = Dive angle\r\n\
 Min:       0     ; Lowest pitch value\r\n\
                  ;   cm/s        in Mode 0, 1, or 4\r\n\
@@ -91,6 +94,9 @@ Mode_2:    9     ; Determines tone rate\r\n\
                  ;   2 = Glide ratio\r\n\
                  ;   3 = Inverse glide ratio\r\n\
                  ;   4 = Total speed\r\n\
+                 ;   5 = Direction to destination\r\n\
+                 ;   6 = Distance to destination\r\n\
+                 ;   7 = Direction to bearing\r\n\
                  ;   8 = Magnitude of Value 1\r\n\
                  ;   9 = Change in Value 1\r\n\
                  ;   11 = Dive angle\r\n\
@@ -118,10 +124,14 @@ Sp_Mode:   2     ; Speech mode\r\n\
                  ;   2 = Glide ratio\r\n\
                  ;   3 = Inverse glide ratio\r\n\
                  ;   4 = Total speed\r\n\
+                 ;   5 = Direction to destination\r\n\
+                 ;   6 = Distance to destination\r\n\
+                 ;   7 = Direction to bearing\r\n\
                  ;   11 = Dive angle\r\n\
 Sp_Units:  1     ; Speech units\r\n\
                  ;   0 = km/h\r\n\
                  ;   1 = mph\r\n\
+                 ;   2 = kn\r\n\
 Sp_Rate:   0     ; Speech rate (s)\r\n\
                  ;   0 = No speech\r\n\
 Sp_Dec:    0     ; Decimal places for speech\r\n\
@@ -206,7 +216,24 @@ Alt_Step:      0 ; Altitude between announcements\r\n\
 ;          alarms will be audible.\r\n\
 \r\n\
 Win_Top:       0 ; Silence window top (m)\r\n\
-Win_Bottom:    0 ; Silence window bottom (m)\r\n";
+Win_Bottom:    0 ; Silence window bottom (m)\r\n\
+\r\n\
+; Flyblind settings\r\n\
+\r\n\
+      Lat: 532497000 ; Latitude of destination  (Decimal degrees *10,000,000)\r\n\
+                     ;   e.g. 43.6423 should be entered as 436423000 \r\n\
+      Lon: -71192000 ; Longitude of destination (Decimal degrees *10,000,000)\r\n\
+                     ;   e.g. -79.387 should be entered as -793870000 \r\n\
+  Bearing: 0         ; Bearing to follow (Degrees) (Mode 7)\r\n\
+ \r\n\
+ ; Flyblind silence settings\r\n\
+ \r\n\
+  End_Nav: 500       ; Minimum height above DZ_Elev (m) for tone or speech (Modes/SP_Modes 5 & 7)\r\n\
+                     ;   0 = Disable\r\n\
+                     ;   Max value = 3000\r\n\
+ Max_Dist: 10000     ; Maximum distance from destination (m) for tone or speech (Mode/SP_Mode 5)\r\n\
+                     ;   0 = Disable\r\n\
+                     ;   Max value = 10000\r\n" ;
 
 static const char Config_Model[] PROGMEM      = "Model";
 static const char Config_Rate[] PROGMEM       = "Rate";
@@ -236,6 +263,12 @@ static const char Config_DZ_Elev[] PROGMEM    = "DZ_Elev";
 static const char Config_Alarm_Elev[] PROGMEM = "Alarm_Elev";
 static const char Config_Alarm_Type[] PROGMEM = "Alarm_Type";
 static const char Config_Alarm_File[] PROGMEM = "Alarm_File";
+static const char Config_Lat[] PROGMEM        = "Lat";
+static const char Config_Lon[] PROGMEM        = "Lon";
+static const char Config_Bearing[] PROGMEM    = "Bearing";
+static const char Config_End_Nav[] PROGMEM    = "End_Nav";
+static const char Config_Max_Dist[] PROGMEM   = "Max_Dist";
+static const char Config_Min_Angle[] PROGMEM  = "Min_Angle";
 static const char Config_TZ_Offset[] PROGMEM  = "TZ_Offset";
 static const char Config_Init_Mode[] PROGMEM  = "Init_Mode";
        const char Config_Init_File[] PROGMEM  = "Init_File";
@@ -295,19 +328,19 @@ static FRESULT Config_ReadSingle(
 
 		HANDLE_VALUE(Config_Model,     UBX_model,        val, val >= 0 && val <= 8);
 		HANDLE_VALUE(Config_Rate,      UBX_rate,         val, val >= 100);
-		HANDLE_VALUE(Config_Mode,      UBX_mode,         val, (val >= 0 && val <= 4) || (val == 11));
+		HANDLE_VALUE(Config_Mode,      UBX_mode,         val, (val >= 0 && val <= 7) || (val == 11));
 		HANDLE_VALUE(Config_Min,       UBX_min,          val, TRUE);
 		HANDLE_VALUE(Config_Max,       UBX_max,          val, TRUE);
 		HANDLE_VALUE(Config_Limits,    UBX_limits,       val, val >= 0 && val <= 2);
 		HANDLE_VALUE(Config_Volume,    Tone_volume,      8 - val, val >= 0 && val <= 8);
-		HANDLE_VALUE(Config_Mode_2,    UBX_mode_2,       val, (val >= 0 && val <= 4) || (val >= 8 && val <= 9) || (val == 11));
+		HANDLE_VALUE(Config_Mode_2,    UBX_mode_2,       val, (val >= 0 && val <= 9) || (val == 11));
 		HANDLE_VALUE(Config_Min_Val_2, UBX_min_2,        val, TRUE);
 		HANDLE_VALUE(Config_Max_Val_2, UBX_max_2,        val, TRUE);
 		HANDLE_VALUE(Config_Min_Rate,  UBX_min_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
 		HANDLE_VALUE(Config_Max_Rate,  UBX_max_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
 		HANDLE_VALUE(Config_Flatline,  UBX_flatline,     val, val == 0 || val == 1);
-		HANDLE_VALUE(Config_Sp_Mode,   UBX_sp_mode,      val, (val >= 0 && val <= 6) || (val == 11));
-		HANDLE_VALUE(Config_Sp_Units,  UBX_sp_units,     val, val >= 0 && val <= 1);
+		HANDLE_VALUE(Config_Sp_Mode,   UBX_sp_mode,      val, (val >= 0 && val <= 7) || (val == 11));
+		HANDLE_VALUE(Config_Sp_Units,  UBX_sp_units,     val, val >= 0 && val <= 2);
 		HANDLE_VALUE(Config_Sp_Rate,   UBX_sp_rate,      val * 1000, val >= 0 && val <= 32);
 		HANDLE_VALUE(Config_Sp_Dec,    UBX_sp_decimals,  val, val >= 0 && val <= 2);
 		HANDLE_VALUE(Config_Sp_Volume, Tone_sp_volume,   8 - val, val >= 0 && val <= 8);
@@ -318,6 +351,12 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_Window,    UBX_alarm_window_below, val * 1000, TRUE);
 		HANDLE_VALUE(Config_Window_Above, UBX_alarm_window_above, val * 1000, TRUE);
 		HANDLE_VALUE(Config_Window_Below, UBX_alarm_window_below, val * 1000, TRUE);
+		HANDLE_VALUE(Config_Lat,       UBX_dLat,         val, val >= -900000000 && val <= 900000000);
+		HANDLE_VALUE(Config_Lon,       UBX_dLon,         val, val >= -1800000000 && val <= 1800000000);
+		HANDLE_VALUE(Config_Bearing,   UBX_bearing,      val, val >= 0 && val <= 360);
+		HANDLE_VALUE(Config_End_Nav,   UBX_end_nav,      val * 1000, TRUE);
+		HANDLE_VALUE(Config_Max_Dist,  UBX_max_dist,     val, val >= 0 && val <= 10000);
+		HANDLE_VALUE(Config_Min_Angle, UBX_min_angle,    val, val >= 0 && val <= 360);
 		HANDLE_VALUE(Config_DZ_Elev,   UBX_dz_elev,      val * 1000, TRUE);
 		HANDLE_VALUE(Config_TZ_Offset, Log_tz_offset,    val, TRUE);
 		HANDLE_VALUE(Config_Init_Mode, UBX_init_mode,    val, val >= 0 && val <= 2);

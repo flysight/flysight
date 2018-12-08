@@ -39,6 +39,7 @@ SRC          = src/Main.c                                                  \
 	           src/Debug.c                                                 \
 	           src/Descriptors.c                                           \
 	           src/Log.c                                                   \
+	           src/Nav.c                                                   \
 	           src/Power.c                                                 \
 	           src/Signature.c                                             \
 	           src/Time.c                                                  \
