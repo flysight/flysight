@@ -244,8 +244,6 @@ static const char Config_Win_Bottom[] PROGMEM = "Win_Bottom";
 static const char Config_Alt_Units[] PROGMEM  = "Alt_Units";
 static const char Config_Alt_Step[] PROGMEM   = "Alt_Step";
 
-char Config_buf[80];
-
 static void Config_WriteString_P(
 	const char *str,
 	FIL        *file)
@@ -277,12 +275,12 @@ static FRESULT Config_ReadSingle(
 
 	while (!f_eof(&Main_file))
 	{
-		f_gets(Config_buf, sizeof(Config_buf), &Main_file);
+		f_gets(UBX_buffer, sizeof(UBX_buffer), &Main_file);
 
-		len = strcspn(Config_buf, ";");
-		Config_buf[len] = 0;
+		len = strcspn(UBX_buffer, ";");
+		UBX_buffer[len] = 0;
 		
-		name = strtok(Config_buf, " \r\n\t:");
+		name = strtok(UBX_buffer, " \r\n\t:");
 		if (name == 0) continue ;
 		
 		result = strtok(0, " \r\n\t:");
@@ -386,10 +384,10 @@ void Config_Read(void)
 		f_close(&Main_file);
 	}
 
-	eeprom_read_block(UBX_buf, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
+	eeprom_read_block(UBX_filename, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
 
-	if (UBX_buf[0] != 0 && UBX_buf[0] != 0xff)
+	if (UBX_filename[0] != 0 && UBX_filename[0] != 0xff)
 	{
-		res = Config_ReadSingle("\\config", UBX_buf);
+		res = Config_ReadSingle("\\config", UBX_filename);
 	}
 }

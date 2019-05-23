@@ -26,8 +26,11 @@
 
 #include <avr/io.h>
 
-#define UBX_MAX_ALARMS  10
-#define UBX_MAX_WINDOWS 2
+#define UBX_MAX_ALARMS   10
+#define UBX_MAX_WINDOWS  2
+
+#define UBX_BUFFER_LEN   150
+#define UBX_FILENAME_LEN 13
 
 typedef struct
 {
@@ -78,7 +81,8 @@ extern uint32_t  UBX_alt_step;
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
 
-extern char      UBX_buf[150];
+extern char      UBX_buffer[UBX_BUFFER_LEN];
+extern char      UBX_filename[UBX_FILENAME_LEN];
 
 extern UBX_window UBX_windows[UBX_MAX_WINDOWS];
 extern uint8_t    UBX_num_windows;

@@ -84,7 +84,7 @@
 #define UBX_UNITS_METERS    0
 #define UBX_UNITS_FEET      1
 
-#define UBX_BUFFER_LEN      4
+#define UBX_SAVED_LEN       4
 
 #define UBX_MSG_POSLLH      0x01
 #define UBX_MSG_SOL         0x02
@@ -300,7 +300,8 @@ uint32_t  UBX_alarm_window_below = 0;
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
 
-char UBX_buf[150];
+char UBX_buffer[UBX_BUFFER_LEN];
+char UBX_filename[UBX_FILENAME_LEN];
 
 UBX_window UBX_windows[UBX_MAX_WINDOWS];
 uint8_t    UBX_num_windows = 0;
@@ -336,7 +337,7 @@ typedef struct
 	uint8_t  sec;      // Second of minute             (0..59)
 }
 UBX_saved_t ;
-static UBX_saved_t UBX_saved[UBX_BUFFER_LEN];
+static UBX_saved_t UBX_saved[UBX_SAVED_LEN];
 
 static uint8_t UBX_read  = 0;
 static uint8_t UBX_write = 0;
@@ -987,9 +988,9 @@ static void UBX_UpdateAlarms(
 					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
 					break ;
 				case 4:	// play file
-					strcpy(UBX_buf, UBX_alarms[i].filename);
-					strcat(UBX_buf, ".wav");
-					Tone_Play(UBX_buf);
+					strcpy(UBX_filename, UBX_alarms[i].filename);
+					strcat(UBX_filename, ".wav");
+					Tone_Play(UBX_filename);
 					break;
 				}
 				
@@ -1084,7 +1085,7 @@ static void UBX_ReceiveMessage(
 	uint8_t msg_received, 
 	uint32_t time_of_week)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_SAVED_LEN);
 
 	if (time_of_week != UBX_time_of_week)
 	{
@@ -1148,7 +1149,7 @@ static void UBX_ReceiveMessage(
 
 static void UBX_HandleNavSol(void)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_SAVED_LEN);
 	UBX_nav_sol *nav_sol = (UBX_nav_sol *) UBX_payload;
 
 	current->gpsFix = nav_sol->gpsFix;
@@ -1159,7 +1160,7 @@ static void UBX_HandleNavSol(void)
 
 static void UBX_HandlePosition(void)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_SAVED_LEN);
 	UBX_nav_posllh *nav_pos_llh = (UBX_nav_posllh *) UBX_payload;
 
 	current->lon  = nav_pos_llh->lon;
@@ -1173,7 +1174,7 @@ static void UBX_HandlePosition(void)
 
 static void UBX_HandleVelocity(void)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_SAVED_LEN);
 	UBX_nav_velned *nav_velned = (UBX_nav_velned *) UBX_payload;
 
 	current->velN    = nav_velned->velN;
@@ -1190,7 +1191,7 @@ static void UBX_HandleVelocity(void)
 
 static void UBX_HandleTimeUTC(void)
 {
-	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_BUFFER_LEN);
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_SAVED_LEN);
 	UBX_nav_timeutc *nav_timeutc = (UBX_nav_timeutc *) UBX_payload;
 
 	current->nano  = nav_timeutc->nano;
@@ -1206,7 +1207,7 @@ static void UBX_HandleTimeUTC(void)
 
 static void UBX_HandleMessage(void)
 {
-	if ((uint8_t) (UBX_read + UBX_BUFFER_LEN) == UBX_write)
+	if ((uint8_t) (UBX_read + UBX_SAVED_LEN) == UBX_write)
 	{
 		++UBX_read;
 	}
@@ -1341,11 +1342,11 @@ void UBX_Task(void)
 	case st_idle:
 		if (Tone_CanWrite() && disk_is_ready() && UBX_read != UBX_write)
 		{
-			current = UBX_saved + (UBX_read % UBX_BUFFER_LEN);
+			current = UBX_saved + (UBX_read % UBX_SAVED_LEN);
 
 			Power_Hold();
 
-			ptr = UBX_buf + sizeof(UBX_buf);
+			ptr = UBX_buffer + sizeof(UBX_buffer);
 			*(--ptr) = 0;
 
 			*(--ptr) = '\n';
@@ -1433,39 +1434,39 @@ void UBX_Task(void)
 			else if (*UBX_speech_ptr == 't')
 			{
 				++UBX_speech_ptr;
-				UBX_buf[0] = '1';
-				UBX_buf[1] = *UBX_speech_ptr;
-				UBX_buf[2] = '.';
-				UBX_buf[3] = 'w';
-				UBX_buf[4] = 'a';
-				UBX_buf[5] = 'v';
-				UBX_buf[6] = 0;
+				UBX_filename[1] = *UBX_speech_ptr;
+				UBX_filename[0] = '1';
+				UBX_filename[2] = '.';
+				UBX_filename[3] = 'w';
+				UBX_filename[4] = 'a';
+				UBX_filename[5] = 'v';
+				UBX_filename[6] = 0;
 
-				Tone_Play(UBX_buf);
+				Tone_Play(UBX_filename);
 			}
 			else if (*UBX_speech_ptr == 'x')
 			{
 				++UBX_speech_ptr;
-				UBX_buf[0] = *UBX_speech_ptr;
-				UBX_buf[1] = '0';
-				UBX_buf[2] = '.';
-				UBX_buf[3] = 'w';
-				UBX_buf[4] = 'a';
-				UBX_buf[5] = 'v';
-				UBX_buf[6] = 0;
+				UBX_filename[0] = *UBX_speech_ptr;
+				UBX_filename[1] = '0';
+				UBX_filename[2] = '.';
+				UBX_filename[3] = 'w';
+				UBX_filename[4] = 'a';
+				UBX_filename[5] = 'v';
+				UBX_filename[6] = 0;
 
-				Tone_Play(UBX_buf);
+				Tone_Play(UBX_filename);
 			}
 			else
 			{
-				UBX_buf[0] = *UBX_speech_ptr;
-				UBX_buf[1] = '.';
-				UBX_buf[2] = 'w';
-				UBX_buf[3] = 'a';
-				UBX_buf[4] = 'v';
-				UBX_buf[5] = 0;
+				UBX_filename[0] = *UBX_speech_ptr;
+				UBX_filename[1] = '.';
+				UBX_filename[2] = 'w';
+				UBX_filename[3] = 'a';
+				UBX_filename[4] = 'v';
+				UBX_filename[5] = 0;
 				
-				Tone_Play(UBX_buf);
+				Tone_Play(UBX_filename);
 			}
 			
 			++UBX_speech_ptr;
