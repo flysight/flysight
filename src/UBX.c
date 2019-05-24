@@ -47,7 +47,7 @@
 #define UBX_INVALID_VALUE   INT32_MAX
 
 #define UBX_TIMEOUT         500 // ACK/NAK timeout (ms)
-#define UBX_MAX_PAYLOAD_LEN 64
+#define UBX_MAX_PAYLOAD_LEN 52
 
 #define UBX_SYNC_1          0xb5
 #define UBX_SYNC_2          0x62
