@@ -112,6 +112,10 @@ Flatline:  0     ; Flatline at minimum rate\r\n\
 \r\n\
 ; Speech settings\r\n\
 \r\n\
+Sp_Rate:   0     ; Speech rate (s)\r\n\
+                 ;   0 = No speech\r\n\
+Sp_Volume: 8     ; 0 (min) to 8 (max)\r\n\
+\r\n\
 Sp_Mode:   2     ; Speech mode\r\n\
                  ;   0 = Horizontal speed\r\n\
                  ;   1 = Vertical speed\r\n\
@@ -122,10 +126,7 @@ Sp_Mode:   2     ; Speech mode\r\n\
 Sp_Units:  1     ; Speech units\r\n\
                  ;   0 = km/h\r\n\
                  ;   1 = mph\r\n\
-Sp_Rate:   0     ; Speech rate (s)\r\n\
-                 ;   0 = No speech\r\n\
 Sp_Dec:    0     ; Decimal places for speech\r\n\
-Sp_Volume: 8     ; 0 (min) to 8 (max)\r\n\
 \r\n\
 ; Thresholds\r\n\
 \r\n\
@@ -304,10 +305,7 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_Min_Rate,  UBX_min_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
 		HANDLE_VALUE(Config_Max_Rate,  UBX_max_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
 		HANDLE_VALUE(Config_Flatline,  UBX_flatline,     val, val == 0 || val == 1);
-		HANDLE_VALUE(Config_Sp_Mode,   UBX_sp_mode,      val, (val >= 0 && val <= 6) || (val == 11));
-		HANDLE_VALUE(Config_Sp_Units,  UBX_sp_units,     val, val >= 0 && val <= 1);
 		HANDLE_VALUE(Config_Sp_Rate,   UBX_sp_rate,      val * 1000, val >= 0 && val <= 32);
-		HANDLE_VALUE(Config_Sp_Dec,    UBX_sp_decimals,  val, val >= 0 && val <= 2);
 		HANDLE_VALUE(Config_Sp_Volume, Tone_sp_volume,   8 - val, val >= 0 && val <= 8);
 		HANDLE_VALUE(Config_V_Thresh,  UBX_threshold,    val, TRUE);
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
@@ -355,6 +353,23 @@ static FRESULT Config_ReadSingle(
 		if (!strcmp_P(name, Config_Win_Bottom) && UBX_num_windows <= UBX_MAX_WINDOWS)
 		{
 			UBX_windows[UBX_num_windows - 1].bottom = val * 1000;
+		}
+
+		if (!strcmp_P(name, Config_Sp_Mode) && UBX_num_speech < UBX_MAX_SPEECH)
+		{
+			++UBX_num_speech;
+			UBX_speech[UBX_num_speech - 1].mode = val;
+			UBX_speech[UBX_num_speech - 1].units = UBX_UNITS_MPH;
+			UBX_speech[UBX_num_speech - 1].decimals = 0;
+		}
+		if (!strcmp_P(name, Config_Sp_Units) && UBX_num_speech <= UBX_MAX_SPEECH)
+		{
+			UBX_speech[UBX_num_speech - 1].units = val;
+		}
+		if (!strcmp_P(name, Config_Sp_Dec) && UBX_num_speech <= UBX_MAX_SPEECH)
+		{
+			result[8] = '\0';
+			UBX_speech[UBX_num_speech - 1].decimals = val;
 		}
 	}
 	

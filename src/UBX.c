@@ -78,12 +78,6 @@
 #define UBX_NMEA_GPRMC      0x04
 #define UBX_NMEA_GPVTG      0x05
 
-#define UBX_UNITS_KMH       0
-#define UBX_UNITS_MPH       1
-
-#define UBX_UNITS_METERS    0
-#define UBX_UNITS_FEET      1
-
 #define UBX_SAVED_LEN       4
 
 #define UBX_MSG_POSLLH      0x01
@@ -276,10 +270,10 @@ uint8_t  UBX_flatline      = 0;
 uint8_t  UBX_limits        = 1;
 uint8_t  UBX_use_sas       = 1;
 
-uint8_t  UBX_sp_mode       = 2;
-uint8_t  UBX_sp_units      = UBX_UNITS_MPH;
-uint16_t UBX_sp_rate       = 0;
-uint8_t  UBX_sp_decimals   = 0;
+UBX_speech_t UBX_speech[UBX_MAX_SPEECH];
+uint8_t      UBX_num_speech = 0;
+uint8_t      UBX_cur_speech = 0;
+uint16_t     UBX_sp_rate    = 0;
 
 uint8_t  UBX_alt_units     = UBX_UNITS_FEET;
 uint32_t UBX_alt_step      = 0;
@@ -292,18 +286,18 @@ static uint16_t UBX_sp_counter = 0;
 uint32_t UBX_threshold     = 1000;
 uint32_t UBX_hThreshold    = 0;
 
-UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
-uint8_t   UBX_num_alarms   = 0;
-uint32_t  UBX_alarm_window_above = 0;
-uint32_t  UBX_alarm_window_below = 0;
+UBX_alarm_t UBX_alarms[UBX_MAX_ALARMS];
+uint8_t     UBX_num_alarms   = 0;
+uint32_t    UBX_alarm_window_above = 0;
+uint32_t    UBX_alarm_window_below = 0;
 
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
 
 UBX_buffer_t UBX_buffer;
 
-UBX_window UBX_windows[UBX_MAX_WINDOWS];
-uint8_t    UBX_num_windows = 0;
+UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
+uint8_t      UBX_num_windows = 0;
 
 int32_t UBX_dz_elev = 0;
 
@@ -774,7 +768,7 @@ static void UBX_SpeakValue(
 		}
 	}
 
-	switch (UBX_sp_units)
+	switch (UBX_speech[UBX_cur_speech].units)
 	{
 	case UBX_UNITS_KMH:
 		speed_mul = (uint16_t) (((uint32_t) speed_mul * 18204) / 65536);
@@ -791,7 +785,7 @@ static void UBX_SpeakValue(
 
 	// Step 1: Get speech value with 2 decimal places
 	
-	switch (UBX_sp_mode)
+	switch (UBX_speech[UBX_cur_speech].mode)
 	{
 	case 0: // Horizontal speed
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->gSpeed * 1024) / speed_mul, 2, 1, 0);
@@ -825,12 +819,12 @@ static void UBX_SpeakValue(
 	
 	// Step 2: Truncate to the desired number of decimal places
 
-	if (UBX_sp_decimals == 0) end_ptr -= 4;
-	else                      end_ptr -= 3 - UBX_sp_decimals;
+	if (UBX_speech[UBX_cur_speech].decimals == 0) end_ptr -= 4;
+	else end_ptr -= 3 - UBX_speech[UBX_cur_speech].decimals;
 	
 	// Step 3: Add units if needed, e.g., *(end_ptr++) = 'k';
 	
-	switch (UBX_sp_mode)
+	switch (UBX_speech[UBX_cur_speech].mode)
 	{
 	case 0: // Horizontal speed
 	case 1: // Vertical speed
@@ -1062,9 +1056,12 @@ static void UBX_UpdateTones(
 		{
 			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
 				
-			if (UBX_sp_rate != 0 && UBX_sp_counter >= UBX_sp_rate)
+			if (UBX_sp_rate != 0 && 
+			    UBX_num_speech != 0 && 
+			    UBX_sp_counter >= UBX_sp_rate)
 			{
 				UBX_SpeakValue(current);
+				UBX_cur_speech = (UBX_cur_speech + 1) % UBX_num_speech;
 				UBX_sp_counter = 0;
 			}
 		}
