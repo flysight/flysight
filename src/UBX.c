@@ -300,8 +300,7 @@ uint32_t  UBX_alarm_window_below = 0;
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
 
-char UBX_buffer[UBX_BUFFER_LEN];
-char UBX_filename[UBX_FILENAME_LEN];
+UBX_buffer_t UBX_buffer;
 
 UBX_window UBX_windows[UBX_MAX_WINDOWS];
 uint8_t    UBX_num_windows = 0;
@@ -988,9 +987,9 @@ static void UBX_UpdateAlarms(
 					Tone_Beep(TONE_MAX_PITCH - 1, -TONE_CHIRP_MAX, TONE_LENGTH_125_MS);
 					break ;
 				case 4:	// play file
-					strcpy(UBX_filename, UBX_alarms[i].filename);
-					strcat(UBX_filename, ".wav");
-					Tone_Play(UBX_filename);
+					strcpy(UBX_buffer.filename, UBX_alarms[i].filename);
+					strcat(UBX_buffer.filename, ".wav");
+					Tone_Play(UBX_buffer.filename);
 					break;
 				}
 				
@@ -1346,7 +1345,7 @@ void UBX_Task(void)
 
 			Power_Hold();
 
-			ptr = UBX_buffer + sizeof(UBX_buffer);
+			ptr = UBX_buffer.buffer + sizeof(UBX_buffer.buffer);
 			*(--ptr) = 0;
 
 			*(--ptr) = '\n';
@@ -1434,39 +1433,39 @@ void UBX_Task(void)
 			else if (*UBX_speech_ptr == 't')
 			{
 				++UBX_speech_ptr;
-				UBX_filename[1] = *UBX_speech_ptr;
-				UBX_filename[0] = '1';
-				UBX_filename[2] = '.';
-				UBX_filename[3] = 'w';
-				UBX_filename[4] = 'a';
-				UBX_filename[5] = 'v';
-				UBX_filename[6] = 0;
+				UBX_buffer.filename[1] = *UBX_speech_ptr;
+				UBX_buffer.filename[0] = '1';
+				UBX_buffer.filename[2] = '.';
+				UBX_buffer.filename[3] = 'w';
+				UBX_buffer.filename[4] = 'a';
+				UBX_buffer.filename[5] = 'v';
+				UBX_buffer.filename[6] = 0;
 
-				Tone_Play(UBX_filename);
+				Tone_Play(UBX_buffer.filename);
 			}
 			else if (*UBX_speech_ptr == 'x')
 			{
 				++UBX_speech_ptr;
-				UBX_filename[0] = *UBX_speech_ptr;
-				UBX_filename[1] = '0';
-				UBX_filename[2] = '.';
-				UBX_filename[3] = 'w';
-				UBX_filename[4] = 'a';
-				UBX_filename[5] = 'v';
-				UBX_filename[6] = 0;
+				UBX_buffer.filename[0] = *UBX_speech_ptr;
+				UBX_buffer.filename[1] = '0';
+				UBX_buffer.filename[2] = '.';
+				UBX_buffer.filename[3] = 'w';
+				UBX_buffer.filename[4] = 'a';
+				UBX_buffer.filename[5] = 'v';
+				UBX_buffer.filename[6] = 0;
 
-				Tone_Play(UBX_filename);
+				Tone_Play(UBX_buffer.filename);
 			}
 			else
 			{
-				UBX_filename[0] = *UBX_speech_ptr;
-				UBX_filename[1] = '.';
-				UBX_filename[2] = 'w';
-				UBX_filename[3] = 'a';
-				UBX_filename[4] = 'v';
-				UBX_filename[5] = 0;
+				UBX_buffer.filename[0] = *UBX_speech_ptr;
+				UBX_buffer.filename[1] = '.';
+				UBX_buffer.filename[2] = 'w';
+				UBX_buffer.filename[3] = 'a';
+				UBX_buffer.filename[4] = 'v';
+				UBX_buffer.filename[5] = 0;
 				
-				Tone_Play(UBX_filename);
+				Tone_Play(UBX_buffer.filename);
 			}
 			
 			++UBX_speech_ptr;

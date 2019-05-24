@@ -47,6 +47,13 @@ typedef struct
 }
 UBX_window;
 
+typedef struct
+{
+	char buffer[UBX_BUFFER_LEN - UBX_FILENAME_LEN];
+	char filename[UBX_FILENAME_LEN];
+}
+UBX_buffer_t;
+
 extern uint8_t   UBX_model;
 extern uint16_t  UBX_rate;
 extern uint8_t   UBX_mode;
@@ -81,8 +88,7 @@ extern uint32_t  UBX_alt_step;
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
 
-extern char      UBX_buffer[UBX_BUFFER_LEN];
-extern char      UBX_filename[UBX_FILENAME_LEN];
+extern UBX_buffer_t UBX_buffer;
 
 extern UBX_window UBX_windows[UBX_MAX_WINDOWS];
 extern uint8_t    UBX_num_windows;

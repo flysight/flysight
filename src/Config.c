@@ -275,12 +275,12 @@ static FRESULT Config_ReadSingle(
 
 	while (!f_eof(&Main_file))
 	{
-		f_gets(UBX_buffer, sizeof(UBX_buffer), &Main_file);
+		f_gets(UBX_buffer.buffer, sizeof(UBX_buffer.buffer), &Main_file);
 
-		len = strcspn(UBX_buffer, ";");
-		UBX_buffer[len] = 0;
+		len = strcspn(UBX_buffer.buffer, ";");
+		UBX_buffer.buffer[len] = 0;
 		
-		name = strtok(UBX_buffer, " \r\n\t:");
+		name = strtok(UBX_buffer.buffer, " \r\n\t:");
 		if (name == 0) continue ;
 		
 		result = strtok(0, " \r\n\t:");
@@ -384,10 +384,10 @@ void Config_Read(void)
 		f_close(&Main_file);
 	}
 
-	eeprom_read_block(UBX_filename, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
+	eeprom_read_block(UBX_buffer.filename, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
 
-	if (UBX_filename[0] != 0 && UBX_filename[0] != 0xff)
+	if (UBX_buffer.filename[0] != 0 && UBX_buffer.filename[0] != 0xff)
 	{
-		res = Config_ReadSingle("\\config", UBX_filename);
+		res = Config_ReadSingle("\\config", UBX_buffer.filename);
 	}
 }
