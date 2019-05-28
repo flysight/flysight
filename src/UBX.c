@@ -35,10 +35,13 @@
 #include "Log.h"
 #include "Main.h"
 #include "Power.h"
+#include "Stack.h"
 #include "Timer.h"
 #include "Tone.h"
 #include "uart.h"
 #include "UBX.h"
+
+#define STACK_PAINTING
 
 #define ABS(a)   ((a) < 0     ? -(a) : (a))
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
@@ -345,9 +348,15 @@ static uint8_t UBX_suppress_tone = 0;
 static char UBX_speech_buf[16] = "\0";
 static char *UBX_speech_ptr = UBX_speech_buf;
 
+#ifdef STACK_PAINTING
+static const char UBX_header[] PROGMEM = 
+	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,heading,cAcc,gpsFix,numSV,stack\r\n"
+	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),(deg),(deg),,,\r\n";
+#else
 static const char UBX_header[] PROGMEM = 
 	"time,lat,lon,hMSL,velN,velE,velD,hAcc,vAcc,sAcc,heading,cAcc,gpsFix,numSV\r\n"
 	",(deg),(deg),(m),(m/s),(m/s),(m/s),(m),(m),(m/s),(deg),(deg),,\r\n";
+#endif
 
 static enum
 {
@@ -1320,6 +1329,11 @@ void UBX_Init(void)
 
 void UBX_Task(void)
 {
+#ifdef STACK_PAINTING
+	static int32_t stack_count = 0;
+	int32_t temp;
+#endif
+	
 	unsigned int ch;
 
 	UBX_saved_t *current;
@@ -1346,27 +1360,38 @@ void UBX_Task(void)
 			*(--ptr) = 0;
 
 			*(--ptr) = '\n';
-			ptr = Log_WriteInt32ToBuf(ptr, current->numSV,     0, 0, '\r');
-			ptr = Log_WriteInt32ToBuf(ptr, current->gpsFix,    0, 0, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->cAcc,   5, 1, ',');
+#ifdef STACK_PAINTING
+			temp = Stack_Count();
+			if (temp < stack_count)
+			{
+				stack_count = temp;
+			}
+
+			ptr = Log_WriteInt32ToBuf(ptr, stack_count,      0, 0, '\r');
+			ptr = Log_WriteInt32ToBuf(ptr, current->numSV,   0, 0, ',');
+#else
+			ptr = Log_WriteInt32ToBuf(ptr, current->numSV,   0, 0, '\r');
+#endif
+			ptr = Log_WriteInt32ToBuf(ptr, current->gpsFix,  0, 0, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->cAcc,    5, 1, ',');
 			ptr = Log_WriteInt32ToBuf(ptr, current->heading, 5, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->sAcc,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->vAcc,  3, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->hAcc,  3, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->velD,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->velE,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->velN,   2, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->hMSL,  3, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->lon,   7, 1, ',');
-			ptr = Log_WriteInt32ToBuf(ptr, current->lat,   7, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->sAcc,    2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->vAcc,    3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->hAcc,    3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->velD,    2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->velE,    2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->velN,    2, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->hMSL,    3, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->lon,     7, 1, ',');
+			ptr = Log_WriteInt32ToBuf(ptr, current->lat,     7, 1, ',');
 			*(--ptr) = ',';
 			ptr = Log_WriteInt32ToBuf(ptr, (current->nano + 5000000) / 10000000, 2, 0, 'Z');
-			ptr = Log_WriteInt32ToBuf(ptr, current->sec,   2, 0, '.');
-			ptr = Log_WriteInt32ToBuf(ptr, current->min,   2, 0, ':');
-			ptr = Log_WriteInt32ToBuf(ptr, current->hour,  2, 0, ':');
-			ptr = Log_WriteInt32ToBuf(ptr, current->day,   2, 0, 'T');
-			ptr = Log_WriteInt32ToBuf(ptr, current->month, 2, 0, '-');
-			ptr = Log_WriteInt32ToBuf(ptr, current->year,  4, 0, '-');
+			ptr = Log_WriteInt32ToBuf(ptr, current->sec,     2, 0, '.');
+			ptr = Log_WriteInt32ToBuf(ptr, current->min,     2, 0, ':');
+			ptr = Log_WriteInt32ToBuf(ptr, current->hour,    2, 0, ':');
+			ptr = Log_WriteInt32ToBuf(ptr, current->day,     2, 0, 'T');
+			ptr = Log_WriteInt32ToBuf(ptr, current->month,   2, 0, '-');
+			ptr = Log_WriteInt32ToBuf(ptr, current->year,    4, 0, '-');
 			++UBX_read;
 
 			f_puts(ptr, &Main_file);
