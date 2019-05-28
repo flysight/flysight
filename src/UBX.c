@@ -41,7 +41,9 @@
 #include "uart.h"
 #include "UBX.h"
 
-#define STACK_PAINTING
+/*
+#define STACK_PAINTING	// Define to enable stack debugging
+*/
 
 #define ABS(a)   ((a) < 0     ? -(a) : (a))
 #define MIN(a,b) (((a) < (b)) ?  (a) : (b))
