@@ -41,6 +41,7 @@ SRC          = src/Main.c                                                  \
 	           src/Log.c                                                   \
 	           src/Power.c                                                 \
 	           src/Signature.c                                             \
+	           src/Stack.c                                                 \
 	           src/Time.c                                                  \
 	           src/Timer.c                                                 \
 	           src/Tone.c                                                  \
