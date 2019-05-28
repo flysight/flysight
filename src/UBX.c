@@ -1330,7 +1330,7 @@ void UBX_Init(void)
 void UBX_Task(void)
 {
 #ifdef STACK_PAINTING
-	static int32_t stack_count = 0;
+	static int32_t stack_count = 4096;
 	int32_t temp;
 #endif
 	

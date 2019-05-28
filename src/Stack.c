@@ -7,9 +7,8 @@
 extern uint8_t _end;
 extern uint8_t __stack;
 
-static void Stack_Paint(void) __attribute__ ((naked)) __attribute__ ((section (".init1")));
-
-static void Stack_Paint(void)
+__attribute__ ((naked,section (".init3")))
+void Stack_Paint(void)
 {
 #if 0
     uint8_t *p = &_end;
