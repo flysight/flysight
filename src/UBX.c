@@ -827,6 +827,13 @@ static void UBX_SpeakValue(
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, current->gSpeed) / M_PI * 180, 2, 1, 0);
 		break;
 	}
+
+	// Step 1.5: Include label
+	if (UBX_num_speech > 1)
+	{
+		*(--UBX_speech_ptr) = UBX_speech[UBX_cur_speech].mode + 1;
+		*(--UBX_speech_ptr) = '>';
+	}
 	
 	// Step 2: Truncate to the desired number of decimal places
 
@@ -1479,6 +1486,31 @@ void UBX_Task(void)
 				UBX_buffer.filename[6] = 0;
 
 				Tone_Play(UBX_buffer.filename);
+			}
+			else if (*UBX_speech_ptr == '>')
+			{
+				++UBX_speech_ptr;
+				switch ((*UBX_speech_ptr) - 1)
+				{
+					case 0:
+						Tone_Play("horz.wav");
+						break;
+					case 1:
+						Tone_Play("vert.wav");
+						break;
+					case 2:
+						Tone_Play("glide.wav");
+						break;
+					case 3:
+						Tone_Play("iglide.wav");
+						break;
+					case 4:
+						Tone_Play("speed.wav");
+						break;
+					case 11:
+						Tone_Play("dive.wav");
+						break;
+				}
 			}
 			else
 			{
