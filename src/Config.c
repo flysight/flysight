@@ -122,11 +122,14 @@ Sp_Mode:   2     ; Speech mode\r\n\
                  ;   2 = Glide ratio\r\n\
                  ;   3 = Inverse glide ratio\r\n\
                  ;   4 = Total speed\r\n\
+                 ;   5 = Altitude above DZ_Elev\r\n\
                  ;   11 = Dive angle\r\n\
 Sp_Units:  1     ; Speech units\r\n\
-                 ;   0 = km/h\r\n\
-                 ;   1 = mph\r\n\
-Sp_Dec:    0     ; Decimal places for speech\r\n\
+                 ;   0 = km/h or m\r\n\
+                 ;   1 = mph or feet\r\n\
+Sp_Dec:    0     ; Speech precision\r\n\
+                 ;   Altitude step in Mode 5\r\n\
+                 ;   Decimal places in all other Modes\r\n\
 \r\n\
 ; Thresholds\r\n\
 \r\n\

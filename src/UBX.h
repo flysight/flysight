@@ -58,7 +58,7 @@ typedef struct
 {
 	uint8_t mode;
 	uint8_t units;
-	uint8_t decimals;
+	uint32_t decimals;
 }
 UBX_speech_t;
 

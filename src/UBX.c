@@ -751,10 +751,67 @@ static void UBX_GetValues(
 	}
 }
 
+static char *UBX_NumberToSpeech(
+	int32_t number,
+	char *ptr)
+{
+	// Adapted from https://stackoverflow.com/questions/2729752/converting-numbers-in-to-words-c-sharp
+
+    if (number == 0)
+	{
+		*(ptr++) = '0';
+		return ptr;
+	}
+
+    if (number < 0)
+	{
+		*(ptr++) = '-';
+        return UBX_NumberToSpeech(-number, ptr);
+	}
+
+    if ((number / 1000) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 1000, ptr);
+		*(ptr++) = 'k';
+        number %= 1000;
+    }
+
+    if ((number / 100) > 0)
+    {
+        ptr = UBX_NumberToSpeech(number / 100, ptr);
+		*(ptr++) = 'h';
+        number %= 100;
+    }
+
+    if (number > 0)
+    {
+		if (number < 10)
+		{
+			*(ptr++) = '0' + number;
+		}
+		else if (number < 20)
+		{
+			*(ptr++) = 't';
+			*(ptr++) = '0' + (number - 10);
+		}
+        else
+        {
+			*(ptr++) = 'x';
+			*(ptr++) = '0' + (number / 10);
+
+            if ((number % 10) > 0)
+				*(ptr++) = '0' + (number % 10);
+        }
+    }
+
+    return ptr;
+}
+
 static void UBX_SpeakValue(
 	UBX_saved_t *current)
 {
 	uint16_t speed_mul = 1024;
+	int32_t step_size, step;
 	
 	char *end_ptr;
 
@@ -823,6 +880,21 @@ static void UBX_SpeakValue(
 	case 4: // Total speed
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->speed * 1024) / speed_mul, 2, 1, 0);
 		break;
+	case 5: // Altitude
+		if (UBX_speech[UBX_cur_speech].units == UBX_UNITS_KMH)
+		{
+			step_size = 10000 * UBX_speech[UBX_cur_speech].decimals;
+		}
+		else
+		{
+			step_size = 3048 * UBX_speech[UBX_cur_speech].decimals;
+		}
+		step = ((current->hMSL - UBX_dz_elev) * 10 + step_size / 2) / step_size;
+		UBX_speech_ptr = UBX_speech_buf + 2;
+		UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_speech[UBX_cur_speech].decimals, UBX_speech_ptr);
+		end_ptr = UBX_speech_ptr;
+		UBX_speech_ptr = UBX_speech_buf + 2;
+		break;
 	case 11: // Dive angle
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, current->gSpeed) / M_PI * 180, 2, 1, 0);
 		break;
@@ -837,8 +909,11 @@ static void UBX_SpeakValue(
 	
 	// Step 2: Truncate to the desired number of decimal places
 
-	if (UBX_speech[UBX_cur_speech].decimals == 0) end_ptr -= 4;
-	else end_ptr -= 3 - UBX_speech[UBX_cur_speech].decimals;
+	if (UBX_speech[UBX_cur_speech].mode != 5)
+	{
+		if (UBX_speech[UBX_cur_speech].decimals == 0) end_ptr -= 4;
+		else end_ptr -= 3 - UBX_speech[UBX_cur_speech].decimals;
+	}
 	
 	// Step 3: Add units if needed, e.g., *(end_ptr++) = 'k';
 	
@@ -850,67 +925,14 @@ static void UBX_SpeakValue(
 	case 3: // Inverse glide ratio
 	case 4: // Total speed
 		break;
+	case 5: // Altitude
+		*(end_ptr++) = (UBX_speech[UBX_cur_speech].units == UBX_UNITS_KMH) ? 'm' : 'f';
+		break;
 	}
 	
 	// Step 4: Terminate with a null
 
 	*(end_ptr++) = 0;
-}
-
-static char *UBX_NumberToSpeech(
-	uint32_t number,
-	char *ptr)
-{
-	// Adapted from https://stackoverflow.com/questions/2729752/converting-numbers-in-to-words-c-sharp
-
-    if (number == 0)
-	{
-		*(ptr++) = '0';
-		return ptr;
-	}
-
-    if (number < 0)
-	{
-		*(ptr++) = '-';
-        return UBX_NumberToSpeech(-number, ptr);
-	}
-
-    if ((number / 1000) > 0)
-    {
-        ptr = UBX_NumberToSpeech(number / 1000, ptr);
-		*(ptr++) = 'k';
-        number %= 1000;
-    }
-
-    if ((number / 100) > 0)
-    {
-        ptr = UBX_NumberToSpeech(number / 100, ptr);
-		*(ptr++) = 'h';
-        number %= 100;
-    }
-
-    if (number > 0)
-    {
-		if (number < 10)
-		{
-			*(ptr++) = '0' + number;
-		}
-		else if (number < 20)
-		{
-			*(ptr++) = 't';
-			*(ptr++) = '0' + (number - 10);
-		}
-        else
-        {
-			*(ptr++) = 'x';
-			*(ptr++) = '0' + (number / 10);
-
-            if ((number % 10) > 0)
-				*(ptr++) = '0' + (number % 10);
-        }
-    }
-
-    return ptr;
 }
 
 static void UBX_UpdateAlarms(
@@ -1037,6 +1059,8 @@ static void UBX_UpdateTones(
 	
 	int32_t val_1 = UBX_INVALID_VALUE, min_1 = UBX_min, max_1 = UBX_max;
 	int32_t val_2 = UBX_INVALID_VALUE, min_2 = UBX_min_2, max_2 = UBX_max_2;
+	
+	uint8_t i;
 
 	UBX_GetValues(current, UBX_mode, &val_1, &min_1, &max_1);
 
@@ -1078,8 +1102,21 @@ static void UBX_UpdateTones(
 			    UBX_num_speech != 0 && 
 			    UBX_sp_counter >= UBX_sp_rate)
 			{
-				UBX_SpeakValue(current);
-				UBX_cur_speech = (UBX_cur_speech + 1) % UBX_num_speech;
+				for (i = 0; i < UBX_num_speech; ++i)
+				{
+					if ((UBX_speech[UBX_cur_speech].mode != 5) || 
+						(current->hMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
+					{
+						UBX_SpeakValue(current);
+						UBX_cur_speech = (UBX_cur_speech + 1) % UBX_num_speech;
+						break;
+					}
+					else
+					{
+						UBX_cur_speech = (UBX_cur_speech + 1) % UBX_num_speech;
+					}
+				}
+
 				UBX_sp_counter = 0;
 			}
 		}
@@ -1506,6 +1543,9 @@ void UBX_Task(void)
 						break;
 					case 4:
 						Tone_Play("speed.wav");
+						break;
+					case 5:
+						Tone_Play("alt.wav");
 						break;
 					case 11:
 						Tone_Play("dive.wav");
