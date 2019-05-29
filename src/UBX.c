@@ -97,6 +97,7 @@
 #define UBX_FIRST_FIX       0x02
 #define UBX_SAY_ALTITUDE    0x04
 #define UBX_VERTICAL_ACC    0x08
+#define UBX_USING_ALTITUDE  0x10
 
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
@@ -1371,6 +1372,19 @@ void UBX_Init(void)
 	#undef SEND_MESSAGE
 
 	UBX_SendMessage(UBX_CFG, UBX_CFG_RST, sizeof(cfg_rst), &cfg_rst);
+
+	if (UBX_alt_step > 0)
+	{
+		UBX_flags |= UBX_USING_ALTITUDE;
+	}
+
+	for (i = 0; (i < UBX_num_speech) && !(UBX_flags & UBX_USING_ALTITUDE); ++i)
+	{
+		if (UBX_speech[UBX_cur_speech].mode == 5)
+		{
+			UBX_flags |= UBX_USING_ALTITUDE;
+		}
+	}
 }
 
 void UBX_Task(void)
@@ -1577,7 +1591,7 @@ void UBX_Task(void)
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
 
-		if ((UBX_alt_step > 0) && 
+		if ((UBX_flags & UBX_USING_ALTITUDE) && 
 		    (UBX_flags & UBX_SAY_ALTITUDE) && 
 		    (UBX_flags & UBX_VERTICAL_ACC) && 
 			Tone_IsIdle())
