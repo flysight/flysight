@@ -97,7 +97,6 @@
 #define UBX_FIRST_FIX       0x02
 #define UBX_SAY_ALTITUDE    0x04
 #define UBX_VERTICAL_ACC    0x08
-#define UBX_USING_ALTITUDE  0x10
 
 static const uint16_t UBX_sas_table[] PROGMEM =
 {
@@ -1099,9 +1098,11 @@ static void UBX_UpdateTones(
 		{
 			UBX_SetTone(val_1, min_1, max_1, val_2, min_2, max_2);
 				
-			if (UBX_sp_rate != 0 && 
-			    UBX_num_speech != 0 && 
-			    UBX_sp_counter >= UBX_sp_rate)
+			if (UBX_sp_rate != 0 &&
+			    UBX_num_speech != 0 &&
+			    UBX_sp_counter >= UBX_sp_rate &&
+				(*UBX_speech_ptr == 0) &&
+				!(UBX_flags & UBX_SAY_ALTITUDE))
 			{
 				for (i = 0; i < UBX_num_speech; ++i)
 				{
@@ -1172,7 +1173,6 @@ static void UBX_ReceiveMessage(
 				UBX_state = st_flush_1;
 
 				UBX_flags |= UBX_FIRST_FIX;
-				UBX_flags |= UBX_SAY_ALTITUDE;
 			}
 
 			++UBX_write;
@@ -1375,14 +1375,14 @@ void UBX_Init(void)
 
 	if (UBX_alt_step > 0)
 	{
-		UBX_flags |= UBX_USING_ALTITUDE;
+		UBX_flags |= UBX_SAY_ALTITUDE;
 	}
 
-	for (i = 0; (i < UBX_num_speech) && !(UBX_flags & UBX_USING_ALTITUDE); ++i)
+	for (i = 0; (i < UBX_num_speech) && !(UBX_flags & UBX_SAY_ALTITUDE); ++i)
 	{
 		if (UBX_speech[UBX_cur_speech].mode == 5)
 		{
-			UBX_flags |= UBX_USING_ALTITUDE;
+			UBX_flags |= UBX_SAY_ALTITUDE;
 		}
 	}
 }
@@ -1591,8 +1591,8 @@ void UBX_Task(void)
 			Tone_Beep(TONE_MAX_PITCH - 1, 0, TONE_LENGTH_125_MS);
 		}
 
-		if ((UBX_flags & UBX_USING_ALTITUDE) && 
-		    (UBX_flags & UBX_SAY_ALTITUDE) && 
+		if ((UBX_flags & UBX_SAY_ALTITUDE) && 
+			(UBX_flags & UBX_HAS_FIX) &&
 		    (UBX_flags & UBX_VERTICAL_ACC) && 
 			Tone_IsIdle())
 		{
