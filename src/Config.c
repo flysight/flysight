@@ -127,7 +127,7 @@ Sp_Mode:   2     ; Speech mode\r\n\
 Sp_Units:  1     ; Speech units\r\n\
                  ;   0 = km/h or m\r\n\
                  ;   1 = mph or feet\r\n\
-Sp_Dec:    0     ; Speech precision\r\n\
+Sp_Dec:    1     ; Speech precision\r\n\
                  ;   Altitude step in Mode 5\r\n\
                  ;   Decimal places in all other Modes\r\n\
 \r\n\
@@ -363,7 +363,7 @@ static FRESULT Config_ReadSingle(
 			++UBX_num_speech;
 			UBX_speech[UBX_num_speech - 1].mode = val;
 			UBX_speech[UBX_num_speech - 1].units = UBX_UNITS_MPH;
-			UBX_speech[UBX_num_speech - 1].decimals = 0;
+			UBX_speech[UBX_num_speech - 1].decimals = 1;
 		}
 		if (!strcmp_P(name, Config_Sp_Units) && UBX_num_speech <= UBX_MAX_SPEECH)
 		{
