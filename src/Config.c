@@ -112,20 +112,24 @@ Flatline:  0     ; Flatline at minimum rate\r\n\
 \r\n\
 ; Speech settings\r\n\
 \r\n\
+Sp_Rate:   0     ; Speech rate (s)\r\n\
+                 ;   0 = No speech\r\n\
+Sp_Volume: 8     ; 0 (min) to 8 (max)\r\n\
+\r\n\
 Sp_Mode:   2     ; Speech mode\r\n\
                  ;   0 = Horizontal speed\r\n\
                  ;   1 = Vertical speed\r\n\
                  ;   2 = Glide ratio\r\n\
                  ;   3 = Inverse glide ratio\r\n\
                  ;   4 = Total speed\r\n\
+                 ;   5 = Altitude above DZ_Elev\r\n\
                  ;   11 = Dive angle\r\n\
 Sp_Units:  1     ; Speech units\r\n\
-                 ;   0 = km/h\r\n\
-                 ;   1 = mph\r\n\
-Sp_Rate:   0     ; Speech rate (s)\r\n\
-                 ;   0 = No speech\r\n\
-Sp_Dec:    0     ; Decimal places for speech\r\n\
-Sp_Volume: 8     ; 0 (min) to 8 (max)\r\n\
+                 ;   0 = km/h or m\r\n\
+                 ;   1 = mph or feet\r\n\
+Sp_Dec:    1     ; Speech precision\r\n\
+                 ;   Altitude step in Mode 5\r\n\
+                 ;   Decimal places in all other Modes\r\n\
 \r\n\
 ; Thresholds\r\n\
 \r\n\
@@ -244,8 +248,6 @@ static const char Config_Win_Bottom[] PROGMEM = "Win_Bottom";
 static const char Config_Alt_Units[] PROGMEM  = "Alt_Units";
 static const char Config_Alt_Step[] PROGMEM   = "Alt_Step";
 
-char Config_buf[80];
-
 static void Config_WriteString_P(
 	const char *str,
 	FIL        *file)
@@ -277,12 +279,12 @@ static FRESULT Config_ReadSingle(
 
 	while (!f_eof(&Main_file))
 	{
-		f_gets(Config_buf, sizeof(Config_buf), &Main_file);
+		f_gets(UBX_buffer.buffer, sizeof(UBX_buffer.buffer), &Main_file);
 
-		len = strcspn(Config_buf, ";");
-		Config_buf[len] = 0;
+		len = strcspn(UBX_buffer.buffer, ";");
+		UBX_buffer.buffer[len] = 0;
 		
-		name = strtok(Config_buf, " \r\n\t:");
+		name = strtok(UBX_buffer.buffer, " \r\n\t:");
 		if (name == 0) continue ;
 		
 		result = strtok(0, " \r\n\t:");
@@ -306,10 +308,7 @@ static FRESULT Config_ReadSingle(
 		HANDLE_VALUE(Config_Min_Rate,  UBX_min_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
 		HANDLE_VALUE(Config_Max_Rate,  UBX_max_rate,     val * TONE_RATE_ONE_HZ / 100, val >= 0);
 		HANDLE_VALUE(Config_Flatline,  UBX_flatline,     val, val == 0 || val == 1);
-		HANDLE_VALUE(Config_Sp_Mode,   UBX_sp_mode,      val, (val >= 0 && val <= 6) || (val == 11));
-		HANDLE_VALUE(Config_Sp_Units,  UBX_sp_units,     val, val >= 0 && val <= 1);
 		HANDLE_VALUE(Config_Sp_Rate,   UBX_sp_rate,      val * 1000, val >= 0 && val <= 32);
-		HANDLE_VALUE(Config_Sp_Dec,    UBX_sp_decimals,  val, val >= 0 && val <= 2);
 		HANDLE_VALUE(Config_Sp_Volume, Tone_sp_volume,   8 - val, val >= 0 && val <= 8);
 		HANDLE_VALUE(Config_V_Thresh,  UBX_threshold,    val, TRUE);
 		HANDLE_VALUE(Config_H_Thresh,  UBX_hThreshold,   val, TRUE);
@@ -358,6 +357,23 @@ static FRESULT Config_ReadSingle(
 		{
 			UBX_windows[UBX_num_windows - 1].bottom = val * 1000;
 		}
+
+		if (!strcmp_P(name, Config_Sp_Mode) && UBX_num_speech < UBX_MAX_SPEECH)
+		{
+			++UBX_num_speech;
+			UBX_speech[UBX_num_speech - 1].mode = val;
+			UBX_speech[UBX_num_speech - 1].units = UBX_UNITS_MPH;
+			UBX_speech[UBX_num_speech - 1].decimals = 1;
+		}
+		if (!strcmp_P(name, Config_Sp_Units) && UBX_num_speech <= UBX_MAX_SPEECH)
+		{
+			UBX_speech[UBX_num_speech - 1].units = val;
+		}
+		if (!strcmp_P(name, Config_Sp_Dec) && UBX_num_speech <= UBX_MAX_SPEECH)
+		{
+			result[8] = '\0';
+			UBX_speech[UBX_num_speech - 1].decimals = val;
+		}
 	}
 	
 	f_close(&Main_file);
@@ -386,10 +402,10 @@ void Config_Read(void)
 		f_close(&Main_file);
 	}
 
-	eeprom_read_block(UBX_buf, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
+	eeprom_read_block(UBX_buffer.filename, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
 
-	if (UBX_buf[0] != 0 && UBX_buf[0] != 0xff)
+	if (UBX_buffer.filename[0] != 0 && UBX_buffer.filename[0] != 0xff)
 	{
-		res = Config_ReadSingle("\\config", UBX_buf);
+		res = Config_ReadSingle("\\config", UBX_buffer.filename);
 	}
 }

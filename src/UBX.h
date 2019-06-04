@@ -26,8 +26,18 @@
 
 #include <avr/io.h>
 
-#define UBX_MAX_ALARMS  10
-#define UBX_MAX_WINDOWS 2
+#define UBX_MAX_ALARMS   10
+#define UBX_MAX_WINDOWS  2
+#define UBX_MAX_SPEECH   3
+
+#define UBX_BUFFER_LEN   150
+#define UBX_FILENAME_LEN 13
+
+#define UBX_UNITS_KMH       0
+#define UBX_UNITS_MPH       1
+
+#define UBX_UNITS_METERS    0
+#define UBX_UNITS_FEET      1
 
 typedef struct
 {
@@ -35,14 +45,29 @@ typedef struct
 	uint8_t type;
 	char    filename[9];
 }
-UBX_alarm;
+UBX_alarm_t;
 
 typedef struct
 {
 	int32_t top;
 	int32_t bottom;
 }
-UBX_window;
+UBX_window_t;
+
+typedef struct
+{
+	uint8_t mode;
+	uint8_t units;
+	uint32_t decimals;
+}
+UBX_speech_t;
+
+typedef struct
+{
+	char buffer[UBX_BUFFER_LEN - UBX_FILENAME_LEN];
+	char filename[UBX_FILENAME_LEN];
+}
+UBX_buffer_t;
 
 extern uint8_t   UBX_model;
 extern uint16_t  UBX_rate;
@@ -62,15 +87,14 @@ extern uint8_t   UBX_use_sas;
 extern uint32_t  UBX_threshold;
 extern uint32_t  UBX_hThreshold;
 
-extern UBX_alarm UBX_alarms[UBX_MAX_ALARMS];
+extern UBX_alarm_t UBX_alarms[UBX_MAX_ALARMS];
 extern uint8_t   UBX_num_alarms;
 extern uint32_t  UBX_alarm_window_above;
 extern uint32_t  UBX_alarm_window_below;
 
-extern uint8_t   UBX_sp_mode;
-extern uint8_t   UBX_sp_units;
-extern uint16_t  UBX_sp_rate;
-extern uint8_t   UBX_sp_decimals;
+extern UBX_speech_t UBX_speech[UBX_MAX_SPEECH];
+extern uint8_t      UBX_num_speech;
+extern uint16_t     UBX_sp_rate;
 
 extern uint8_t   UBX_alt_units;
 extern uint32_t  UBX_alt_step;
@@ -78,9 +102,9 @@ extern uint32_t  UBX_alt_step;
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
 
-extern char      UBX_buf[150];
+extern UBX_buffer_t UBX_buffer;
 
-extern UBX_window UBX_windows[UBX_MAX_WINDOWS];
+extern UBX_window_t UBX_windows[UBX_MAX_WINDOWS];
 extern uint8_t    UBX_num_windows;
 
 extern int32_t    UBX_dz_elev;

@@ -102,12 +102,12 @@ static void ReadSingleConfigName(
 
 	while (!f_eof(&Main_file))
 	{
-		f_gets(Config_buf, sizeof(Config_buf), &Main_file);
+		f_gets(UBX_buffer.buffer, sizeof(UBX_buffer.buffer), &Main_file);
 
-		len = strcspn(Config_buf, ";");
-		Config_buf[len] = 0;
+		len = strcspn(UBX_buffer.buffer, ";");
+		UBX_buffer.buffer[len] = 0;
 		
-		name = strtok(Config_buf, " \t:");
+		name = strtok(UBX_buffer.buffer, " \t:");
 		if (name == 0) continue ;
 		
 		result = strtok(0, " \t:");
@@ -117,13 +117,13 @@ static void ReadSingleConfigName(
 		{
 			eeprom_write_block(fname, CONFIG_FNAME_ADDR, CONFIG_FNAME_LEN);
 			
-			strcpy(UBX_buf, result);
-			strcat(UBX_buf, ".wav");
+			strcpy(UBX_buffer.filename, result);
+			strcat(UBX_buffer.filename, ".wav");
 
 			Power_Hold();
 			Tone_Hold();
 			
-			Tone_Play(UBX_buf);
+			Tone_Play(UBX_buffer.filename);
 			Tone_Wait();
 			
 			Tone_Release();
@@ -171,11 +171,11 @@ static void ReadInitFile(void)
 	{
 		for (i = 0; i < 10; ++i)
 		{
-			UBX_buf[0] = i + '0';
-			UBX_buf[1] = 0;
-			strcat(UBX_buf, ".wav");
+			UBX_buffer.filename[0] = i + '0';
+			UBX_buffer.filename[1] = 0;
+			strcat(UBX_buffer.filename, ".wav");
 
-			Tone_Play(UBX_buf);
+			Tone_Play(UBX_buffer.filename);
 			Tone_Wait();
 		}
 
@@ -187,10 +187,10 @@ static void ReadInitFile(void)
 	}
 	else if (UBX_init_mode == 2)	// Play a file
 	{
-		strcpy(UBX_buf, UBX_init_filename);
-		strcat(UBX_buf, ".wav");
+		strcpy(UBX_buffer.filename, UBX_init_filename);
+		strcat(UBX_buffer.filename, ".wav");
 
-		Tone_Play(UBX_buf);
+		Tone_Play(UBX_buffer.filename);
 		Tone_Wait();
 	}
 	
