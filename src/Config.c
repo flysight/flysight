@@ -40,6 +40,10 @@
 #define FALSE 0
 #define TRUE  (!FALSE)
 
+#define CONFIG_FIRST_ALARM  0x01
+#define CONFIG_FIRST_WINDOW 0x02
+#define CONFIG_FIRST_SPEECH 0x04
+
 static const char Config_default[] PROGMEM = "\
 ; Firmware version " FLYSIGHT_VERSION "\r\n\
 \r\n\
@@ -268,6 +272,8 @@ static FRESULT Config_ReadSingle(
 	char    *name;
 	char    *result;
 	int32_t val;
+	
+	uint8_t first = 0;
 
 	FRESULT res;
 
@@ -333,6 +339,12 @@ static FRESULT Config_ReadSingle(
 		
 		if (!strcmp_P(name, Config_Alarm_Elev) && UBX_num_alarms < UBX_MAX_ALARMS)
 		{
+			if (!(first & CONFIG_FIRST_ALARM))
+			{
+				UBX_num_alarms = 0;
+				first |= CONFIG_FIRST_ALARM;
+			}
+			
 			++UBX_num_alarms;
 			UBX_alarms[UBX_num_alarms - 1].elev = val * 1000;
 			UBX_alarms[UBX_num_alarms - 1].type = 0;
@@ -350,6 +362,12 @@ static FRESULT Config_ReadSingle(
 		
 		if (!strcmp_P(name, Config_Win_Top) && UBX_num_windows < UBX_MAX_WINDOWS)
 		{
+			if (!(first & CONFIG_FIRST_WINDOW))
+			{
+				UBX_num_windows = 0;
+				first |= CONFIG_FIRST_WINDOW;
+			}
+			
 			++UBX_num_windows;
 			UBX_windows[UBX_num_windows - 1].top = val * 1000;
 		}
@@ -360,6 +378,12 @@ static FRESULT Config_ReadSingle(
 
 		if (!strcmp_P(name, Config_Sp_Mode) && UBX_num_speech < UBX_MAX_SPEECH)
 		{
+			if (!(first & CONFIG_FIRST_SPEECH))
+			{
+				UBX_num_speech = 0;
+				first |= CONFIG_FIRST_SPEECH;
+			}
+			
 			++UBX_num_speech;
 			UBX_speech[UBX_num_speech - 1].mode = val;
 			UBX_speech[UBX_num_speech - 1].units = UBX_UNITS_MPH;
