@@ -400,27 +400,33 @@ void Tone_Beep(
 	uint32_t chirp,
 	uint16_t len)
 {
-	Tone_Stop();
-	
-	Tone_step  = ((int32_t) index * 3242 + 30212096) * TONE_SAMPLE_LEN;
-	Tone_chirp = chirp * TONE_SAMPLE_LEN * TONE_SAMPLE_LEN;
-	Tone_len   = len / TONE_SAMPLE_LEN;
-	
-	Tone_Start(TONE_MODE_BEEP);
+	if (Tone_volume < 8)
+	{
+		Tone_Stop();
+		
+		Tone_step  = ((int32_t) index * 3242 + 30212096) * TONE_SAMPLE_LEN;
+		Tone_chirp = chirp * TONE_SAMPLE_LEN * TONE_SAMPLE_LEN;
+		Tone_len   = len / TONE_SAMPLE_LEN;
+		
+		Tone_Start(TONE_MODE_BEEP);
+	}
 }
 
 void Tone_Play(
 	const char *filename)
 {
-	Tone_Stop();
-
-	f_chdir("\\audio");
-
-	if (f_open(&Tone_file, filename, FA_READ) == FR_OK)
+	if (Tone_sp_volume < 8)
 	{
-		f_lseek(&Tone_file, 44);
+		Tone_Stop();
 
-		Tone_Start(TONE_MODE_WAV);
+		f_chdir("\\audio");
+
+		if (f_open(&Tone_file, filename, FA_READ) == FR_OK)
+		{
+			f_lseek(&Tone_file, 44);
+
+			Tone_Start(TONE_MODE_WAV);
+		}
 	}
 }
 
