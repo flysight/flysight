@@ -1027,6 +1027,7 @@ static void UBX_UpdateAlarms(
 					break;
 				}
 				
+				*UBX_speech_ptr = 0;
 				break;
 			}
 		}
