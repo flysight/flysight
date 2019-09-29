@@ -395,7 +395,6 @@ static FRESULT Config_ReadSingle(
 		}
 		if (!strcmp_P(name, Config_Sp_Dec) && UBX_num_speech <= UBX_MAX_SPEECH)
 		{
-			result[8] = '\0';
 			UBX_speech[UBX_num_speech - 1].decimals = val;
 		}
 	}
