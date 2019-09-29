@@ -1082,7 +1082,7 @@ static void UBX_UpdateTones(
 			x1 != UBX_INVALID_VALUE && 
 			x2 != UBX_INVALID_VALUE)
 		{
-			val_2 = (int32_t) 1000 * (x2 - x0) / (2 * UBX_rate);
+			val_2 = (int32_t) 1000 * (x2 - x0) / (int32_t) (2 * UBX_rate);
 			val_2 = (int32_t) 10000 * ABS(val_2) / ABS(max_1 - min_1);
 		}
 	}
