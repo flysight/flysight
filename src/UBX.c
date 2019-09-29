@@ -91,7 +91,7 @@
 #define UBX_MSG_TIMEUTC     0x08
 #define UBX_MSG_ALL         (UBX_MSG_POSLLH | UBX_MSG_SOL | UBX_MSG_VELNED | UBX_MSG_TIMEUTC)
 
-#define UBX_ALT_MIN         1500UL // Minimum announced altitude (m)
+#define UBX_ALT_MIN         1500L // Minimum announced altitude (m)
 
 #define UBX_HAS_FIX         0x01
 #define UBX_FIRST_FIX       0x02
@@ -320,8 +320,8 @@ typedef struct
 	int32_t  velN;     // North velocity               (cm/s)
 	int32_t  velE;     // East velocity                (cm/s)
 	int32_t  velD;     // Down velocity                (cm/s)
-	uint32_t speed;    // 3D speed                     (cm/s)
-	uint32_t gSpeed;   // Ground speed                 (cm/s)
+	int32_t  speed;    // 3D speed                     (cm/s)
+	int32_t  gSpeed;   // Ground speed                 (cm/s)
 	int32_t  heading;  // 2D heading                   (deg)
 	uint32_t sAcc;     // Speed accuracy estimate      (cm/s)
 	uint32_t cAcc;     // Heading accuracy estimate    (deg)
