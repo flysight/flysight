@@ -281,20 +281,20 @@ uint8_t      UBX_cur_speech = 0;
 uint16_t     UBX_sp_rate    = 0;
 
 uint8_t  UBX_alt_units     = UBX_UNITS_FEET;
-uint32_t UBX_alt_step      = 0;
+int32_t  UBX_alt_step      = 0;
 
 uint8_t  UBX_init_mode     = 0;
 char     UBX_init_filename[9];
 
 static uint16_t UBX_sp_counter = 0;
 
-uint32_t UBX_threshold     = 1000;
-uint32_t UBX_hThreshold    = 0;
+int32_t  UBX_threshold     = 1000;
+int32_t  UBX_hThreshold    = 0;
 
 UBX_alarm_t UBX_alarms[UBX_MAX_ALARMS];
 uint8_t     UBX_num_alarms   = 0;
-uint32_t    UBX_alarm_window_above = 0;
-uint32_t    UBX_alarm_window_below = 0;
+int32_t     UBX_alarm_window_above = 0;
+int32_t     UBX_alarm_window_below = 0;
 
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
