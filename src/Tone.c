@@ -172,7 +172,7 @@ void Tone_Update(void)
 {
 	static uint16_t tone_timer = 0;
 
-	if (!Tone_hold && 0 - tone_timer < Tone_rate)
+	if (!Tone_hold && 0 - tone_timer <= Tone_rate)
 	{
 		Tone_flags |= TONE_FLAGS_BEEP;
 	}
