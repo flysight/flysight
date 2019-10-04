@@ -866,6 +866,10 @@ static void UBX_SpeakValue(
 		{
 			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->gSpeed / current->velD, 2, 1, 0);
 		}
+		else
+		{
+			*(--UBX_speech_ptr) = 0;
+		}
 		break;
 	case 3: // Inverse glide ratio
 		if (current->gSpeed != 0)
