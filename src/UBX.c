@@ -91,7 +91,7 @@
 #define UBX_MSG_TIMEUTC     0x08
 #define UBX_MSG_ALL         (UBX_MSG_POSLLH | UBX_MSG_SOL | UBX_MSG_VELNED | UBX_MSG_TIMEUTC)
 
-#define UBX_ALT_MIN         1500UL // Minimum announced altitude (m)
+#define UBX_ALT_MIN         1500L // Minimum announced altitude (m)
 
 #define UBX_HAS_FIX         0x01
 #define UBX_FIRST_FIX       0x02
@@ -281,20 +281,20 @@ uint8_t      UBX_cur_speech = 0;
 uint16_t     UBX_sp_rate    = 0;
 
 uint8_t  UBX_alt_units     = UBX_UNITS_FEET;
-uint32_t UBX_alt_step      = 0;
+int32_t  UBX_alt_step      = 0;
 
 uint8_t  UBX_init_mode     = 0;
 char     UBX_init_filename[9];
 
 static uint16_t UBX_sp_counter = 0;
 
-uint32_t UBX_threshold     = 1000;
-uint32_t UBX_hThreshold    = 0;
+int32_t  UBX_threshold     = 1000;
+int32_t  UBX_hThreshold    = 0;
 
 UBX_alarm_t UBX_alarms[UBX_MAX_ALARMS];
 uint8_t     UBX_num_alarms   = 0;
-uint32_t    UBX_alarm_window_above = 0;
-uint32_t    UBX_alarm_window_below = 0;
+int32_t     UBX_alarm_window_above = 0;
+int32_t     UBX_alarm_window_below = 0;
 
 static uint32_t UBX_time_of_week = 0;
 static uint8_t  UBX_msg_received = 0;
@@ -320,8 +320,8 @@ typedef struct
 	int32_t  velN;     // North velocity               (cm/s)
 	int32_t  velE;     // East velocity                (cm/s)
 	int32_t  velD;     // Down velocity                (cm/s)
-	uint32_t speed;    // 3D speed                     (cm/s)
-	uint32_t gSpeed;   // Ground speed                 (cm/s)
+	int32_t  speed;    // 3D speed                     (cm/s)
+	int32_t  gSpeed;   // Ground speed                 (cm/s)
 	int32_t  heading;  // 2D heading                   (deg)
 	uint32_t sAcc;     // Speed accuracy estimate      (cm/s)
 	uint32_t cAcc;     // Heading accuracy estimate    (deg)
@@ -866,6 +866,10 @@ static void UBX_SpeakValue(
 		{
 			UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * (int32_t) current->gSpeed / current->velD, 2, 1, 0);
 		}
+		else
+		{
+			*(--UBX_speech_ptr) = 0;
+		}
 		break;
 	case 3: // Inverse glide ratio
 		if (current->gSpeed != 0)
@@ -880,7 +884,10 @@ static void UBX_SpeakValue(
 	case 4: // Total speed
 		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, (current->speed * 1024) / speed_mul, 2, 1, 0);
 		break;
-	case 5: // Altitude
+	case 11: // Dive angle
+		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, current->gSpeed) / M_PI * 180, 2, 1, 0);
+		break;
+	case 12: // Altitude
 		if (UBX_speech[UBX_cur_speech].units == UBX_UNITS_KMH)
 		{
 			step_size = 10000 * UBX_speech[UBX_cur_speech].decimals;
@@ -894,9 +901,6 @@ static void UBX_SpeakValue(
 		UBX_speech_ptr = UBX_NumberToSpeech(step * UBX_speech[UBX_cur_speech].decimals, UBX_speech_ptr);
 		end_ptr = UBX_speech_ptr;
 		UBX_speech_ptr = UBX_speech_buf + 2;
-		break;
-	case 11: // Dive angle
-		UBX_speech_ptr = Log_WriteInt32ToBuf(UBX_speech_ptr, 100 * atan2(current->velD, current->gSpeed) / M_PI * 180, 2, 1, 0);
 		break;
 	}
 
@@ -924,8 +928,9 @@ static void UBX_SpeakValue(
 	case 2: // Glide ratio
 	case 3: // Inverse glide ratio
 	case 4: // Total speed
+	case 11: // Dive angle
 		break;
-	case 5: // Altitude
+	case 12: // Altitude
 		*(end_ptr++) = (UBX_speech[UBX_cur_speech].units == UBX_UNITS_KMH) ? 'm' : 'f';
 		break;
 	}
@@ -1027,6 +1032,7 @@ static void UBX_UpdateAlarms(
 					break;
 				}
 				
+				*UBX_speech_ptr = 0;
 				break;
 			}
 		}
@@ -1082,7 +1088,7 @@ static void UBX_UpdateTones(
 			x1 != UBX_INVALID_VALUE && 
 			x2 != UBX_INVALID_VALUE)
 		{
-			val_2 = (int32_t) 1000 * (x2 - x0) / (2 * UBX_rate);
+			val_2 = (int32_t) 1000 * (x2 - x0) / (int32_t) (2 * UBX_rate);
 			val_2 = (int32_t) 10000 * ABS(val_2) / ABS(max_1 - min_1);
 		}
 	}
@@ -1558,11 +1564,11 @@ void UBX_Task(void)
 					case 4:
 						Tone_Play("speed.wav");
 						break;
-					case 5:
-						Tone_Play("alt.wav");
-						break;
 					case 11:
 						Tone_Play("dive.wav");
+						break;
+					case 12:
+						Tone_Play("alt.wav");
 						break;
 				}
 			}

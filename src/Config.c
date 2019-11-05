@@ -126,8 +126,8 @@ Sp_Mode:   2     ; Speech mode\r\n\
                  ;   2 = Glide ratio\r\n\
                  ;   3 = Inverse glide ratio\r\n\
                  ;   4 = Total speed\r\n\
-                 ;   5 = Altitude above DZ_Elev\r\n\
                  ;   11 = Dive angle\r\n\
+                 ;   12 = Altitude above DZ_Elev\r\n\
 Sp_Units:  1     ; Speech units\r\n\
                  ;   0 = km/h or m\r\n\
                  ;   1 = mph or feet\r\n\
@@ -395,7 +395,6 @@ static FRESULT Config_ReadSingle(
 		}
 		if (!strcmp_P(name, Config_Sp_Dec) && UBX_num_speech <= UBX_MAX_SPEECH)
 		{
-			result[8] = '\0';
 			UBX_speech[UBX_num_speech - 1].decimals = val;
 		}
 	}

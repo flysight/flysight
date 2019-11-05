@@ -58,7 +58,7 @@ typedef struct
 {
 	uint8_t mode;
 	uint8_t units;
-	uint32_t decimals;
+	int32_t decimals;
 }
 UBX_speech_t;
 
@@ -84,20 +84,20 @@ extern uint8_t   UBX_flatline;
 extern uint8_t   UBX_limits;
 extern uint8_t   UBX_use_sas;
 
-extern uint32_t  UBX_threshold;
-extern uint32_t  UBX_hThreshold;
+extern int32_t   UBX_threshold;
+extern int32_t   UBX_hThreshold;
 
 extern UBX_alarm_t UBX_alarms[UBX_MAX_ALARMS];
 extern uint8_t   UBX_num_alarms;
-extern uint32_t  UBX_alarm_window_above;
-extern uint32_t  UBX_alarm_window_below;
+extern int32_t   UBX_alarm_window_above;
+extern int32_t   UBX_alarm_window_below;
 
 extern UBX_speech_t UBX_speech[UBX_MAX_SPEECH];
 extern uint8_t      UBX_num_speech;
 extern uint16_t     UBX_sp_rate;
 
 extern uint8_t   UBX_alt_units;
-extern uint32_t  UBX_alt_step;
+extern int32_t   UBX_alt_step;
 
 extern uint8_t   UBX_init_mode;
 extern char      UBX_init_filename[9];
