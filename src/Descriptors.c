@@ -88,7 +88,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 
 			.ConfigAttributes       = USB_CONFIG_ATTR_RESERVED,
 
-			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(250)
+			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(50)
 		},
 
 #ifdef USE_SERIAL_INTERFACE
@@ -192,7 +192,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 			.EndpointSize           = CDC_TXRX_EPSIZE,
 			.PollingIntervalMS      = 0x05
 		},
-#endif		
+#endif
 
 	.MS_Interface =
 		{
