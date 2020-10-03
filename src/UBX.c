@@ -1387,7 +1387,7 @@ void UBX_Init(void)
 
 	for (i = 0; (i < UBX_num_speech) && !(UBX_flags & UBX_SAY_ALTITUDE); ++i)
 	{
-		if (UBX_speech[UBX_cur_speech].mode == 5)
+		if (UBX_speech[i].mode == 5)
 		{
 			UBX_flags |= UBX_SAY_ALTITUDE;
 		}
