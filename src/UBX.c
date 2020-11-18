@@ -1113,7 +1113,7 @@ static void UBX_UpdateTones(
 			{
 				for (i = 0; i < UBX_num_speech; ++i)
 				{
-					if ((UBX_speech[UBX_cur_speech].mode != 5) || 
+					if ((UBX_speech[UBX_cur_speech].mode != 12) || 
 						(current->hMSL - UBX_dz_elev >= UBX_ALT_MIN * 1000))
 					{
 						UBX_SpeakValue(current);
@@ -1387,7 +1387,7 @@ void UBX_Init(void)
 
 	for (i = 0; (i < UBX_num_speech) && !(UBX_flags & UBX_SAY_ALTITUDE); ++i)
 	{
-		if (UBX_speech[i].mode == 5)
+		if (UBX_speech[i].mode == 12)
 		{
 			UBX_flags |= UBX_SAY_ALTITUDE;
 		}
