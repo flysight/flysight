@@ -52,7 +52,7 @@
 #define UBX_INVALID_VALUE   INT32_MAX
 
 #define UBX_TIMEOUT         500 // ACK/NAK timeout (ms)
-#define UBX_MAX_PAYLOAD_LEN 52
+#define UBX_MAX_PAYLOAD_LEN 92
 
 #define UBX_SYNC_1          0xb5
 #define UBX_SYNC_2          0x62
@@ -61,6 +61,7 @@
 #define UBX_NAV_POSLLH      0x02
 #define UBX_NAV_STATUS      0x03
 #define UBX_NAV_SOL         0x06
+#define UBX_NAV_PVT         0x07
 #define UBX_NAV_VELNED      0x12
 #define UBX_NAV_TIMEUTC     0x21
 
@@ -216,6 +217,44 @@ typedef struct
 	uint32_t res2;     // Reserved
 }
 UBX_nav_sol;
+
+typedef struct
+{
+	uint32_t iTOW;         // GPS time of week              (ms)
+	uint16_t year;         // Year                          (1999..2099)
+	uint8_t  month;        // Month                         (1..12)
+	uint8_t  day;          // Day of month                  (1..31)
+	uint8_t  hour;         // Hour of day                   (0..23)
+	uint8_t  min;          // Minute of hour                (0..59)
+	uint8_t  sec;          // Second of minute              (0..59)
+	uint8_t  valid;        // Validity flags
+	uint32_t tAcc;         // Time accuracy estimate        (ns)
+	int32_t  nano;         // Nanoseconds of second         (ns)
+	uint8_t  gpsFix;       // GPS fix type
+	uint8_t  flags;        // Fix status flags
+	uint8_t  flags2;       // Additional flags
+	uint8_t  numSV;        // Number of SVs in solution
+	int32_t  lon;          // Longitude                     (deg)
+	int32_t  lat;          // Latitude                      (deg)
+	int32_t  height;       // Height above ellipsoid        (mm)
+	int32_t  hMSL;         // Height above mean sea level   (mm)
+	uint32_t hAcc;         // Horizontal accuracy estimate  (mm)
+	uint32_t vAcc;         // Vertical accuracy estimate    (mm)
+	int32_t  velN;         // North velocity                (mm/s)
+	int32_t  velE;         // East velocity                 (mm/s)
+	int32_t  velD;         // Down velocity                 (mm/s)
+	int32_t  gSpeed;       // Ground speed                  (mm/s)
+	int32_t  headMot;      // 2D heading of motion          (deg)
+	uint32_t sAcc;         // Speed accuracy estimate       (mm/s)
+	uint32_t headAcc;      // Heading accuracy estimate     (deg)
+	uint16_t pDOP;         // Position DOP
+	uint8_t  flags3;       // Additional flags
+	uint8_t  reserved0[5]; // Reserved
+	int32_t  headVeh;      // 2D heading of vehicle         (deg)
+	int16_t  magDec;       // Magnetic declination          (deg)
+	uint16_t magAcc;       // Magnetic declination accuracy (deg)
+}
+UBX_nav_pvt;
 
 typedef struct
 {
@@ -1217,6 +1256,17 @@ static void UBX_HandleNavSol(void)
 	UBX_ReceiveMessage(UBX_MSG_SOL, nav_sol->iTOW);
 }
 
+static void UBX_HandleNavPvt(void)
+{
+	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_SAVED_LEN);
+	UBX_nav_pvt *nav_pvt = (UBX_nav_pvt *) UBX_payload;
+
+	current->gpsFix = nav_pvt->gpsFix;
+	current->numSV  = nav_pvt->numSV;
+
+	UBX_ReceiveMessage(UBX_MSG_SOL, nav_pvt->iTOW);
+}
+
 static void UBX_HandlePosition(void)
 {
 	UBX_saved_t *current = UBX_saved + (UBX_write % UBX_SAVED_LEN);
@@ -1279,6 +1329,9 @@ static void UBX_HandleMessage(void)
 		case UBX_NAV_SOL:
 			UBX_HandleNavSol();
 			break;
+		case UBX_NAV_PVT:
+			UBX_HandleNavPvt();
+			break;
 		case UBX_NAV_POSLLH:
 			UBX_HandlePosition();
 			break;
@@ -1305,8 +1358,21 @@ void UBX_Init(void)
 		{UBX_NMEA, UBX_NMEA_GPVTG,  0},
 		{UBX_NAV,  UBX_NAV_POSLLH,  1},
 		{UBX_NAV,  UBX_NAV_VELNED,  1},
-		{UBX_NAV,  UBX_NAV_SOL,     1},
 		{UBX_NAV,  UBX_NAV_TIMEUTC, 1}
+	};
+
+	UBX_cfg_msg cfg_sol =
+	{
+		.msgClass = UBX_NAV,
+		.msgID    = UBX_NAV_SOL,
+		.rate     = 1
+	};
+
+	UBX_cfg_msg cfg_pvt =
+	{
+		.msgClass = UBX_NAV,
+		.msgID    = UBX_NAV_PVT,
+		.rate     = 1
 	};
 
 	size_t n = sizeof(cfg_msg) / sizeof(UBX_cfg_msg);
@@ -1371,6 +1437,15 @@ void UBX_Init(void)
 	for (i = 0; i < n; ++i)
 	{
 		SEND_MESSAGE(UBX_CFG, UBX_CFG_MSG, cfg_msg[i]);
+	}
+
+	while (1)
+	{
+		UBX_SendMessage(UBX_CFG, UBX_CFG_MSG, sizeof(cfg_sol), &cfg_sol);
+		if (UBX_WaitForAck(UBX_CFG, UBX_CFG_MSG, UBX_TIMEOUT)) break;
+
+		UBX_SendMessage(UBX_CFG, UBX_CFG_MSG, sizeof(cfg_pvt), &cfg_pvt);
+		if (UBX_WaitForAck(UBX_CFG, UBX_CFG_MSG, UBX_TIMEOUT)) break;
 	}
 	
 	SEND_MESSAGE(UBX_CFG, UBX_CFG_RATE, cfg_rate);
